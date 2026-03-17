@@ -1,0 +1,337 @@
+﻿fecha,presentacion,origen,destino,precio_minimo,precio_maximo,precio_frecuente,obs,fecha_inicio_query,fecha_final_query,producto_id,origen_id,destino_id,origen_query,destino_query,precios_por_id,registros_por_pagina,fuente,fecha_extraccion
+03/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 24 kg.,Baja California,"Baja California : Central de Abasto INDIA, Tijuana",18.75,18.75,18.75,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 24 kg.,Baja California,"Baja California : Central de Abasto INDIA, Tijuana",20.0,20.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 24 kg.,Baja California,"Baja California : Central de Abasto INDIA, Tijuana",20.0,20.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 24 kg.,Baja California,"Baja California : Central de Abasto INDIA, Tijuana",20.0,20.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 24 kg.,Baja California,"Baja California : Central de Abasto INDIA, Tijuana",20.83,20.83,20.83,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 24 kg.,Baja California,"Baja California : Central de Abasto INDIA, Tijuana",22.08,22.08,22.08,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 24 kg.,Baja California,"Baja California : Central de Abasto INDIA, Tijuana",22.08,22.08,22.08,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 24 kg.,Baja California,"Baja California : Central de Abasto INDIA, Tijuana",22.08,22.08,22.08,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 24 kg.,Baja California,"Baja California : Central de Abasto INDIA, Tijuana",22.92,22.92,22.92,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Baja California Sur,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Jalisco,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Baja California Sur,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Jalisco,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Baja California Sur,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Jalisco,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Baja California Sur,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Jalisco,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Baja California Sur,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Jalisco,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Baja California Sur,Baja California Sur: Unión de Comerciantes de La Paz,20.0,20.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Jalisco,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Baja California Sur,Baja California Sur: Unión de Comerciantes de La Paz,20.0,20.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Jalisco,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Baja California Sur,Baja California Sur: Unión de Comerciantes de La Paz,20.0,20.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Jalisco,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Baja California Sur,Baja California Sur: Unión de Comerciantes de La Paz,20.0,20.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Jalisco,Baja California Sur: Unión de Comerciantes de La Paz,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Distrito Federal,"Campeche: Mercado ""Pedro Sáinz de Baranda"", Campeche",30.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Distrito Federal,"Campeche: Mercado ""Pedro Sáinz de Baranda"", Campeche",30.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Distrito Federal,"Campeche: Mercado ""Pedro Sáinz de Baranda"", Campeche",35.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Distrito Federal,"Campeche: Mercado ""Pedro Sáinz de Baranda"", Campeche",35.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Distrito Federal,"Campeche: Mercado ""Pedro Sáinz de Baranda"", Campeche",35.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Distrito Federal,"Campeche: Mercado ""Pedro Sáinz de Baranda"", Campeche",35.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Distrito Federal,"Campeche: Mercado ""Pedro Sáinz de Baranda"", Campeche",35.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Distrito Federal,"Campeche: Mercado ""Pedro Sáinz de Baranda"", Campeche",35.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Distrito Federal,"Campeche: Mercado ""Pedro Sáinz de Baranda"", Campeche",35.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Durango,"Coahuila: Central de Abasto de La Laguna, Torreón",22.0,24.0,23.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Durango,"Coahuila: Central de Abasto de La Laguna, Torreón",22.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Durango,"Coahuila: Central de Abasto de La Laguna, Torreón",22.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Durango,"Coahuila: Central de Abasto de La Laguna, Torreón",22.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Durango,"Coahuila: Central de Abasto de La Laguna, Torreón",22.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Durango,"Coahuila: Central de Abasto de La Laguna, Torreón",22.0,24.0,23.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Durango,"Coahuila: Central de Abasto de La Laguna, Torreón",22.0,24.0,23.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Durango,"Coahuila: Central de Abasto de La Laguna, Torreón",22.0,24.0,23.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Durango,"Coahuila: Central de Abasto de La Laguna, Torreón",22.0,24.0,23.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Jalisco,Colima: Centros de distribución de Colima,30.0,32.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Jalisco,Colima: Centros de distribución de Colima,30.0,32.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Jalisco,Colima: Centros de distribución de Colima,30.0,32.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Jalisco,Colima: Centros de distribución de Colima,30.0,32.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Chiapas,Chiapas: Central de Abasto de Tuxtla Gutiérrez,22.0,28.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Chiapas,Chiapas: Central de Abasto de Tuxtla Gutiérrez,22.0,28.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Chiapas,Chiapas: Central de Abasto de Tuxtla Gutiérrez,20.0,28.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Chiapas,Chiapas: Central de Abasto de Tuxtla Gutiérrez,20.0,28.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Chiapas,Chiapas: Central de Abasto de Tuxtla Gutiérrez,20.0,28.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Chiapas,Chiapas: Central de Abasto de Tuxtla Gutiérrez,22.0,28.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Chiapas,Chiapas: Central de Abasto de Tuxtla Gutiérrez,22.0,28.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Chiapas,Chiapas: Central de Abasto de Tuxtla Gutiérrez,22.0,28.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Chiapas,Chiapas: Central de Abasto de Tuxtla Gutiérrez,20.0,28.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 20 kg.,Sinaloa,Chihuahua: Central de Abasto de Chihuahua,25.0,26.5,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 20 kg.,Sinaloa,Chihuahua: Central de Abasto de Chihuahua,25.0,28.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 20 kg.,Sinaloa,Chihuahua: Central de Abasto de Chihuahua,25.0,28.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 20 kg.,Sinaloa,Chihuahua: Central de Abasto de Chihuahua,25.0,28.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 20 kg.,Sinaloa,Chihuahua: Central de Abasto de Chihuahua,25.0,29.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 20 kg.,Sinaloa,Chihuahua: Central de Abasto de Chihuahua,25.0,29.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 20 kg.,Sinaloa,Chihuahua: Central de Abasto de Chihuahua,25.0,29.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 20 kg.,Sinaloa,Chihuahua: Central de Abasto de Chihuahua,25.0,30.0,26.25,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 20 kg.,Sinaloa,Chihuahua: Central de Abasto de Chihuahua,25.0,30.0,26.25,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Sonora,Chihuahua: Mercado de Abasto de Cd. Juárez,28.0,28.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Sonora,Chihuahua: Mercado de Abasto de Cd. Juárez,28.0,28.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Sonora,Chihuahua: Mercado de Abasto de Cd. Juárez,28.0,28.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Sonora,Chihuahua: Mercado de Abasto de Cd. Juárez,28.0,28.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Sonora,Chihuahua: Mercado de Abasto de Cd. Juárez,28.0,28.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Sonora,Chihuahua: Mercado de Abasto de Cd. Juárez,28.0,28.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Sonora,Chihuahua: Mercado de Abasto de Cd. Juárez,28.0,28.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Sonora,Chihuahua: Mercado de Abasto de Cd. Juárez,28.0,28.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Sonora,Chihuahua: Mercado de Abasto de Cd. Juárez,28.0,28.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 30 kg.,Zacatecas,DF: Central de Abasto de Iztapalapa DF,17.0,25.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 30 kg.,Zacatecas,DF: Central de Abasto de Iztapalapa DF,18.0,29.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 30 kg.,Zacatecas,DF: Central de Abasto de Iztapalapa DF,18.0,29.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 30 kg.,Zacatecas,DF: Central de Abasto de Iztapalapa DF,18.0,29.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 30 kg.,Zacatecas,DF: Central de Abasto de Iztapalapa DF,18.0,29.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 30 kg.,Zacatecas,DF: Central de Abasto de Iztapalapa DF,18.0,29.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 30 kg.,Zacatecas,DF: Central de Abasto de Iztapalapa DF,18.0,29.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 30 kg.,Zacatecas,DF: Central de Abasto de Iztapalapa DF,18.0,28.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 30 kg.,Zacatecas,DF: Central de Abasto de Iztapalapa DF,18.0,30.0,23.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Sinaloa,Durango: Centro de Distribución y Abasto de Gómez Palacio,17.5,24.0,20.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Sinaloa,Durango: Centro de Distribución y Abasto de Gómez Palacio,17.5,24.0,20.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Sinaloa,Durango: Centro de Distribución y Abasto de Gómez Palacio,17.5,24.0,20.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Sinaloa,Durango: Centro de Distribución y Abasto de Gómez Palacio,17.5,24.0,20.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Sinaloa,Durango: Centro de Distribución y Abasto de Gómez Palacio,17.5,24.0,20.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Sinaloa,Durango: Centro de Distribución y Abasto de Gómez Palacio,17.5,24.0,20.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Sinaloa,Durango: Centro de Distribución y Abasto de Gómez Palacio,17.5,24.0,20.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Sinaloa,Durango: Centro de Distribución y Abasto de Gómez Palacio,17.5,24.0,20.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Sinaloa,Durango: Centro de Distribución y Abasto de Gómez Palacio,17.5,24.0,20.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Distrito Federal,Guerrero: Central de Abastos de Acapulco,35.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Distrito Federal,Guerrero: Central de Abastos de Acapulco,42.0,42.0,42.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Distrito Federal,Guerrero: Central de Abastos de Acapulco,42.0,42.0,42.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Distrito Federal,Guerrero: Central de Abastos de Acapulco,42.0,42.0,42.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Distrito Federal,Guerrero: Central de Abastos de Acapulco,42.0,42.0,42.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Distrito Federal,Guerrero: Central de Abastos de Acapulco,42.0,42.0,42.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Distrito Federal,Guerrero: Central de Abastos de Acapulco,42.0,42.0,42.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Distrito Federal,Guerrero: Central de Abastos de Acapulco,42.0,42.0,42.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Distrito Federal,Guerrero: Central de Abastos de Acapulco,42.0,42.0,42.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 30 kg.,México,Hidalgo: Central de Abasto de Pachuca,15.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 30 kg.,México,Hidalgo: Central de Abasto de Pachuca,15.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 30 kg.,México,Hidalgo: Central de Abasto de Pachuca,22.0,30.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 30 kg.,México,Hidalgo: Central de Abasto de Pachuca,22.0,30.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 30 kg.,México,Hidalgo: Central de Abasto de Pachuca,22.0,28.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 30 kg.,México,Hidalgo: Central de Abasto de Pachuca,22.0,28.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 30 kg.,México,Hidalgo: Central de Abasto de Pachuca,24.0,28.0,24.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 30 kg.,México,Hidalgo: Central de Abasto de Pachuca,24.0,28.0,24.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 30 kg.,México,Hidalgo: Central de Abasto de Pachuca,24.0,28.0,24.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado de Abasto de Guadalajara,30.0,31.67,30.83,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado de Abasto de Guadalajara,30.0,31.67,30.83,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado de Abasto de Guadalajara,30.0,31.67,30.83,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado de Abasto de Guadalajara,30.0,31.67,30.83,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado de Abasto de Guadalajara,30.0,31.67,30.83,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado de Abasto de Guadalajara,30.0,31.67,30.83,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado de Abasto de Guadalajara,30.0,31.67,30.83,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado de Abasto de Guadalajara,30.0,31.67,30.83,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado de Abasto de Guadalajara,30.0,31.67,30.83,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado Felipe Ángeles de Guadalajara,35.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado Felipe Ángeles de Guadalajara,35.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado Felipe Ángeles de Guadalajara,35.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado Felipe Ángeles de Guadalajara,35.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado Felipe Ángeles de Guadalajara,35.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado Felipe Ángeles de Guadalajara,35.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado Felipe Ángeles de Guadalajara,29.5,29.5,29.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado Felipe Ángeles de Guadalajara,29.5,29.5,29.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 30 kg.,Sinaloa,Jalisco: Mercado Felipe Ángeles de Guadalajara,29.5,29.5,29.5,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 30 kg.,Distrito Federal,México: Central de Abasto de Ecatepec,34.0,35.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 30 kg.,Distrito Federal,México: Central de Abasto de Ecatepec,34.0,35.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 30 kg.,Distrito Federal,México: Central de Abasto de Ecatepec,30.0,34.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 30 kg.,Distrito Federal,México: Central de Abasto de Ecatepec,30.0,34.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 30 kg.,Distrito Federal,México: Central de Abasto de Ecatepec,30.0,32.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 30 kg.,Distrito Federal,México: Central de Abasto de Ecatepec,32.0,35.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 30 kg.,Distrito Federal,México: Central de Abasto de Ecatepec,32.0,35.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 30 kg.,Distrito Federal,México: Central de Abasto de Ecatepec,32.0,35.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 30 kg.,Distrito Federal,México: Central de Abasto de Ecatepec,32.0,35.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 30 kg.,Michoacán,México: Central de Abasto de Toluca,14.0,16.0,15.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 30 kg.,Michoacán,México: Central de Abasto de Toluca,14.0,16.0,15.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 30 kg.,Michoacán,México: Central de Abasto de Toluca,20.0,26.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 30 kg.,Michoacán,México: Central de Abasto de Toluca,20.0,25.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 30 kg.,Michoacán,México: Central de Abasto de Toluca,20.0,26.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 30 kg.,Michoacán,México: Central de Abasto de Toluca,30.0,35.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 30 kg.,Michoacán,México: Central de Abasto de Toluca,25.0,30.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 30 kg.,Michoacán,México: Central de Abasto de Toluca,25.0,35.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 30 kg.,Michoacán,México: Central de Abasto de Toluca,25.0,30.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Jalisco,Michoacán: Mercado de Abasto de Morelia,25.0,27.0,27.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Jalisco,Michoacán: Mercado de Abasto de Morelia,25.0,27.0,27.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Jalisco,Michoacán: Mercado de Abasto de Morelia,25.0,27.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Jalisco,Michoacán: Mercado de Abasto de Morelia,25.0,27.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Jalisco,Michoacán: Mercado de Abasto de Morelia,25.0,27.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Jalisco,Michoacán: Mercado de Abasto de Morelia,25.0,27.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Jalisco,Michoacán: Mercado de Abasto de Morelia,25.0,27.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Jalisco,Michoacán: Mercado de Abasto de Morelia,25.0,27.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Jalisco,Michoacán: Mercado de Abasto de Morelia,25.0,27.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Zacatecas,"Morelos: Mercado ""Adolfo López Mateos"" de Cuernavaca",28.0,30.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Nayarit,Nayarit: Mercado de abasto 'Adolfo López Mateos' de Tepic,33.0,35.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Nayarit,Nayarit: Mercado de abasto 'Adolfo López Mateos' de Tepic,32.0,34.0,33.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Nayarit,Nayarit: Mercado de abasto 'Adolfo López Mateos' de Tepic,32.0,34.0,33.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Nayarit,Nayarit: Mercado de abasto 'Adolfo López Mateos' de Tepic,33.0,35.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Nayarit,Nayarit: Mercado de abasto 'Adolfo López Mateos' de Tepic,32.0,34.0,33.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Nayarit,Nayarit: Mercado de abasto 'Adolfo López Mateos' de Tepic,32.0,34.0,33.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Nayarit,Nayarit: Nayarabastos de Tepic,30.0,32.0,31.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Nayarit,Nayarit: Nayarabastos de Tepic,33.0,35.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Nayarit,Nayarit: Nayarabastos de Tepic,33.0,35.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Nayarit,Nayarit: Nayarabastos de Tepic,33.0,35.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Nayarit,Nayarit: Nayarabastos de Tepic,33.0,35.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Nayarit,Nayarit: Nayarabastos de Tepic,32.0,34.0,33.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Sinaloa,"Nuevo León: Mercado de Abasto ""Estrella"" de San Nicolás de los Garza",26.0,32.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Sinaloa,"Nuevo León: Mercado de Abasto ""Estrella"" de San Nicolás de los Garza",26.0,31.0,27.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Sinaloa,"Nuevo León: Mercado de Abasto ""Estrella"" de San Nicolás de los Garza",26.0,31.0,27.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Sinaloa,"Nuevo León: Mercado de Abasto ""Estrella"" de San Nicolás de los Garza",26.0,31.0,27.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Sinaloa,"Nuevo León: Mercado de Abasto ""Estrella"" de San Nicolás de los Garza",26.0,31.0,27.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Tamaulipas,"Nuevo León: Mercado de Abasto ""Estrella"" de San Nicolás de los Garza",26.0,31.0,27.0,Cambio de orígen,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Tamaulipas,"Nuevo León: Mercado de Abasto ""Estrella"" de San Nicolás de los Garza",26.0,31.0,27.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Tamaulipas,"Nuevo León: Mercado de Abasto ""Estrella"" de San Nicolás de los Garza",30.0,35.0,33.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Tamaulipas,"Nuevo León: Mercado de Abasto ""Estrella"" de San Nicolás de los Garza",30.0,35.0,33.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Puebla,Oaxaca: Módulo de Abasto de Oaxaca,17.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Puebla,Oaxaca: Módulo de Abasto de Oaxaca,16.0,18.0,17.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Puebla,Oaxaca: Módulo de Abasto de Oaxaca,17.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Puebla,Oaxaca: Módulo de Abasto de Oaxaca,30.0,35.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 26 kg.,Michoacán,Puebla: Central de Abasto de Puebla,25.0,27.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 26 kg.,Michoacán,Puebla: Central de Abasto de Puebla,24.0,26.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 26 kg.,Michoacán,Puebla: Central de Abasto de Puebla,24.0,26.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 26 kg.,Michoacán,Puebla: Central de Abasto de Puebla,24.0,26.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 26 kg.,Michoacán,Puebla: Central de Abasto de Puebla,29.0,31.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 26 kg.,Michoacán,Puebla: Central de Abasto de Puebla,29.0,31.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 26 kg.,Michoacán,Puebla: Central de Abasto de Puebla,33.0,37.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 26 kg.,Michoacán,Puebla: Central de Abasto de Puebla,33.0,37.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 26 kg.,Michoacán,Puebla: Central de Abasto de Puebla,25.0,27.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Jalisco,Querétaro: Mercado de Abasto de Querétaro,32.0,34.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Jalisco,Querétaro: Mercado de Abasto de Querétaro,28.0,29.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Jalisco,Querétaro: Mercado de Abasto de Querétaro,28.0,29.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Jalisco,Querétaro: Mercado de Abasto de Querétaro,29.0,30.0,29.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Jalisco,Querétaro: Mercado de Abasto de Querétaro,30.0,33.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Jalisco,Querétaro: Mercado de Abasto de Querétaro,29.0,31.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Jalisco,Querétaro: Mercado de Abasto de Querétaro,30.0,31.0,31.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Jalisco,Querétaro: Mercado de Abasto de Querétaro,30.0,31.0,31.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Jalisco,Querétaro: Mercado de Abasto de Querétaro,27.0,29.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Yucatán,"Quintana Roo: Mercado de Chetumal, Quintana Roo",70.0,70.0,70.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Yucatán,"Quintana Roo: Mercado de Chetumal, Quintana Roo",70.0,70.0,70.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Yucatán,"Quintana Roo: Mercado de Chetumal, Quintana Roo",70.0,70.0,70.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Yucatán,"Quintana Roo: Mercado de Chetumal, Quintana Roo",70.0,70.0,70.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Yucatán,"Quintana Roo: Mercado de Chetumal, Quintana Roo",70.0,70.0,70.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Yucatán,"Quintana Roo: Mercado de Chetumal, Quintana Roo",70.0,70.0,70.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Yucatán,"Quintana Roo: Mercado de Chetumal, Quintana Roo",70.0,70.0,70.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Yucatán,"Quintana Roo: Mercado de Chetumal, Quintana Roo",70.0,70.0,70.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Yucatán,"Quintana Roo: Mercado de Chetumal, Quintana Roo",50.0,50.0,50.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Zacatecas,San Luis Potosí: Centro de Abasto de San Luis Potosí,20.0,25.0,23.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Zacatecas,San Luis Potosí: Centro de Abasto de San Luis Potosí,20.0,25.0,23.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Zacatecas,San Luis Potosí: Centro de Abasto de San Luis Potosí,24.0,25.0,24.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Zacatecas,San Luis Potosí: Centro de Abasto de San Luis Potosí,24.0,25.0,24.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Zacatecas,San Luis Potosí: Centro de Abasto de San Luis Potosí,30.0,31.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Zacatecas,San Luis Potosí: Centro de Abasto de San Luis Potosí,30.0,31.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Zacatecas,San Luis Potosí: Centro de Abasto de San Luis Potosí,30.0,31.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Zacatecas,San Luis Potosí: Centro de Abasto de San Luis Potosí,30.0,31.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Zacatecas,San Luis Potosí: Centro de Abasto de San Luis Potosí,30.0,31.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Sinaloa,Sinaloa: Central de Abasto de Culiacán,15.0,15.0,15.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Sinaloa,Sinaloa: Central de Abasto de Culiacán,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Sinaloa,Sinaloa: Central de Abasto de Culiacán,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Sinaloa,Sinaloa: Central de Abasto de Culiacán,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Sinaloa,Sinaloa: Central de Abasto de Culiacán,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Sinaloa,Sinaloa: Central de Abasto de Culiacán,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Sinaloa,Sinaloa: Central de Abasto de Culiacán,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Sinaloa,Sinaloa: Central de Abasto de Culiacán,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Sinaloa,Sinaloa: Central de Abasto de Culiacán,20.0,20.0,20.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 30 kg.,Sinaloa,Sinaloa: Zona de Abasto de Mazatlán,16.0,16.0,16.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 30 kg.,Sinaloa,Sinaloa: Zona de Abasto de Mazatlán,18.0,18.0,18.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 30 kg.,Sinaloa,Sinaloa: Zona de Abasto de Mazatlán,19.0,19.0,19.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 30 kg.,Sinaloa,Sinaloa: Zona de Abasto de Mazatlán,19.0,19.0,19.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 30 kg.,Sinaloa,Sinaloa: Zona de Abasto de Mazatlán,19.0,19.0,19.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 30 kg.,Sinaloa,Sinaloa: Zona de Abasto de Mazatlán,19.0,19.0,19.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 30 kg.,Sinaloa,Sinaloa: Zona de Abasto de Mazatlán,19.0,19.0,19.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 30 kg.,Sinaloa,Sinaloa: Zona de Abasto de Mazatlán,19.0,19.0,19.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 30 kg.,Sinaloa,Sinaloa: Zona de Abasto de Mazatlán,21.0,21.0,21.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Sinaloa,Sonora: Central de Abasto de Cd. Obregón,23.0,27.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Sinaloa,Sonora: Central de Abasto de Cd. Obregón,23.0,27.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Sinaloa,Sonora: Central de Abasto de Cd. Obregón,25.0,29.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Sinaloa,Sonora: Central de Abasto de Cd. Obregón,25.0,29.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Sinaloa,Sonora: Central de Abasto de Cd. Obregón,25.0,39.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Sinaloa,Sonora: Central de Abasto de Cd. Obregón,25.0,39.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Sinaloa,Sonora: Central de Abasto de Cd. Obregón,27.0,37.0,30.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Sinaloa,Sonora: Central de Abasto de Cd. Obregón,27.0,37.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Sinaloa,Sonora: Central de Abasto de Cd. Obregón,27.0,37.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Sonora,"Sonora: Mercado de Abasto ""Francisco I. Madero"" de Hermosillo",35.0,38.0,38.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Sonora,"Sonora: Mercado de Abasto ""Francisco I. Madero"" de Hermosillo",35.0,38.0,38.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Sonora,"Sonora: Mercado de Abasto ""Francisco I. Madero"" de Hermosillo",35.0,38.0,38.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Sonora,"Sonora: Mercado de Abasto ""Francisco I. Madero"" de Hermosillo",30.0,36.0,36.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Sonora,"Sonora: Mercado de Abasto ""Francisco I. Madero"" de Hermosillo",35.0,38.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Sonora,"Sonora: Mercado de Abasto ""Francisco I. Madero"" de Hermosillo",35.0,38.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Sonora,"Sonora: Mercado de Abasto ""Francisco I. Madero"" de Hermosillo",36.0,38.0,38.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Sonora,"Sonora: Mercado de Abasto ""Francisco I. Madero"" de Hermosillo",36.0,38.0,38.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Sonora,"Sonora: Mercado de Abasto ""Francisco I. Madero"" de Hermosillo",36.0,37.0,37.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Puebla,Tabasco: Central de Abasto de Villahermosa,35.0,45.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Puebla,Tabasco: Central de Abasto de Villahermosa,35.0,45.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Puebla,Tabasco: Central de Abasto de Villahermosa,35.0,45.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Puebla,Tabasco: Central de Abasto de Villahermosa,35.0,45.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Puebla,Tabasco: Central de Abasto de Villahermosa,38.0,40.0,38.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Puebla,Tabasco: Central de Abasto de Villahermosa,38.0,40.0,38.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Puebla,Tabasco: Central de Abasto de Villahermosa,38.0,40.0,38.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Puebla,Tabasco: Central de Abasto de Villahermosa,38.0,40.0,38.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Puebla,Tabasco: Central de Abasto de Villahermosa,38.0,40.0,38.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 25 kg.,Nuevo León,Tamaulipas: Módulo de Abasto de Reynosa,24.0,44.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 25 kg.,Nuevo León,Tamaulipas: Módulo de Abasto de Reynosa,24.0,44.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 25 kg.,Nuevo León,Tamaulipas: Módulo de Abasto de Reynosa,24.0,44.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 25 kg.,Nuevo León,Tamaulipas: Módulo de Abasto de Reynosa,24.0,44.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 25 kg.,Nuevo León,Tamaulipas: Módulo de Abasto de Reynosa,24.0,44.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 25 kg.,Nuevo León,Tamaulipas: Módulo de Abasto de Reynosa,24.0,36.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 25 kg.,Nuevo León,Tamaulipas: Módulo de Abasto de Reynosa,24.0,36.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 25 kg.,Nuevo León,Tamaulipas: Módulo de Abasto de Reynosa,24.0,36.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 25 kg.,Nuevo León,Tamaulipas: Módulo de Abasto de Reynosa,24.0,36.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 28 kg.,Puebla,"Tamaulipas: Módulo de Abasto de Tampico, Madero y Altamira",16.07,26.96,26.96,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 28 kg.,Puebla,"Tamaulipas: Módulo de Abasto de Tampico, Madero y Altamira",16.07,26.96,26.96,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 28 kg.,Puebla,"Tamaulipas: Módulo de Abasto de Tampico, Madero y Altamira",16.18,27.11,27.11,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 28 kg.,Puebla,"Tamaulipas: Módulo de Abasto de Tampico, Madero y Altamira",16.25,27.21,27.21,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 28 kg.,Puebla,"Tamaulipas: Módulo de Abasto de Tampico, Madero y Altamira",16.25,27.21,27.21,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 28 kg.,Puebla,"Tamaulipas: Módulo de Abasto de Tampico, Madero y Altamira",16.11,27.14,27.14,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 28 kg.,Puebla,"Tamaulipas: Módulo de Abasto de Tampico, Madero y Altamira",16.11,27.14,27.14,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 28 kg.,Puebla,"Tamaulipas: Módulo de Abasto de Tampico, Madero y Altamira",16.11,27.14,27.14,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 28 kg.,Puebla,"Tamaulipas: Módulo de Abasto de Tampico, Madero y Altamira",15.75,26.43,26.43,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 33 kg.,Veracruz,Veracruz: Central de Abasto de Jalapa,30.0,33.0,33.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 33 kg.,Veracruz,Veracruz: Central de Abasto de Jalapa,30.0,33.0,33.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 33 kg.,Veracruz,Veracruz: Central de Abasto de Jalapa,30.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 33 kg.,Veracruz,Veracruz: Central de Abasto de Jalapa,30.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 33 kg.,Veracruz,Veracruz: Central de Abasto de Jalapa,35.0,37.0,37.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 33 kg.,Veracruz,Veracruz: Central de Abasto de Jalapa,35.0,37.0,37.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 33 kg.,Veracruz,Veracruz: Central de Abasto de Jalapa,35.0,37.0,37.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 33 kg.,Veracruz,Veracruz: Central de Abasto de Jalapa,30.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 33 kg.,Veracruz,Veracruz: Central de Abasto de Jalapa,30.0,35.0,35.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Veracruz,Veracruz: Central de Abasto de Minatitlán,24.0,28.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Veracruz,Veracruz: Central de Abasto de Minatitlán,24.0,28.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Veracruz,Veracruz: Central de Abasto de Minatitlán,24.0,28.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Veracruz,Veracruz: Central de Abasto de Minatitlán,24.0,28.0,26.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Veracruz,Veracruz: Central de Abasto de Minatitlán,26.0,30.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Veracruz,Veracruz: Central de Abasto de Minatitlán,26.0,30.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Veracruz,Veracruz: Central de Abasto de Minatitlán,26.0,30.0,28.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Veracruz,Veracruz: Central de Abasto de Minatitlán,30.0,34.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Veracruz,Veracruz: Central de Abasto de Minatitlán,30.0,34.0,32.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Arpilla de 30 kg.,Veracruz,Veracruz: Mercado Malibrán,21.67,27.33,23.33,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Arpilla de 30 kg.,Veracruz,Veracruz: Mercado Malibrán,21.67,27.33,23.33,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Arpilla de 30 kg.,Veracruz,Veracruz: Mercado Malibrán,21.67,27.33,23.33,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Arpilla de 30 kg.,Veracruz,Veracruz: Mercado Malibrán,21.67,27.33,23.33,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Arpilla de 30 kg.,Veracruz,Veracruz: Mercado Malibrán,21.67,27.33,23.33,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Arpilla de 30 kg.,Veracruz,Veracruz: Mercado Malibrán,21.67,27.33,23.33,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Arpilla de 30 kg.,Veracruz,Veracruz: Mercado Malibrán,21.67,27.33,23.33,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Arpilla de 30 kg.,Veracruz,Veracruz: Mercado Malibrán,21.67,27.33,23.33,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Arpilla de 30 kg.,Veracruz,Veracruz: Mercado Malibrán,21.67,27.33,23.33,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Distrito Federal,Yucatán: Central de Abasto de Mérida,40.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Distrito Federal,Yucatán: Central de Abasto de Mérida,40.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Distrito Federal,Yucatán: Central de Abasto de Mérida,40.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Distrito Federal,Yucatán: Central de Abasto de Mérida,40.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Distrito Federal,Yucatán: Central de Abasto de Mérida,40.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Distrito Federal,Yucatán: Central de Abasto de Mérida,40.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Distrito Federal,Yucatán: Central de Abasto de Mérida,40.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Distrito Federal,Yucatán: Central de Abasto de Mérida,40.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Distrito Federal,Yucatán: Central de Abasto de Mérida,40.0,40.0,40.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+03/03/2026,Kilogramo,Jalisco,Zacatecas: Mercado de Abasto de Zacatecas,25.0,25.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+04/03/2026,Kilogramo,Jalisco,Zacatecas: Mercado de Abasto de Zacatecas,25.0,25.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+05/03/2026,Kilogramo,Jalisco,Zacatecas: Mercado de Abasto de Zacatecas,25.0,25.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+06/03/2026,Kilogramo,Jalisco,Zacatecas: Mercado de Abasto de Zacatecas,34.0,34.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+09/03/2026,Kilogramo,Jalisco,Zacatecas: Mercado de Abasto de Zacatecas,34.0,34.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+10/03/2026,Kilogramo,Jalisco,Zacatecas: Mercado de Abasto de Zacatecas,34.0,34.0,34.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+11/03/2026,Kilogramo,Jalisco,Zacatecas: Mercado de Abasto de Zacatecas,25.0,25.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+12/03/2026,Kilogramo,Jalisco,Zacatecas: Mercado de Abasto de Zacatecas,25.0,25.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
+13/03/2026,Kilogramo,Jalisco,Zacatecas: Mercado de Abasto de Zacatecas,25.0,25.0,25.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36

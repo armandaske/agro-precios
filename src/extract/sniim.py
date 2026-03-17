@@ -480,7 +480,7 @@ def _parse_cli_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--producto-id", required=True, type=int, help="ID de producto")
     parser.add_argument("--origen-id", type=int, default=-1)
     parser.add_argument("--destino-id", type=int, default=-1)
-    parser.add_argument("--precios-por-id", type=int, default=1)
+    parser.add_argument("--precios-por-id", type=int, default=2)
     parser.add_argument("--timeout", type=int, default=60)
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     return parser.parse_args(argv)
