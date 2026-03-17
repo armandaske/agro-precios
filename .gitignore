@@ -1,3 +1,7 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -12,3 +16,12 @@ venv/
 dist/
 build/
 *.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# Environment variables
+.env
