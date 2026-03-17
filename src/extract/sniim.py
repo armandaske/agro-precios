@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import logging
 import re
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from io import StringIO
@@ -23,7 +24,30 @@ RESULTS_URL_FRAGMENTS = (
     "ResultadosConsultaFechaFrutasYHortalizas.aspx",
     "ResultadosConsultaFechasFrutasYHortalizas.aspx",
 )
+RESULTS_TABLE_ID = "tblResultados"
 DEFAULT_OUTPUT_DIR = Path("data/raw/sniim")
+HEADER_ALIASES = {
+    "presentaci_n": "presentacion",
+    "precio_min": "precio_minimo",
+    "precio_m_n": "precio_minimo",
+    "precio_m_nimo": "precio_minimo",
+    "precio_max": "precio_maximo",
+    "precio_frec": "precio_frecuente",
+    "observaciones": "obs",
+}
+RESULT_TABLE_TERMS = {
+    "fecha",
+    "producto",
+    "presentacion",
+    "origen",
+    "destino",
+    "precio_minimo",
+    "precio_maximo",
+    "precio_frecuente",
+    "obs",
+}
+PRICE_COLUMN_TERMS = {"precio_minimo", "precio_maximo", "precio_frecuente"}
+CATEGORY_MARKERS = {"frutas", "hortalizas"}
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,28 +72,46 @@ def _format_query_date(date_str: str) -> str:
 
 
 def normalize_column_name(name: str) -> str:
-    replacements = str.maketrans(
-        {
-            "á": "a",
-            "é": "e",
-            "í": "i",
-            "ó": "o",
-            "ú": "u",
-            "ü": "u",
-            "ñ": "n",
-            "Á": "a",
-            "É": "e",
-            "Í": "i",
-            "Ó": "o",
-            "Ú": "u",
-            "Ü": "u",
-            "Ñ": "n",
-        }
-    )
-    normalized = str(name).strip().translate(replacements).lower()
+    replacements = {
+        "á": "a",
+        "é": "e",
+        "í": "i",
+        "ó": "o",
+        "ú": "u",
+        "ü": "u",
+        "ñ": "n",
+        "Á": "a",
+        "É": "e",
+        "Í": "i",
+        "Ó": "o",
+        "Ú": "u",
+        "Ü": "u",
+        "Ñ": "n",
+        "Ã¡": "a",
+        "Ã©": "e",
+        "Ã­": "i",
+        "Ã³": "o",
+        "Ãº": "u",
+        "Ã¼": "u",
+        "Ã±": "n",
+        "Ã": "a",
+        "Ã‰": "e",
+        "Ã": "i",
+        "Ã“": "o",
+        "Ãš": "u",
+        "Ãœ": "u",
+        "Ã‘": "n",
+    }
+    normalized = str(name).strip().replace("\xa0", " ")
+    for source, target in replacements.items():
+        normalized = normalized.replace(source, target)
+    normalized = unicodedata.normalize("NFKD", normalized)
+    normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    normalized = normalized.lower()
     normalized = re.sub(r"[^a-z0-9]+", "_", normalized)
     normalized = re.sub(r"_+", "_", normalized).strip("_")
-    return normalized or "columna"
+    normalized = normalized or "columna"
+    return HEADER_ALIASES.get(normalized, normalized)
 
 
 def clean_numeric_series(series: pd.Series) -> pd.Series:
@@ -88,6 +130,12 @@ def clean_numeric_series(series: pd.Series) -> pd.Series:
     if (numeric.notna().mean() if len(numeric) else 0) >= 0.6:
         return numeric
     return series
+
+
+def _replace_blank_strings_with_na(df: pd.DataFrame) -> pd.DataFrame:
+    return df.apply(
+        lambda col: col.map(lambda value: pd.NA if isinstance(value, str) and not value.strip() else value)
+    )
 
 
 def _extract_form_inputs(html: str) -> dict[str, str]:
@@ -164,29 +212,51 @@ def _promote_first_row_to_header(df: pd.DataFrame) -> pd.DataFrame:
     return promoted
 
 
-def _score_result_table(df: pd.DataFrame) -> tuple[int, int]:
-    terms = {
-        "fecha",
-        "producto",
-        "origen",
-        "destino",
-        "precio_minimo",
-        "precio_maximo",
-        "precio_frecuente",
-    }
+def _drop_category_marker_rows(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
 
+    keep_mask: list[bool] = []
+    for _, row in df.iterrows():
+        values = []
+        for value in row.tolist():
+            if pd.isna(value):
+                continue
+            text = str(value).strip()
+            if not text or text.lower() == "nan":
+                continue
+            values.append(normalize_column_name(text))
+
+        unique_values = set(values)
+        is_category_marker = bool(unique_values) and len(unique_values) == 1 and unique_values.issubset(
+            CATEGORY_MARKERS
+        )
+        keep_mask.append(not is_category_marker)
+
+    return df.loc[keep_mask].reset_index(drop=True)
+
+
+def _prepare_result_table(df: pd.DataFrame) -> pd.DataFrame:
+    prepared = df
+    if _looks_like_default_columns(prepared.columns) and not prepared.empty:
+        prepared = _promote_first_row_to_header(prepared)
+    return _drop_category_marker_rows(prepared)
+
+
+def _score_result_table(df: pd.DataFrame) -> tuple[int, int]:
     normalized_cols = {normalize_column_name(c) for c in df.columns}
-    col_score = len(terms.intersection(normalized_cols))
+    col_score = len(RESULT_TABLE_TERMS.intersection(normalized_cols))
 
     # Algunas tablas de SNIIM vienen sin header real (columnas 0..n).
     # En ese caso intentamos usar la primera fila como encabezado.
     row_header_score = 0
     if _looks_like_default_columns(df.columns) and not df.empty:
         candidate_cols = {normalize_column_name(v) for v in df.iloc[0].astype(str).tolist()}
-        row_header_score = len(terms.intersection(candidate_cols))
+        row_header_score = len(RESULT_TABLE_TERMS.intersection(candidate_cols))
 
     best_score = max(col_score, row_header_score)
-    useful_rows = int(df.replace(r"^\s*$", pd.NA, regex=True).dropna(how="all").shape[0])
+    cleaned = _replace_blank_strings_with_na(df)
+    useful_rows = int(cleaned.dropna(how="all").shape[0])
     return (best_score, useful_rows)
 
 
@@ -202,35 +272,41 @@ def _select_result_table_or_raise(tables: list[pd.DataFrame]) -> pd.DataFrame:
             [normalize_column_name(c) for c in table.columns],
         )
 
-    scored = sorted(((table, _score_result_table(table)) for table in tables), key=lambda x: x[1], reverse=True)
+    prepared_tables = [_prepare_result_table(table) for table in tables]
+    scored = sorted(
+        ((table, _score_result_table(table)) for table in prepared_tables),
+        key=lambda x: x[1],
+        reverse=True,
+    )
     best_table, (best_score, _best_rows) = scored[0]
-
-    if _looks_like_default_columns(best_table.columns) and not best_table.empty:
-        promoted = _promote_first_row_to_header(best_table)
-        promoted_score, _ = _score_result_table(promoted)
-        if promoted_score >= best_score:
-            best_table = promoted
-            best_score = promoted_score
 
     # Match fuerte: al menos 3 términos y uno de precios.
     normalized_cols = {normalize_column_name(c) for c in best_table.columns}
-    has_price_col = any(
-        c in normalized_cols for c in ("precio_minimo", "precio_maximo", "precio_frecuente")
-    )
+    has_price_col = any(c in normalized_cols for c in PRICE_COLUMN_TERMS)
     if best_score < 3 or not has_price_col:
         raise ValueError("No se encontró una tabla de resultados confiable en SNIIM")
 
     return best_table
 
 
-def _parse_results_table_or_raise(html: str) -> pd.DataFrame:
+def _read_html_tables(html: str) -> list[pd.DataFrame]:
     try:
-        tables = pd.read_html(StringIO(html))
+        return pd.read_html(StringIO(html))
     except ValueError:
-        tables = []
+        return []
+
+
+def _parse_results_table_or_raise(html: str) -> pd.DataFrame:
+    soup = BeautifulSoup(html, "html.parser")
+    preferred_table = soup.find("table", id=RESULTS_TABLE_ID)
+    if preferred_table is not None:
+        preferred_tables = _read_html_tables(str(preferred_table))
+        if preferred_tables:
+            return _select_result_table_or_raise(preferred_tables)
+
+    tables = _read_html_tables(html)
 
     if not tables:
-        soup = BeautifulSoup(html, "html.parser")
         tables = []
         for table_tag in soup.find_all("table"):
             try:
@@ -242,9 +318,10 @@ def _parse_results_table_or_raise(html: str) -> pd.DataFrame:
 
 
 def _normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    result = df.copy()
+    result = _drop_category_marker_rows(df.copy())
     result.columns = [normalize_column_name(c) for c in result.columns]
-    result = result.replace(r"^\s*$", pd.NA, regex=True).dropna(how="all")
+    result = _replace_blank_strings_with_na(result)
+    result = result.dropna(how="all")
     result = result.drop_duplicates().reset_index(drop=True)
 
     numeric_tokens = ("precio", "min", "max", "promedio", "frecuente", "volumen", "cantidad")
@@ -270,9 +347,15 @@ def _append_metadata(
     result["fecha_final_query"] = fecha_final
     result["producto_id"] = producto_id
     result["origen_id"] = origen_id
-    result["origen"] = str(origen_id)
     result["destino_id"] = destino_id
-    result["destino"] = str(destino_id)
+    if "origen" in result.columns:
+        result["origen_query"] = str(origen_id)
+    else:
+        result["origen"] = str(origen_id)
+    if "destino" in result.columns:
+        result["destino_query"] = str(destino_id)
+    else:
+        result["destino"] = str(destino_id)
     result["precios_por_id"] = precios_por_id
     result["registros_por_pagina"] = pd.NA
     result["fuente"] = "sniim_frutas_hortalizas"
