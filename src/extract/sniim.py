@@ -1,7 +1,10 @@
 """Extractor de precios SNIIM para frutas y hortalizas.
 
-Este módulo consulta la URL pública de resultados de SNIIM usando parámetros
-por query string, parsea la tabla HTML y devuelve un DataFrame limpio.
+Este módulo reproduce el flujo observado en navegador:
+1) GET de la página de consulta para iniciar sesión/cookies.
+2) POST de filtros al formulario de consulta.
+3) Seguimiento de redirecciones hasta la URL de resultados.
+4) Parsing de tabla HTML hacia DataFrame.
 """
 
 from __future__ import annotations
@@ -18,6 +21,11 @@ import openpyxl  # noqa: F401  # requerido como motor para exportación XLSX
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+
+CONSULTA_URL = (
+    "https://www.economia-sniim.gob.mx/Nuevo/Consultas/MercadosNacionales/"
+    "PreciosDeMercado/Agricolas/ConsultaFrutasYHortalizas.aspx?SubOpcion=4"
+)
 
 BASE_RESULTS_URL = (
     "https://www.economia-sniim.gob.mx/nuevo/Consultas/MercadosNacionales/"
@@ -129,7 +137,6 @@ def _score_table(df: pd.DataFrame) -> tuple[int, int]:
         "frecuente",
     ]
     keyword_score = sum(1 for kw in keywords if kw in col_text)
-
     useful_rows = int(df.replace(r"^\s*$", pd.NA, regex=True).dropna(how="all").shape[0])
     return (keyword_score, useful_rows)
 
@@ -144,8 +151,7 @@ def _parse_with_read_html(html: str) -> pd.DataFrame:
     if not tables:
         raise ValueError("No se encontró tabla de resultados en SNIIM")
 
-    best = max(tables, key=_score_table)
-    return best
+    return max(tables, key=_score_table)
 
 
 def _parse_with_bs4(html: str) -> pd.DataFrame:
@@ -170,11 +176,11 @@ def _parse_with_bs4(html: str) -> pd.DataFrame:
 
 def _normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """Aplica limpieza de columnas, filas y tipos de datos."""
-    df = df.copy()
-    df.columns = [normalize_column_name(col) for col in df.columns]
+    result = df.copy()
+    result.columns = [normalize_column_name(col) for col in result.columns]
 
-    df = df.replace(r"^\s*$", pd.NA, regex=True).dropna(how="all")
-    df = df.drop_duplicates().reset_index(drop=True)
+    result = result.replace(r"^\s*$", pd.NA, regex=True).dropna(how="all")
+    result = result.drop_duplicates().reset_index(drop=True)
 
     numeric_hint_tokens = (
         "precio",
@@ -186,11 +192,11 @@ def _normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         "cantidad",
     )
 
-    for col in df.columns:
+    for col in result.columns:
         if any(token in col for token in numeric_hint_tokens):
-            df[col] = clean_numeric_series(df[col])
+            result[col] = clean_numeric_series(result[col])
 
-    return df
+    return result
 
 
 def _append_metadata(
@@ -222,6 +228,126 @@ def _append_metadata(
     return result
 
 
+def _response_debug_info(response: requests.Response) -> str:
+    """Resumen útil de una respuesta HTTP para mensajes de error."""
+    preview = (response.text or "")[:500].replace("\n", " ").replace("\r", " ")
+    return f"status_code={response.status_code}, url={response.url}, body_preview={preview!r}"
+
+
+def _parse_results_html_or_raise(response: requests.Response) -> pd.DataFrame:
+    """Intenta parsear HTML de resultados y arroja error detallado si no puede."""
+    try:
+        parsed = _parse_with_read_html(response.text)
+    except ValueError:
+        try:
+            parsed = _parse_with_bs4(response.text)
+        except ValueError as exc:
+            raise ValueError(
+                "No se encontró tabla de resultados en SNIIM. "
+                f"Detalles respuesta: {_response_debug_info(response)}"
+            ) from exc
+
+    if parsed.empty:
+        raise ValueError(
+            "No se encontró tabla de resultados en SNIIM (tabla vacía). "
+            f"Detalles respuesta: {_response_debug_info(response)}"
+        )
+
+    cleaned = _normalize_dataframe(parsed)
+    if cleaned.empty:
+        raise ValueError(
+            "No se encontró tabla de resultados en SNIIM (sin filas útiles). "
+            f"Detalles respuesta: {_response_debug_info(response)}"
+        )
+
+    return cleaned
+
+
+def _build_query_params(
+    *,
+    fecha_inicio_query: str,
+    fecha_final_query: str,
+    producto_id: int,
+    origen_id: int,
+    origen: str,
+    destino_id: int,
+    destino: str,
+    precios_por_id: int,
+    registros_por_pagina: int,
+) -> dict[str, str | int]:
+    """Construye parámetros estándar de resultados SNIIM."""
+    return {
+        QUERY_PARAM_NAMES["fecha_inicio"]: fecha_inicio_query,
+        QUERY_PARAM_NAMES["fecha_final"]: fecha_final_query,
+        QUERY_PARAM_NAMES["producto_id"]: int(producto_id),
+        QUERY_PARAM_NAMES["origen_id"]: int(origen_id),
+        QUERY_PARAM_NAMES["origen"]: str(origen),
+        QUERY_PARAM_NAMES["destino_id"]: int(destino_id),
+        QUERY_PARAM_NAMES["destino"]: str(destino),
+        QUERY_PARAM_NAMES["precios_por_id"]: int(precios_por_id),
+        QUERY_PARAM_NAMES["registros_por_pagina"]: int(registros_por_pagina),
+    }
+
+
+def _build_post_payload(params: dict[str, str | int]) -> dict[str, str | int]:
+    """Construye payload de POST para emular envío de formulario del navegador.
+
+    Incluye claves esperadas de resultados y alias de fecha usados en algunos formularios.
+    """
+    payload = dict(params)
+    payload["fechaInicio"] = params.get("fechaInicio", "")
+    payload["fechaFinal"] = params.get("fechaFinal", "")
+    return payload
+
+
+def _fetch_via_browser_flow(
+    session: requests.Session,
+    *,
+    params: dict[str, str | int],
+    timeout: int,
+) -> requests.Response:
+    """Ejecuta flujo GET consulta -> POST consulta -> follow redirects."""
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        )
+    }
+
+    try:
+        init_get = session.get(CONSULTA_URL, timeout=timeout, headers=headers)
+        LOGGER.info("SNIIM initial GET status: %s", init_get.status_code)
+        init_get.raise_for_status()
+    except requests.exceptions.Timeout as exc:
+        raise TimeoutError(
+            f"Timeout en GET inicial de consulta SNIIM tras {timeout} segundos"
+        ) from exc
+    except requests.exceptions.RequestException as exc:
+        raise ConnectionError(f"Error en GET inicial de consulta SNIIM: {exc}") from exc
+
+    payload = _build_post_payload(params)
+    try:
+        post_response = session.post(
+            CONSULTA_URL,
+            data=payload,
+            timeout=timeout,
+            allow_redirects=True,
+            headers=headers,
+        )
+        LOGGER.info("SNIIM POST status: %s", post_response.status_code)
+        LOGGER.info("SNIIM final resolved URL: %s", post_response.url)
+        post_response.raise_for_status()
+    except requests.exceptions.Timeout as exc:
+        raise TimeoutError(
+            f"Timeout en POST de consulta SNIIM tras {timeout} segundos"
+        ) from exc
+    except requests.exceptions.RequestException as exc:
+        raise ConnectionError(f"Error en POST de consulta SNIIM: {exc}") from exc
+
+    return post_response
+
+
 def fetch_sniim_fruits_vegetables(
     fecha_inicio: str,
     fecha_final: str,
@@ -240,44 +366,58 @@ def fetch_sniim_fruits_vegetables(
     fecha_inicio_query = _format_query_date(fecha_inicio)
     fecha_final_query = _format_query_date(fecha_final)
 
-    params = {
-        QUERY_PARAM_NAMES["fecha_inicio"]: fecha_inicio_query,
-        QUERY_PARAM_NAMES["fecha_final"]: fecha_final_query,
-        QUERY_PARAM_NAMES["producto_id"]: int(producto_id),
-        QUERY_PARAM_NAMES["origen_id"]: int(origen_id),
-        QUERY_PARAM_NAMES["origen"]: str(origen),
-        QUERY_PARAM_NAMES["destino_id"]: int(destino_id),
-        QUERY_PARAM_NAMES["destino"]: str(destino),
-        QUERY_PARAM_NAMES["precios_por_id"]: int(precios_por_id),
-        QUERY_PARAM_NAMES["registros_por_pagina"]: int(registros_por_pagina),
-    }
+    params = _build_query_params(
+        fecha_inicio_query=fecha_inicio_query,
+        fecha_final_query=fecha_final_query,
+        producto_id=producto_id,
+        origen_id=origen_id,
+        origen=origen,
+        destino_id=destino_id,
+        destino=destino,
+        precios_por_id=precios_por_id,
+        registros_por_pagina=registros_por_pagina,
+    )
 
-    LOGGER.info("Consultando SNIIM: %s?%s", BASE_RESULTS_URL, urlencode(params))
+    LOGGER.info("Consulta SNIIM (form flow) con params: %s", urlencode(params))
 
     session = requests.Session()
+
+    # Flujo principal: GET consulta -> POST consulta -> redirect a resultados.
     try:
-        response = session.get(BASE_RESULTS_URL, params=params, timeout=timeout)
-        response.raise_for_status()
-    except requests.exceptions.Timeout as exc:
-        raise TimeoutError(
-            f"Timeout al consultar SNIIM tras {timeout} segundos"
-        ) from exc
-    except requests.exceptions.RequestException as exc:
-        raise ConnectionError(f"Error al consultar SNIIM: {exc}") from exc
+        flow_response = _fetch_via_browser_flow(session, params=params, timeout=timeout)
+        cleaned = _parse_results_html_or_raise(flow_response)
+    except Exception as flow_exc:
+        LOGGER.warning(
+            "Falló flujo principal GET+POST de consulta SNIIM. "
+            "Se intentará fallback GET directo a resultados. Error: %s",
+            flow_exc,
+        )
 
-    html = response.text
-
-    try:
-        parsed = _parse_with_read_html(html)
-    except ValueError:
-        parsed = _parse_with_bs4(html)
-
-    if parsed.empty:
-        raise ValueError("No se encontró tabla de resultados en SNIIM")
-
-    cleaned = _normalize_dataframe(parsed)
-    if cleaned.empty:
-        raise ValueError("No se encontró tabla de resultados en SNIIM")
+        # Fallback solo después de que falle el flujo basado en POST.
+        try:
+            fallback_response = session.get(
+                BASE_RESULTS_URL,
+                params=params,
+                timeout=timeout,
+                allow_redirects=True,
+            )
+            LOGGER.info("SNIIM direct GET fallback status: %s", fallback_response.status_code)
+            LOGGER.info("SNIIM direct GET fallback final URL: %s", fallback_response.url)
+            fallback_response.raise_for_status()
+            cleaned = _parse_results_html_or_raise(fallback_response)
+        except requests.exceptions.Timeout as exc:
+            raise TimeoutError(
+                f"Timeout en fallback GET directo a resultados SNIIM tras {timeout} segundos"
+            ) from exc
+        except requests.exceptions.RequestException as exc:
+            raise ConnectionError(
+                f"Error en fallback GET directo a resultados SNIIM: {exc}"
+            ) from exc
+        except ValueError as parse_exc:
+            raise ValueError(
+                "No se encontró tabla de resultados en SNIIM tras flujo POST y fallback GET. "
+                f"Error flujo principal: {flow_exc}. Error fallback: {parse_exc}"
+            ) from parse_exc
 
     return _append_metadata(
         cleaned,
@@ -305,10 +445,7 @@ def save_sniim_output(df: pd.DataFrame, output_dir: str, base_name: str) -> dict
     df.to_csv(csv_path, index=False, encoding="utf-8-sig")
     df.to_excel(xlsx_path, index=False, engine="openpyxl")
 
-    return {
-        "csv": str(csv_path),
-        "xlsx": str(xlsx_path),
-    }
+    return {"csv": str(csv_path), "xlsx": str(xlsx_path)}
 
 
 def _build_base_name(producto_id: int, fecha_inicio: str, fecha_final: str) -> str:
