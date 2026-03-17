@@ -1,0 +1,34 @@
+# Core data processing
+pandas==2.2.2
+numpy==1.26.4
+
+# HTTP requests & parsing
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.2.2
+
+# Excel handling
+openpyxl==3.1.5
+xlsxwriter==3.2.0
+
+# Machine learning
+scikit-learn==1.5.1
+xgboost==2.1.1
+
+#DS
+matplotlib==3.10.8
+
+# Date handling
+python-dateutil==2.9.0.post0
+
+# Environment variables
+python-dotenv==1.0.1
+
+# Optional: browser automation (only if needed)
+#selenium==4.22.0
+
+# Optional alternative to Selenium (recommended if used instead)
+playwright==1.46.0
+
+# Optional: progress bars / logging UX
+tqdm==4.66.4
