@@ -189,6 +189,10 @@ def parse_defaults_from_page(html: str) -> dict[str, str]:
     for key in keys:
         tag = soup.find(id=key)
         if tag is None:
+            # En algunas variantes del markup, el atributo `name` se usa
+            # y el `id` no coincide exactamente.
+            tag = soup.find(attrs={"name": key})
+        if tag is None:
             defaults[key] = ""
             continue
 
@@ -201,6 +205,51 @@ def parse_defaults_from_page(html: str) -> dict[str, str]:
             defaults[key] = (tag.get("value") or "").strip()
 
     return defaults
+
+
+def _pick_default_from_options(options: list[Option], *, prefer_non_empty: bool = True) -> str:
+    if not options:
+        return ""
+
+    if prefer_non_empty:
+        for option in options:
+            if option.value.strip() != "":
+                return option.value
+    return options[0].value
+
+
+def _update_state_from_innerhtml_commands(
+    state: dict[str, str],
+    commands: list[dict[str, Any]],
+    targets: dict[str, set[str]],
+) -> None:
+    for field_name, target_ids in targets.items():
+        options = extract_options_from_commands(commands, target_ids)
+        if options:
+            state[field_name] = _pick_default_from_options(options, prefer_non_empty=True)
+
+
+def _coerce_missing_report_values(state: dict[str, str]) -> None:
+    # En el backend PHP del portal, muchos combos "Todos" se representan
+    # como "0". Si se envían vacíos, el reporte puede no construir la
+    # variable de sesión necesaria para reporte.php (Undefined index: Tabla).
+    fallback_zero_fields = [
+        "cicloProd",
+        "modalidad",
+        "entidad",
+        "distrito",
+        "municipio",
+        "unidMed",
+        "variedad",
+        "opcionDDRMpio",
+        "agric",
+        "tiprod",
+        "timerc",
+        "noseg",
+    ]
+    for field in fallback_zero_fields:
+        if state.get(field, "") == "":
+            state[field] = "0"
 
 
 def find_option_value(options: list[Option], wanted_label: str, field_name: str) -> str:
@@ -262,6 +311,97 @@ def get_crop_options(
     if not options:
         raise RuntimeError("No fue posible extraer opciones de cultivo desde xajax_llenaCultivo")
     return options
+
+
+def enrich_defaults_with_xajax_bootstrap(
+    session: requests.Session,
+    base_defaults: dict[str, str],
+    *,
+    year_value: str,
+    crop_value: str,
+    debug_dir: Path | None,
+    call_counter: list[int],
+) -> dict[str, str]:
+    state = dict(base_defaults)
+    state["anioagric"] = year_value
+    state["cultivo"] = crop_value
+
+    # Objetivos de parseo desde comandos xajax (target id -> campo reporte).
+    target_map = {
+        "cicloProd": {"cicloProd"},
+        "modalidad": {"modalidad"},
+        "entidad": {"entidad"},
+        "distrito": {"distrito"},
+        "municipio": {"municipio"},
+        "unidMed": {"unidMed"},
+        "variedad": {"variedad"},
+        "agric": {"agric"},
+        "tiprod": {"tiprod"},
+        "timerc": {"timerc"},
+    }
+
+    # Se intenta replicar la cascada de combos del sitio. Si una llamada no
+    # devuelve opciones parseables, conservamos el estado actual.
+    bootstrap_calls: list[tuple[str, list[str]]] = [
+        ("llenaCiclo", [state["anioagric"], state.get("tipo-reporte", "1")]),
+        ("llenaModa", [state["anioagric"], state.get("cicloProd", "0"), state.get("tipo-reporte", "1")]),
+        (
+            "llenaEntidades",
+            [
+                state["anioagric"],
+                state.get("cicloProd", "0"),
+                state.get("modalidad", "0"),
+                state.get("tipo-reporte", "1"),
+            ],
+        ),
+        ("llenaDistrito", [state.get("entidad", "0")]),
+        ("cargaMuni", [state.get("distrito", "0"), state.get("entidad", "0")]),
+        (
+            "llenaUnidMed",
+            [
+                state["anioagric"],
+                state.get("cicloProd", "0"),
+                state.get("modalidad", "0"),
+                state.get("entidad", "0"),
+                state.get("distrito", "0"),
+                state.get("municipio", "0"),
+                state["cultivo"],
+            ],
+        ),
+        (
+            "llenaVariedad",
+            [
+                state["anioagric"],
+                state.get("cicloProd", "0"),
+                state.get("modalidad", "0"),
+                state.get("entidad", "0"),
+                state.get("distrito", "0"),
+                state.get("municipio", "0"),
+                state["cultivo"],
+                state.get("unidMed", "0"),
+            ],
+        ),
+        ("llenaTipoAgric", [state.get("tipo-reporte", "1")]),
+        ("llenaTipoProd", [state.get("tipo-reporte", "1")]),
+        ("llenaTipoMerc", [state.get("tipo-reporte", "1")]),
+    ]
+
+    for function_name, args in bootstrap_calls:
+        call_counter[0] += 1
+        try:
+            result = xajax_call(
+                session,
+                function_name,
+                args,
+                debug_dir=debug_dir,
+                call_index=call_counter[0],
+            )
+            _update_state_from_innerhtml_commands(state, result.commands, target_map)
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.debug("Bootstrap xajax %s falló o no aplicó: %s", function_name, exc)
+
+    _coerce_missing_report_values(state)
+    return state
 
 
 def submit_report(
@@ -394,9 +534,15 @@ def build_report(
     crop_value = find_option_value(crop_options, crop, "crop")
     LOGGER.info("Cultivo seleccionado: %s -> value=%s", crop, crop_value)
 
-    report_params = dict(defaults)
-    report_params["anioagric"] = year_value
-    report_params["cultivo"] = crop_value
+    report_params = enrich_defaults_with_xajax_bootstrap(
+        session,
+        defaults,
+        year_value=year_value,
+        crop_value=crop_value,
+        debug_dir=debug_dir,
+        call_counter=call_counter,
+    )
+    LOGGER.debug("Parámetros finales para xajax_reporte: %s", json.dumps(report_params, ensure_ascii=False))
 
     submit_report(
         session,
