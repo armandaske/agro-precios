@@ -36,6 +36,7 @@ LOGGER = logging.getLogger("cierre_agricola_http")
 class Option:
     value: str
     label: str
+    selected: bool = False
 
 
 @dataclass
@@ -148,7 +149,7 @@ def _extract_options_from_html(html: str) -> list[Option]:
         label = opt.get_text(" ", strip=True)
         if not label:
             continue
-        options.append(Option(value=val, label=label))
+        options.append(Option(value=val, label=label, selected=opt.has_attr("selected")))
     return options
 
 
@@ -207,9 +208,30 @@ def parse_defaults_from_page(html: str) -> dict[str, str]:
     return defaults
 
 
-def _pick_default_from_options(options: list[Option], *, prefer_non_empty: bool = True) -> str:
+def _pick_default_from_options(
+    options: list[Option],
+    *,
+    prefer_non_empty: bool = True,
+    allow_blank_when_multiselect: bool = False,
+) -> str:
     if not options:
         return ""
+
+    selected_values = [opt.value for opt in options if opt.selected]
+    if allow_blank_when_multiselect and len(selected_values) > 1:
+        # En varios combos del sitio (p.ej. ciclo/modalidad) el backend marca
+        # todos los elementos como selected. Tomar solo el primero sobrerrestringe
+        # el reporte y puede dejar la sesión sin `Tabla`.
+        # Dejamos cadena vacía para representar "todos" (comportamiento observado
+        # previamente en el frontend cuando no hay un único valor seleccionado).
+        return ""
+
+    if selected_values:
+        if prefer_non_empty:
+            for value in selected_values:
+                if value.strip() != "":
+                    return value
+        return selected_values[0]
 
     if prefer_non_empty:
         for option in options:
@@ -223,10 +245,15 @@ def _update_state_from_innerhtml_commands(
     commands: list[dict[str, Any]],
     targets: dict[str, set[str]],
 ) -> None:
+    multiselect_like_fields = {"cicloProd", "modalidad"}
     for field_name, target_ids in targets.items():
         options = extract_options_from_commands(commands, target_ids)
         if options:
-            state[field_name] = _pick_default_from_options(options, prefer_non_empty=True)
+            state[field_name] = _pick_default_from_options(
+                options,
+                prefer_non_empty=True,
+                allow_blank_when_multiselect=field_name in multiselect_like_fields,
+            )
 
 
 def _coerce_missing_report_values(state: dict[str, str]) -> None:
@@ -234,13 +261,9 @@ def _coerce_missing_report_values(state: dict[str, str]) -> None:
     # como "0". Si se envían vacíos, el reporte puede no construir la
     # variable de sesión necesaria para reporte.php (Undefined index: Tabla).
     fallback_zero_fields = [
-        "cicloProd",
-        "modalidad",
         "entidad",
         "distrito",
         "municipio",
-        "unidMed",
-        "variedad",
         "opcionDDRMpio",
         "agric",
         "tiprod",
