@@ -213,6 +213,7 @@ def _pick_default_from_options(
     *,
     prefer_non_empty: bool = True,
     allow_blank_when_multiselect: bool = False,
+    prefer_last_when_multiselect: bool = False,
 ) -> str:
     if not options:
         return ""
@@ -225,6 +226,11 @@ def _pick_default_from_options(
         # Dejamos cadena vacía para representar "todos" (comportamiento observado
         # previamente en el frontend cuando no hay un único valor seleccionado).
         return ""
+    if prefer_last_when_multiselect and len(selected_values) > 1:
+        for value in reversed(selected_values):
+            if value.strip() != "":
+                return value
+        return selected_values[-1]
 
     if selected_values:
         if prefer_non_empty:
@@ -252,8 +258,37 @@ def _update_state_from_innerhtml_commands(
             state[field_name] = _pick_default_from_options(
                 options,
                 prefer_non_empty=True,
-                allow_blank_when_multiselect=field_name in multiselect_like_fields,
+                # En la UI observada, ciclo/modalidad tienen un valor por defecto
+                # concreto (p.ej. "Cíclicos - Perennes"), aunque backend marque
+                # múltiples opciones como selected en el HTML devuelto.
+                prefer_last_when_multiselect=field_name in multiselect_like_fields,
             )
+
+
+def _update_state_from_js_commands(
+    state: dict[str, str],
+    commands: list[dict[str, Any]],
+    id_to_field: dict[str, str],
+) -> None:
+    # Patrones frecuentes en respuestas xajax con instrucciones JS.
+    patterns = [
+        re.compile(r"""\$\('#(?P<id>[A-Za-z0-9_-]+)'\)\.val\('(?P<val>[^']*)'\)"""),
+        re.compile(
+            r"""document\.getElementById\('(?P<id>[A-Za-z0-9_-]+)'\)\.value\s*=\s*'(?P<val>[^']*)'"""
+        ),
+    ]
+
+    for cmd in commands:
+        if (cmd.get("n") or "") != "js":
+            continue
+        code = cmd.get("data", "")
+        for pattern in patterns:
+            for match in pattern.finditer(code):
+                dom_id = match.group("id")
+                value = match.group("val")
+                field_name = id_to_field.get(dom_id)
+                if field_name is not None:
+                    state[field_name] = value
 
 
 def _coerce_missing_report_values(state: dict[str, str]) -> None:
@@ -365,6 +400,7 @@ def enrich_defaults_with_xajax_bootstrap(
 
     # Se intenta replicar la cascada de combos del sitio. Si una llamada no
     # devuelve opciones parseables, conservamos el estado actual.
+    id_to_field = {key: key for key in target_map}
     bootstrap_calls: list[tuple[str, list[str]]] = [
         ("llenaCiclo", [state["anioagric"], state.get("tipo-reporte", "1")]),
         ("llenaModa", [state["anioagric"], state.get("cicloProd", "0"), state.get("tipo-reporte", "1")]),
@@ -420,6 +456,7 @@ def enrich_defaults_with_xajax_bootstrap(
                 call_index=call_counter[0],
             )
             _update_state_from_innerhtml_commands(state, result.commands, target_map)
+            _update_state_from_js_commands(state, result.commands, id_to_field)
         except Exception as exc:  # noqa: BLE001
             LOGGER.debug("Bootstrap xajax %s falló o no aplicó: %s", function_name, exc)
 
@@ -532,7 +569,8 @@ def build_report(
 
     # Replica la inicialización observada en JS.
     call_counter[0] += 1
-    xajax_call(session, "reporte_inicio", [], debug_dir=debug_dir, call_index=call_counter[0])
+    init_result = xajax_call(session, "reporte_inicio", [], debug_dir=debug_dir, call_index=call_counter[0])
+    _update_state_from_js_commands(defaults, init_result.commands, {key: key for key in defaults})
 
     entidad_fixed = defaults.get("entidad", "")
     if entidad_fixed == "":
