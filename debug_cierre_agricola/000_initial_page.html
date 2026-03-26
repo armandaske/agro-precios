@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<title>Anuario Estadístico de la Producción Agrícola</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="imagetoolbar" content="no" />
+	<meta http-equiv="pragma" content="no-cache" />
+	<meta http-equiv="expires" content="Thu, 26 Mar 2026 10:36:34" />
+	<meta http-equiv="cache-control" content="no-cache" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta http-equiv="Last-Modified" content="Thu, 26 Mar 2026 10:36:34" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, maximum-scale=1, user-scalable=no" />
+	<link href="https://framework-gb.cdn.gob.mx/favicon.ico" rel="shortcut icon" />
+	<link rel="stylesheet" type="text/css" href="https://framework-gb.cdn.gob.mx/assets/styles/main.css" />
+	<link rel="stylesheet" type="text/css" href="css/font-awesome.css" />
+	<link rel="stylesheet" type="text/css" href="css/index.css?934120260326 103634" />
+	<!-- Respond.js soporte de media queries para Internet Explorer 8 -->
+	<!-- ie8.js EventTarget para cada nodo en Internet Explorer 8 -->
+	<!--[if lt IE 9]>
+	  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/ie8/0.2.2/ie8.js"></script>
+	<![endif]-->
+		<script type="text/javascript">
+var xajaxRequestUri="https://nube.agricultura.gob.mx/cierre_agricola/";
+var xajaxDebug=false;
+var xajaxStatusMessages=false;
+var xajaxWaitCursor=true;
+var xajaxDefinedGet=0;
+var xajaxDefinedPost=1;
+var xajaxLoaded=false;
+function xajax_llenaAnios(){return xajax.call("llenaAnios", arguments, 1);}
+function xajax_llenaCiclo(){return xajax.call("llenaCiclo", arguments, 1);}
+function xajax_llenaModa(){return xajax.call("llenaModa", arguments, 1);}
+function xajax_llenaEntidades(){return xajax.call("llenaEntidades", arguments, 1);}
+function xajax_llenaCultivo(){return xajax.call("llenaCultivo", arguments, 1);}
+function xajax_llenaDistrito(){return xajax.call("llenaDistrito", arguments, 1);}
+function xajax_cargaMuni(){return xajax.call("cargaMuni", arguments, 1);}
+function xajax_llenaUnidMed(){return xajax.call("llenaUnidMed", arguments, 1);}
+function xajax_llenaVariedad(){return xajax.call("llenaVariedad", arguments, 1);}
+function xajax_llenaTipoAgric(){return xajax.call("llenaTipoAgric", arguments, 1);}
+function xajax_llenaTipoProd(){return xajax.call("llenaTipoProd", arguments, 1);}
+function xajax_llenaTipoMerc(){return xajax.call("llenaTipoMerc", arguments, 1);}
+function xajax_reporte(){return xajax.call("reporte", arguments, 1);}
+function xajax_reporte_inicio(){return xajax.call("reporte_inicio", arguments, 1);}
+	</script>
+	<script type="text/javascript" src="xajax/xajax_js/xajax.js"></script>
+	<script type="text/javascript">
+window.setTimeout(function () { if (!xajaxLoaded) { alert('Error: the xajax Javascript file could not be included. Perhaps the URL is incorrect?\nURL: xajax/xajax_js/xajax.js'); } }, 6000);
+	</script>
+	<script type="text/javascript" language="javascript" src="js/jQuery.js"></script>
+	<script type="text/javascript" language="javascript" src="js/jquery.blockUI.js"></script>
+	<script type="text/javascript" language="javascript" src="js/funciones.js?934120260326 103634"></script>
+	<script type="text/javascript" language="javascript">
+	    $(document).ajaxStop($.unblockUI);
+	    function stopLoad() { 
+	        $.ajax({ url: ''});
+	    }
+	    function startLoad() { 
+	        $.blockUI({message: '<center><img src="imagenes/ajax-loader.gif?934120260326 103634" /></center>',
+	        css: {opacity: .8}});
+	    }
+	</script>
+</head>
+<body>
+<center>
+<!-- ********************** Header SIAP ******************** -->
+ <main class="page">
+	<nav class="havbar navbar-inverse sub-navbar navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" role="button" data-target="#subenlaces" aria-expanded="false" aria-controls="subenlaces">
+                    <span class="sr-only">Submen&uacute;</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+				<a class="navbar-brand" href="https://www.gob.mx/agricultura/dgsiap">DGSIAP</a>
+			</div>
+			<div class="collapse navbar-collapse" id="subenlaces">
+				<ul class="nav navbar-nav navbar-right">
+					<li><a class="home_menu" style="font-size: 16px !important;" href="https://www.gob.mx/agricultura/dgsiap/es/archivo/articulos" data-section=".news.section">Blog</a></li>
+					<li><a class="home_menu" style="font-size: 16px !important;" href="https://www.gob.mx/agricultura/dgsiap/es/archivo/multimedia" data-section=".multimedia">Multimedia</a></li>
+					<li><a class="home_menu" style="font-size: 16px !important;" href="https://www.gob.mx/agricultura/dgsiap/es/archivo/prensa" data-section=".press">Prensa</a></li>
+					<li><a class="home_menu" style="font-size: 16px !important;" href="https://www.gob.mx/agricultura/dgsiap/es/archivo/agenda" data-section=".schedule">Agenda</a></li>
+					<li><a class="home_menu" style="font-size: 16px !important;" href="https://www.gob.mx/agricultura/dgsiap/es/archivo/acciones_y_programas" data-section=".programs">Acciones y Programas</a></li>
+					<li><a class="home_menu" style="font-size: 16px !important;" href="https://www.gob.mx/agricultura/dgsiap/es/archivo/documentos" data-section=".documents">Documentos</a></li>
+			<li><a class="home_menu" style="font-size: 16px !important;" href="http://infosiap.siap.gob.mx/gobmx/transparencia.html" data-section=".tran.section">Transparencia</a></li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+	<div class="top-buffer text-left">
+		<ol class="breadcrumb">
+			<li><a href="https://www.gob.mx/agricultura/"><i class="icon icon-home"></i></a></li>
+			<li><a href="https://www.gob.mx/agricultura/dgsiap">Dirección General del Servicio de Información Agroalimentaria y Pesquera</a></li>
+			<li><a href="https://www.gob.mx/agricultura/dgsiap/es/archivo/acciones_y_programas">Acciones y Programas</a></li>
+			<li class="active">Cierre de la producción agrícola</li>
+		</ol>
+	</div>
+</main>
+<!-- ************************************************************************************ -->
+<div class="container">
+
+	<div class="row">
+      <div class="col-sm-12" style="text-align:center" >
+            <h2>Anuario Estadístico de la Producción Agrícola</h2>
+        </div>
+    </div>
+    
+	<div id="divNoImprimir" >
+    	
+        <br />
+    	<div class="borde_prin row">
+        	<div class="tituloTipoReporte">
+            	<i>Tipo de reporte:</i>
+                <input type="button" value="Todos los cultivos" class="btn btn-primary pull-right idnoseguimiento" onclick="verNoSeguimiento(3)" style="display:none"/>
+                <input type="button" value="Cultivos de seguimiento" class="btn btn-default pull-right idseguimiento" onclick="verNoSeguimiento(4)" style="display:none;"/>
+				
+            </div>
+            <label class="select labelbotton" style="background:#CCC" id="tipo-edo" onclick="startLoad(); selecTipo('1'); verSels(1);"> &nbsp; Por ubicación geográfica &nbsp; </label>
+            &nbsp; | &nbsp; 
+            <label class="select labelbotton" onclick="startLoad(); selecTipo('2'); verSels(5);" id="tipo-cult"> &nbsp; Por cultivo &nbsp; </label>
+            &nbsp; | &nbsp; 
+            <label class="select labelbotton " onclick="startLoad(); selecTipo('3'); verSels(5);" id="tipo-cult-var"> &nbsp; Por cultivo / variedad &nbsp; </label>
+            <input type="hidden" id="tipo-reporte" value="1"/>
+            
+            <div class="row"><div class="col-md-12"><hr /></div></div>
+            
+          <div class="row idporcheck">
+                <div class="col-md-3 div-estado-distmun"><input name="opcionDDRMpio" id="opcionDDRMpio1" type="radio" value="2" class="select" checked="checked" onclick="verSels(1)"> <label for="opcionDDRMpio1" class="select">Por Entidad Federativa</label></div>
+                <div class="col-md-3 div-estado-distmun"><input type="radio" name="opcionDDRMpio" id="opcionDDRMpio2" value="3" class="select"  onclick="verSels(2)"> <label for="opcionDDRMpio2" class="select">Por Distrito - Municipio </label></div>
+                <div class="col-md-3 div-mun"><input type="radio" name="opcionDDRMpio" id="opcionDDRMpio3" value="0" class="select"  onclick="verSels(3)"> <label for="opcionDDRMpio3" class="select">Por Distrito</label></div>
+                <div class="col-md-3 div-mun"><input type="radio" name="opcionDDRMpio" id="opcionDDRMpio4" value="1" class="select"  onclick="verSels(4)"> <label for="opcionDDRMpio4" class="select">Por Municipio</label></div>
+            </div>
+            
+        </div>
+        
+        <br />
+        
+        <div class="borde_prin row">
+			<div class="row">
+                <div class="col-sm-12" style="text-align:center">
+					<h2 id="seguimientoC">Cultivos de seguimiento</h2>
+				</div>
+			</div>
+            <div class="tituloTipoReporte">
+            	<i>Filtros:</i>
+            </div>
+            <div class="row">
+                <div class="form-group col-md-4">
+                    <label class="control-label">Año:</label>
+                    <select class="form-control" id="anioagric" onchange="llenaCultivo()"></select>
+                </div>
+                <div class="form-group col-md-4">
+                    <label class="control-label" >Ciclo:</label>
+                    <select class="form-control" id="cicloProd"></select>
+                </div>
+                <div class="form-group col-md-4">
+                    <label class="control-label">Modalidad:</label>
+                    <select class="form-control" id="modalidad"></select>
+                </div>
+            </div>
+            
+            <div class="row"><div class="col-md-12">&nbsp;</div></div>
+
+            <div class="row">
+                <div class="form-group col-md-4">
+                    <label class="control-label">Entidad federativa:</label>
+                    <select class="form-control" id="entidad" onchange="llenaDisMun();"></select>
+                </div>
+                <div class="form-group col-md-4 distSel" style="display:none">
+                    <label class="control-label">Distrito:</label>
+                    <select class="form-control" id="distrito" onchange="llenaMuni()"><option>--</option></select>
+                </div>
+                <div class="form-group col-md-4 muniSel" style="display:none">
+                    <label class="control-label">Municipio:</label>
+                    <select class="form-control" id="municipio"><option>--</option></select>
+                </div>
+            </div>
+            
+            <div class="row"><div class="col-md-12"><hr /></div></div>
+            
+            <div class="row">
+                <div class="form-group col-md-4">
+                    <label class="control-label">Cultivo:</label>
+                    <select class="form-control" id="cultivo" onchange="llenaUnidMed()"><option>--</option></select>
+                </div>
+                <div class="form-group col-md-4">
+                    <label class="control-label">Unidad de medida:</label>
+                    <select class="form-control" id="unidMed" onchange="llenaVariedad()"><option>--</option></select>
+                </div>
+                <div class="form-group col-md-4 ocultaNS">
+                    <label class="control-label">Variedad:</label>
+                    <select class="form-control" id="variedad"><option>--</option></select>
+                </div>
+            </div>
+
+            <div class="row"><div class="col-md-12">&nbsp;</div></div>
+
+            <div class="row">
+                <div class="form-group col-md-4 ocultaNS">
+                    <label class="control-label">Tipo de tecnología:</label>
+                    <select class="form-control" id="agric" ><option>--</option></select>
+                </div>
+                <div class="form-group col-md-4 ocultaNS">
+                    <label class="control-label">Tipo de producción:</label>
+                    <select class="form-control" id="tiprod" ><option>--</option></select>
+                </div>
+                <div class="form-group col-md-4 ocultaNS">
+                    <label class="control-label">Tipo de mercado:</label>
+                    <select class="form-control" id="timerc"><option>--</option></select>
+                </div>
+            </div>
+        </div>
+    
+        
+        <!--------------------------------------------------------------------------------------------------------------------------------------------------------->
+        <br>
+        <div class="container">
+            <div class="row justify-content-md-center">
+                 <div class="col-sm-3"></div>
+                <div class="form-group col-sm-2">
+                    <button type="button" class="btn btn-primary" id="Consultar" onclick="reporte();">
+                        <i class="icon-search pr-2"></i>
+                        <span class="h6">Consultar</span>
+                    </button>
+                </div>
+                <div class="form-group col-sm-2">
+                    <button type="button" class="btn btn-default" id="Imprimir" onclick="printDiv('Resultado');">
+                        <img src="imagenes/print_gb.png" style="width:20px;" />
+                        <span class="h6">Imprimir</span>
+                    </button>
+                </div>
+                <div class="form-group col-sm-2">
+                    <button type="button" class="btn btn-default" id="Excel" onclick="descargarExcel();">
+                        <img src="imagenes/Excel.png" style="width:20px;" />
+                        <span class="h6">Generar</span>
+                    </button>
+                </div>
+                <div class="col-sm-3"></div>
+            </div>
+        </div>
+        <hr class="red">
+        <div id="Resultado" name="Resultado" class="divResultados"></div>
+	</div>
+</div>
+
+<br /><br />
+<script language="javascript">window.onload = llenaCombos();</script>
+<script language="javascript">window.onload = xajax_reporte_inicio();</script>
+<script src="https://framework-gb.cdn.gob.mx/gobmx.js"></script>

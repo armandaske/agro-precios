@@ -1,0 +1,3 @@
+<br />
+<b>Warning</b>:  Illegal string offset 'nom' in <b>C:\WebServer\Apache_Group\Apache80\htdocs\nube.siap.gob.mx\cierre_agricola\Clases\funciones_xajax.php</b> on line <b>336</b><br />
+<?xml version="1.0" encoding="iso-8859-1" ?><xjx><cmd n="as" t="Resultado" p="innerHTML"><![CDATA[<h1>Sin datos</h1>]]></cmd><cmd n="js">stopLoad();</cmd></xjx>
