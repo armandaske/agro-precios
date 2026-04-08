@@ -18,10 +18,12 @@ import logging
 import re
 import time
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree
 
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
@@ -574,7 +576,14 @@ def _html_response_has_error(content: bytes) -> bool:
     return any(marker in text for marker in error_markers)
 
 
-def download_excel(session: requests.Session, output_path: Path) -> None:
+def _resolve_output_path(output_path: Path, output_format: str) -> Path:
+    expected_suffix = f".{output_format}"
+    if output_path.suffix.lower() == expected_suffix:
+        return output_path
+    return output_path.with_suffix(expected_suffix)
+
+
+def _fetch_report_content(session: requests.Session) -> bytes:
     LOGGER.info("Descargando Excel: %s", REPORTE_XLS_URL)
     response = session.get(REPORTE_XLS_URL, timeout=DEFAULT_TIMEOUT)
     ensure_ok_response(response, "Descarga de reporte.php")
@@ -592,7 +601,7 @@ def download_excel(session: requests.Session, output_path: Path) -> None:
                 "La descarga parece HTML de error (posible error de sesión/flujo). "
                 f"Content-Type={content_type!r}. Preview={preview!r}"
             )
-        LOGGER.info("El portal devolvió una tabla HTML compatible con Excel; se guardará como .xls")
+        LOGGER.info("El portal devolvió una tabla HTML compatible con Excel")
 
     excel_hint = any(
         marker in content_type
@@ -605,15 +614,57 @@ def download_excel(session: requests.Session, output_path: Path) -> None:
     if not excel_hint:
         LOGGER.warning("Content-Type no típico de Excel: %s", content_type)
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_bytes(content)
-    LOGGER.info("Archivo guardado: %s (%s bytes)", output_path, len(content))
+    return content
+
+
+def _html_report_to_dataframe(content: bytes) -> pd.DataFrame:
+    html = content.decode("utf-8", errors="ignore")
+    tables = pd.read_html(StringIO(html))
+    if not tables:
+        raise RuntimeError("No se encontró ninguna tabla en la respuesta HTML del reporte")
+
+    best_table = max(tables, key=lambda df: df.shape[0] * df.shape[1])
+    if isinstance(best_table.columns, pd.MultiIndex):
+        best_table.columns = [
+            " ".join(str(part).strip() for part in col if str(part).strip() and str(part) != "nan").strip()
+            for col in best_table.columns.to_flat_index()
+        ]
+    best_table = best_table.dropna(how="all").reset_index(drop=True)
+    return best_table
+
+
+def _write_html_xls(df: pd.DataFrame, output_path: Path) -> None:
+    html = df.to_html(index=False, na_rep="", border=1)
+    output_path.write_text(html, encoding="utf-8")
+
+
+def save_report(session: requests.Session, output_path: Path, output_format: str) -> Path:
+    resolved_output = _resolve_output_path(output_path, output_format)
+    content = _fetch_report_content(session)
+    resolved_output.parent.mkdir(parents=True, exist_ok=True)
+
+    if output_format == "xls":
+        resolved_output.write_bytes(content)
+        LOGGER.info("Archivo guardado: %s (%s bytes)", resolved_output, len(content))
+        return resolved_output
+
+    report_df = _html_report_to_dataframe(content)
+    if output_format == "csv":
+        report_df.to_csv(resolved_output, index=False, encoding="utf-8-sig")
+        LOGGER.info("CSV guardado: %s (%s filas)", resolved_output, len(report_df))
+    elif output_format == "xlsx":
+        report_df.to_excel(resolved_output, index=False, engine="openpyxl")
+        LOGGER.info("XLSX guardado: %s (%s filas)", resolved_output, len(report_df))
+    else:
+        raise ValueError(f"Formato de salida no soportado: {output_format}")
+    return resolved_output
 
 
 def build_report(
     year: str,
     crop: str,
     output: Path,
+    output_format: str,
     *,
     debug: bool,
     debug_dir: Path | None,
@@ -688,7 +739,7 @@ def build_report(
         debug_dir=debug_dir,
         call_counter=call_counter,
     )
-    download_excel(session, output)
+    save_report(session, output, output_format)
 
 
 
@@ -696,7 +747,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Descarga reporte de Cierre Agrícola SIAP vía requests+xajax")
     parser.add_argument("--year", required=True, help="Año visible en el combo (ej. 2024)")
     parser.add_argument("--crop", required=True, help="Cultivo visible (ej. Aguacate)")
-    parser.add_argument("--output", required=True, type=Path, help="Ruta de salida .xls")
+    parser.add_argument("--output", required=True, type=Path, help="Ruta base de salida")
+    parser.add_argument(
+        "--output-format",
+        choices=("xls", "csv", "xlsx"),
+        default="xls",
+        help="Formato de salida. Por defecto: xls",
+    )
     parser.add_argument(
         "--debug",
         action="store_true",
@@ -722,6 +779,7 @@ def main() -> None:
             year=args.year,
             crop=args.crop,
             output=args.output,
+            output_format=args.output_format,
             debug=args.debug,
             debug_dir=debug_dir,
         )

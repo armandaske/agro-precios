@@ -1,0 +1,16 @@
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>product_raw</th>
+      <th>price_mxn</th>
+      <th>product_canonical</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Aguacate Hass por kilo</td>
+      <td>49.9</td>
+      <td>aguacate</td>
+    </tr>
+  </tbody>
+</table>

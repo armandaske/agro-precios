@@ -1,10 +1,13 @@
+import argparse
 import csv
 import json
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from urllib.parse import urlencode
 
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
@@ -365,27 +368,66 @@ def sort_records(records: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return sorted(records, key=record_rank)
 
 
-def save_csv(records: List[Dict[str, Any]], filepath: str) -> None:
+def _records_to_dataframe(records: List[Dict[str, Any]]) -> pd.DataFrame:
+    return pd.DataFrame(records)
+
+
+def _write_html_xls(df: pd.DataFrame, output_path: Path) -> None:
+    html = df.to_html(index=False, na_rep="", border=1)
+    output_path.write_text(html, encoding="utf-8")
+
+
+def save_output(records: List[Dict[str, Any]], filepath: str, output_format: str) -> Path:
     if not records:
         print("No records to save.")
-        return
+        return Path(filepath)
 
-    fieldnames = list(records[0].keys())
-    with open(filepath, "w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(records)
+    output_path = Path(filepath)
+    if output_path.suffix.lower() != f".{output_format}":
+        output_path = output_path.with_suffix(f".{output_format}")
+
+    df = _records_to_dataframe(records)
+    if output_format == "csv":
+        fieldnames = list(records[0].keys())
+        with open(output_path, "w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(records)
+    elif output_format == "xlsx":
+        df.to_excel(output_path, index=False, engine="openpyxl")
+    elif output_format == "xls":
+        _write_html_xls(df, output_path)
+    else:
+        raise ValueError(f"Unsupported output format: {output_format}")
+
+    return output_path
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Walmart Mexico produce scraper")
+    parser.add_argument(
+        "--output-format",
+        choices=("csv", "xls", "xlsx"),
+        default="csv",
+        help="Output format. Default: csv",
+    )
+    parser.add_argument(
+        "--output",
+        help="Output file path. If omitted, a timestamped filename is generated.",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
+    args = parse_args()
     records = collect_search_records()
     best_records = choose_best_record_per_crop(records)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_csv = f"walmart_produce_{timestamp}.csv"
-    save_csv(best_records, out_csv)
+    default_output = f"walmart_produce_{timestamp}.{args.output_format}"
+    output_path = save_output(best_records, args.output or default_output, args.output_format)
 
-    print(f"Saved {len(best_records)} records to {out_csv}\n")
+    print(f"Saved {len(best_records)} records to {output_path}\n")
     for record in best_records:
         print(json.dumps(record, ensure_ascii=False))
 

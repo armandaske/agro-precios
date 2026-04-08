@@ -7,8 +7,8 @@ import logging
 import re
 import unicodedata
 from datetime import datetime
-from pathlib import Path
 from io import StringIO
+from pathlib import Path
 from typing import Iterable
 
 import openpyxl  # noqa: F401
@@ -455,18 +455,31 @@ def fetch_sniim_fruits_vegetables(
     )
 
 
-def save_sniim_output(df: pd.DataFrame, output_dir: str, base_name: str) -> dict[str, str]:
+def _resolve_output_path(output_dir: str, base_name: str, output_format: str) -> Path:
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-
     safe_base = re.sub(r"[^a-zA-Z0-9_.-]+", "_", base_name).strip("_")
-    csv_path = output_path / f"{safe_base}.csv"
-    xlsx_path = output_path / f"{safe_base}.xlsx"
+    return output_path / f"{safe_base}.{output_format}"
 
-    df.to_csv(csv_path, index=False, encoding="utf-8-sig")
-    df.to_excel(xlsx_path, index=False, engine="openpyxl")
 
-    return {"csv": str(csv_path), "xlsx": str(xlsx_path)}
+def _write_html_xls(df: pd.DataFrame, output_path: Path) -> None:
+    html = df.to_html(index=False, na_rep="", border=1)
+    output_path.write_text(html, encoding="utf-8")
+
+
+def save_sniim_output(df: pd.DataFrame, output_dir: str, base_name: str, output_format: str) -> Path:
+    output_path = _resolve_output_path(output_dir, base_name, output_format)
+
+    if output_format == "csv":
+        df.to_csv(output_path, index=False, encoding="utf-8-sig")
+    elif output_format == "xlsx":
+        df.to_excel(output_path, index=False, engine="openpyxl")
+    elif output_format == "xls":
+        _write_html_xls(df, output_path)
+    else:
+        raise ValueError(f"Formato de salida no soportado: {output_format}")
+
+    return output_path
 
 
 def _build_base_name(producto_id: int, fecha_inicio: str, fecha_final: str) -> str:
@@ -483,6 +496,12 @@ def _parse_cli_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--precios-por-id", type=int, default=2)
     parser.add_argument("--timeout", type=int, default=60)
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
+    parser.add_argument(
+        "--output-format",
+        choices=("csv", "xls", "xlsx"),
+        default="xlsx",
+        help="Formato de salida. Por defecto: xlsx",
+    )
     return parser.parse_args(argv)
 
 
@@ -500,9 +519,8 @@ def main(argv: Iterable[str] | None = None) -> int:
 
     print(f"DataFrame shape: {df.shape}")
     base_name = _build_base_name(args.producto_id, args.fecha_inicio, args.fecha_final)
-    outputs = save_sniim_output(df, args.output_dir, base_name)
-    print(f"CSV:  {outputs['csv']}")
-    print(f"XLSX: {outputs['xlsx']}")
+    output_path = save_sniim_output(df, args.output_dir, base_name, args.output_format)
+    print(f"{args.output_format.upper()}: {output_path}")
     return 0
 
 

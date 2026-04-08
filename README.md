@@ -58,37 +58,66 @@ Todos los comandos siguientes se ejecutan desde la raiz del repo.
 Ejemplo:
 
 ```powershell
-python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133
+python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133 --output-format xlsx
+```
+
+Ejemplo en CSV:
+
+```powershell
+python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133 --output-format csv
+```
+
+Ejemplo en XLS:
+
+```powershell
+python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133 --output-format xls
 ```
 
 Con parametros opcionales:
 
 ```powershell
-python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 233 --origen-id -1 --destino-id -1 --precios-por-id 2 --output-dir data/raw/sniim
+python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 233 --origen-id -1 --destino-id -1 --precios-por-id 2 --output-dir data/raw/sniim --output-format xlsx
 ```
 
 Salida esperada:
 
-- CSV y XLSX en `data/raw/sniim/`
-- Nombre tipo `sniim_producto_<producto_id>_<fecha_inicio>_<fecha_final>.csv`
+- `--output-format csv` genera `.csv`
+- `--output-format xls` genera `.xls`
+- `--output-format xlsx` genera `.xlsx`
+- Nombre tipo `sniim_producto_<producto_id>_<fecha_inicio>_<fecha_final>.<ext>`
 
 ### 2. Cierre Agricola SIAP por HTTP
 
 Ejemplo:
 
 ```powershell
-python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024.xls
+python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format xls
+```
+
+Ejemplo en CSV:
+
+```powershell
+python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format csv
+```
+
+Ejemplo en XLSX:
+
+```powershell
+python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format xlsx
 ```
 
 Con modo debug:
 
 ```powershell
-python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024.xls --debug --debug-dir debug_cierre_agricola
+python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format xls --debug --debug-dir debug_cierre_agricola
 ```
 
 Salida esperada:
 
-- Archivo `.xls` en la ruta indicada por `--output`
+- `--output-format xls` genera un archivo `.xls`
+- `--output-format csv` genera un archivo `.csv`
+- `--output-format xlsx` genera un archivo `.xlsx`
+- Si `--output` no trae la extension correcta, el script la ajusta automaticamente
 - El portal suele devolver una tabla HTML compatible con Excel en lugar de un binario XLS nativo; esto es esperado en esta fuente
 - XML/HTML de depuracion en `debug_cierre_agricola/` si usas `--debug`
 
@@ -109,12 +138,31 @@ Salida esperada:
 Ejemplo:
 
 ```powershell
-python src/extract/walmart_produce_scraper.py
+python src/extract/walmart_produce_scraper.py --output-format csv
+```
+
+Ejemplo en XLS:
+
+```powershell
+python src/extract/walmart_produce_scraper.py --output-format xls
+```
+
+Ejemplo en XLSX:
+
+```powershell
+python src/extract/walmart_produce_scraper.py --output-format xlsx
+```
+
+Con ruta explicita:
+
+```powershell
+python src/extract/walmart_produce_scraper.py --output-format xlsx --output data/raw/walmart/walmart_produce_latest.xlsx
 ```
 
 Salida esperada:
 
-- Un CSV en el directorio actual con nombre tipo `walmart_produce_YYYYMMDD_HHMMSS.csv`
+- Un archivo en formato `csv`, `xls` o `xlsx`
+- Si no pasas `--output`, el script genera un nombre tipo `walmart_produce_YYYYMMDD_HHMMSS.<ext>`
 - El script imprime en consola los registros seleccionados por cultivo
 
 ## Tests
