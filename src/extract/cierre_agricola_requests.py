@@ -330,7 +330,6 @@ def find_option_value(options: list[Option], wanted_label: str, field_name: str)
 
 def get_year_options(
     session: requests.Session,
-    entidad: str,
     *,
     debug_dir: Path | None,
     call_counter: list[int],
@@ -339,7 +338,7 @@ def get_year_options(
     result = xajax_call(
         session,
         "llenaAnios",
-        [entidad],
+        [],
         debug_dir=debug_dir,
         call_index=call_counter[0],
     )
@@ -353,6 +352,7 @@ def get_crop_options(
     session: requests.Session,
     year_value: str,
     entidad: str,
+    noseg: str,
     *,
     debug_dir: Path | None,
     call_counter: list[int],
@@ -361,7 +361,7 @@ def get_crop_options(
     result = xajax_call(
         session,
         "llenaCultivo",
-        [year_value, entidad, ""],
+        [year_value, entidad, noseg],
         debug_dir=debug_dir,
         call_index=call_counter[0],
     )
@@ -371,21 +371,17 @@ def get_crop_options(
     return options
 
 
-def enrich_defaults_with_xajax_bootstrap(
+def _load_bootstrap_options(
     session: requests.Session,
     base_defaults: dict[str, str],
     *,
-    year_value: str,
-    crop_value: str,
     debug_dir: Path | None,
     call_counter: list[int],
 ) -> dict[str, str]:
     state = dict(base_defaults)
-    state["anioagric"] = year_value
-    state["cultivo"] = crop_value
 
-    # Objetivos de parseo desde comandos xajax (target id -> campo reporte).
     target_map = {
+        "anioagric": {"anioagric"},
         "cicloProd": {"cicloProd"},
         "modalidad": {"modalidad"},
         "entidad": {"entidad"},
@@ -398,51 +394,15 @@ def enrich_defaults_with_xajax_bootstrap(
         "timerc": {"timerc"},
     }
 
-    # Se intenta replicar la cascada de combos del sitio. Si una llamada no
-    # devuelve opciones parseables, conservamos el estado actual.
     id_to_field = {key: key for key in target_map}
-    bootstrap_calls: list[tuple[str, list[str]]] = [
-        ("llenaCiclo", [state["anioagric"], state.get("tipo-reporte", "1")]),
-        ("llenaModa", [state["anioagric"], state.get("cicloProd", "0"), state.get("tipo-reporte", "1")]),
-        (
-            "llenaEntidades",
-            [
-                state["anioagric"],
-                state.get("cicloProd", "0"),
-                state.get("modalidad", "0"),
-                state.get("tipo-reporte", "1"),
-            ],
-        ),
-        ("llenaDistrito", [state.get("entidad", "0")]),
-        ("cargaMuni", [state.get("distrito", "0"), state.get("entidad", "0")]),
-        (
-            "llenaUnidMed",
-            [
-                state["anioagric"],
-                state.get("cicloProd", "0"),
-                state.get("modalidad", "0"),
-                state.get("entidad", "0"),
-                state.get("distrito", "0"),
-                state.get("municipio", "0"),
-                state["cultivo"],
-            ],
-        ),
-        (
-            "llenaVariedad",
-            [
-                state["anioagric"],
-                state.get("cicloProd", "0"),
-                state.get("modalidad", "0"),
-                state.get("entidad", "0"),
-                state.get("distrito", "0"),
-                state.get("municipio", "0"),
-                state["cultivo"],
-                state.get("unidMed", "0"),
-            ],
-        ),
-        ("llenaTipoAgric", [state.get("tipo-reporte", "1")]),
-        ("llenaTipoProd", [state.get("tipo-reporte", "1")]),
-        ("llenaTipoMerc", [state.get("tipo-reporte", "1")]),
+    bootstrap_calls: list[tuple[str, list[str | int]]] = [
+        ("llenaAnios", []),
+        ("llenaCiclo", []),
+        ("llenaModa", []),
+        ("llenaEntidades", []),
+        ("llenaTipoAgric", [0]),
+        ("llenaTipoProd", [0]),
+        ("llenaTipoMerc", [0]),
     ]
 
     for function_name, args in bootstrap_calls:
@@ -460,7 +420,96 @@ def enrich_defaults_with_xajax_bootstrap(
         except Exception as exc:  # noqa: BLE001
             LOGGER.debug("Bootstrap xajax %s falló o no aplicó: %s", function_name, exc)
 
-    _coerce_missing_report_values(state)
+    if state.get("entidad", "") == "":
+        state["entidad"] = "0"
+    if state.get("opcionDDRMpio", "") == "":
+        state["opcionDDRMpio"] = "2"
+    for field in ("agric", "tiprod", "timerc"):
+        if state.get(field, "") == "":
+            state[field] = "0"
+    return state
+
+
+def _load_location_options(
+    session: requests.Session,
+    state: dict[str, str],
+    *,
+    debug_dir: Path | None,
+    call_counter: list[int],
+) -> dict[str, str]:
+    target_map = {
+        "distrito": {"distrito"},
+        "municipio": {"municipio"},
+    }
+    id_to_field = {key: key for key in target_map}
+
+    location_calls: list[tuple[str, list[str | int]]] = [
+        ("llenaDistrito", [state.get("entidad", "0")]),
+        ("cargaMuni", [state.get("entidad", "0"), 0]),
+    ]
+
+    for function_name, args in location_calls:
+        call_counter[0] += 1
+        result = xajax_call(
+            session,
+            function_name,
+            args,
+            debug_dir=debug_dir,
+            call_index=call_counter[0],
+        )
+        _update_state_from_innerhtml_commands(state, result.commands, target_map)
+        _update_state_from_js_commands(state, result.commands, id_to_field)
+
+    for field in ("distrito", "municipio"):
+        if state.get(field, "") == "":
+            state[field] = "0"
+    return state
+
+
+def _load_crop_dependent_options(
+    session: requests.Session,
+    state: dict[str, str],
+    *,
+    debug_dir: Path | None,
+    call_counter: list[int],
+) -> dict[str, str]:
+    target_map = {
+        "unidMed": {"unidMed"},
+        "variedad": {"variedad"},
+    }
+    id_to_field = {key: key for key in target_map}
+
+    dependent_calls: list[tuple[str, list[str | int]]] = [
+        ("llenaUnidMed", [state["cultivo"]]),
+    ]
+    for function_name, args in dependent_calls:
+        call_counter[0] += 1
+        result = xajax_call(
+            session,
+            function_name,
+            args,
+            debug_dir=debug_dir,
+            call_index=call_counter[0],
+        )
+        _update_state_from_innerhtml_commands(state, result.commands, target_map)
+        _update_state_from_js_commands(state, result.commands, id_to_field)
+
+    if state.get("unidMed", "") == "":
+        state["unidMed"] = "0"
+
+    call_counter[0] += 1
+    result = xajax_call(
+        session,
+        "llenaVariedad",
+        [state["cultivo"], state["unidMed"]],
+        debug_dir=debug_dir,
+        call_index=call_counter[0],
+    )
+    _update_state_from_innerhtml_commands(state, result.commands, target_map)
+    _update_state_from_js_commands(state, result.commands, id_to_field)
+
+    if state.get("variedad", "") == "":
+        state["variedad"] = "0"
     return state
 
 
@@ -508,6 +557,23 @@ def _looks_like_html(content: bytes) -> bool:
     return b"<html" in prefix or b"<!doctype html" in prefix
 
 
+def _html_response_has_report(content: bytes) -> bool:
+    text = content.decode("utf-8", errors="ignore").lower()
+    return "resultados-reporte" in text or "<table" in text
+
+
+def _html_response_has_error(content: bytes) -> bool:
+    text = content.decode("utf-8", errors="ignore").lower()
+    error_markers = [
+        "undefined index: tabla",
+        "<h1>sin datos</h1>",
+        "warning",
+        "notice",
+        "fatal error",
+    ]
+    return any(marker in text for marker in error_markers)
+
+
 def download_excel(session: requests.Session, output_path: Path) -> None:
     LOGGER.info("Descargando Excel: %s", REPORTE_XLS_URL)
     response = session.get(REPORTE_XLS_URL, timeout=DEFAULT_TIMEOUT)
@@ -520,11 +586,13 @@ def download_excel(session: requests.Session, output_path: Path) -> None:
         raise RuntimeError("La descarga devolvió contenido vacío")
 
     if _looks_like_html(content):
-        preview = content[:500].decode("utf-8", errors="ignore")
-        raise RuntimeError(
-            "La descarga parece HTML (posible error de sesión/flujo). "
-            f"Content-Type={content_type!r}. Preview={preview!r}"
-        )
+        if _html_response_has_error(content) or not _html_response_has_report(content):
+            preview = content[:500].decode("utf-8", errors="ignore")
+            raise RuntimeError(
+                "La descarga parece HTML de error (posible error de sesión/flujo). "
+                f"Content-Type={content_type!r}. Preview={preview!r}"
+            )
+        LOGGER.info("El portal devolvió una tabla HTML compatible con Excel; se guardará como .xls")
 
     excel_hint = any(
         marker in content_type
@@ -572,34 +640,43 @@ def build_report(
     init_result = xajax_call(session, "reporte_inicio", [], debug_dir=debug_dir, call_index=call_counter[0])
     _update_state_from_js_commands(defaults, init_result.commands, {key: key for key in defaults})
 
-    entidad_fixed = defaults.get("entidad", "")
-    if entidad_fixed == "":
-        LOGGER.warning("No se detectó entidad por defecto; usando cadena vacía")
+    if defaults.get("entidad", "") == "":
+        LOGGER.warning("No se detectó entidad por defecto; usando valor nacional")
 
-    year_options = get_year_options(
+    defaults = _load_bootstrap_options(
         session,
-        entidad_fixed,
+        defaults,
         debug_dir=debug_dir,
         call_counter=call_counter,
     )
+
+    year_options = get_year_options(session, debug_dir=debug_dir, call_counter=call_counter)
     year_value = find_option_value(year_options, year, "year")
     LOGGER.info("Año seleccionado: %s -> value=%s", year, year_value)
+    defaults["anioagric"] = year_value
+
+    defaults = _load_location_options(
+        session,
+        defaults,
+        debug_dir=debug_dir,
+        call_counter=call_counter,
+    )
 
     crop_options = get_crop_options(
         session,
         year_value,
-        entidad_fixed,
+        defaults.get("entidad", "0"),
+        defaults.get("noseg", ""),
         debug_dir=debug_dir,
         call_counter=call_counter,
     )
     crop_value = find_option_value(crop_options, crop, "crop")
     LOGGER.info("Cultivo seleccionado: %s -> value=%s", crop, crop_value)
+    defaults["cultivo"] = crop_value
 
-    report_params = enrich_defaults_with_xajax_bootstrap(
+    report_params = _load_crop_dependent_options(
         session,
         defaults,
-        year_value=year_value,
-        crop_value=crop_value,
         debug_dir=debug_dir,
         call_counter=call_counter,
     )

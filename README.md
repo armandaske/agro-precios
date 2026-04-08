@@ -1,100 +1,140 @@
-# Agro Price Forecast POC (México)
+# Agro precios
 
-## Descripción
-Este proyecto desarrolla una **prueba de concepto (POC)** para estimar el comportamiento a corto plazo del precio de frutas y hortalizas en México, utilizando datos públicos agrícolas, precios de mercado y variables climáticas.
+POC para extraer y preparar datos de precios agroalimentarios en Mexico.
 
-El objetivo principal es **integrar múltiples fuentes de datos en un dataset estructurado** y evaluar si un modelo sencillo puede generar predicciones útiles en horizontes de 1 a 4 semanas.
+Hoy el repositorio esta centrado principalmente en la capa de extraccion. Ya hay scrapers funcionales para fuentes publicas clave y pruebas para parte del parsing, pero todavia no existe un pipeline completo de transformacion, modelado y forecast como producto final.
 
-Los resultados están diseñados para ser **fácilmente interpretables y utilizables en Excel (.xlsx)** por equipos no técnicos.
+## Estado actual del repo
 
----
+Implementado:
 
-## Objetivos
-- Integrar datos de distintas fuentes públicas en un solo dataset.
-- Generar variables relevantes (históricas, estacionales, climáticas).
-- Construir un modelo de predicción simple.
-- Comparar contra un baseline (último valor o promedio reciente).
-- Entregar resultados en formato Excel claro y reutilizable.
+- Extraccion de precios de frutas y hortalizas desde SNIIM via `requests`.
+- Descarga de reportes de Cierre Agricola SIAP via flujo HTTP/xajax.
+- Alternativa con Playwright para Cierre Agricola cuando el flujo HTTP no sea suficiente.
+- Scraper de precios de productos frescos de Walmart Mexico.
+- Tests unitarios para parsing de SNIIM y Walmart.
 
----
+No implementado aun como flujo formal:
 
-## Fuentes de datos
-- **SNIIM**: precios de mercado de frutas y hortalizas.
-- **DGSIAP (Cierre Agrícola)**: estadísticas anuales de producción.
-- **DGSIAP (Avance Agrícola)**: progreso mensual de siembra/cosecha.
-- **Calendario Agrícola**: estacionalidad de cultivos.
-- **Datos climáticos (API)**: temperatura y precipitación.
+- Pipeline end-to-end de transformacion.
+- Feature engineering para forecast.
+- Entrenamiento de modelos.
+- Script orquestador tipo `run_all.py`.
 
----
+## Estructura relevante
 
-
----
-
-## Flujo de trabajo
-1. **Extracción**
-   - Descarga o scraping de datos desde fuentes públicas.
-2. **Transformación**
-   - Limpieza, homologación y agregación (principalmente a nivel semanal).
-3. **Feature Engineering**
-   - Variables de rezago (lags), promedios móviles, estacionalidad y clima.
-4. **Modelado**
-   - Baseline simple.
-   - Modelo de Machine Learning (ej. Random Forest).
-5. **Exportación**
-   - Generación de archivos Excel con datos, resultados y métricas.
-
----
-
-## Alcance del POC
-- 2–3 cultivos máximo.
-- 1–2 mercados o regiones por cultivo.
-- Frecuencia semanal.
-- Horizonte de predicción: 1 a 4 semanas.
-- Enfoque en simplicidad e interpretabilidad.
-
----
-
-## Entregables
-- `01_Datos_Raw.xlsx`: datos originales.
-- `02_Dataset_Modelo.xlsx`: dataset limpio y variables.
-- `03_Resultados_Pronostico.xlsx`: predicciones y métricas.
-- `00_Resumen_Ejecutivo.xlsx`: conclusiones y recomendaciones.
-
----
+- `src/extract/sniim.py`: extractor SNIIM y export a CSV/XLSX.
+- `src/extract/cierre_agricola_requests.py`: scraper HTTP para Cierre Agricola.
+- `src/extract/scraper_cierre_agricola_playwright.py`: alternativa con navegador.
+- `src/extract/walmart_produce_scraper.py`: scraper de frutas y verduras en Walmart.
+- `tests/`: pruebas unitarias.
+- `data/raw/sniim/`: salidas generadas por el extractor SNIIM.
+- `debug_cierre_agricola/`: respuestas de depuracion del scraper de Cierre Agricola.
 
 ## Requisitos
-- Python 3.9+
-- pandas
-- numpy
-- scikit-learn
-- requests
-- beautifulsoup4
-- openpyxl
 
-(opcional)
-- selenium o playwright (solo si es necesario para scraping)
+- Python 3.10+ recomendado.
+- Crear y activar un entorno virtual.
+- Instalar dependencias:
 
----
-
-## Ejecución
-Ejecutar pipeline completo:
-
-```bash
-python scripts/run_all.py
-```
-Ejecutar por etapas:
-
-```bash
-python scripts/run_extract.py
-python scripts/run_transform.py
-python scripts/run_model.py
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
-## Limitaciones
-- Inconsistencias en nombres y unidades entre fuentes.
+Si vas a usar el scraper con Playwright, instala tambien el navegador:
 
-- Diferente granularidad temporal (diario vs mensual vs anual).
+```powershell
+playwright install chromium
+```
 
-- Posible fragilidad en scrapers si cambian las páginas.
+## Como correr los scrapers manualmente
 
-- Modelos simples: no capturan completamente eventos extremos.
+Todos los comandos siguientes se ejecutan desde la raiz del repo.
+
+### 1. SNIIM
+
+Ejemplo:
+
+```powershell
+python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133
+```
+
+Con parametros opcionales:
+
+```powershell
+python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 233 --origen-id -1 --destino-id -1 --precios-por-id 2 --output-dir data/raw/sniim
+```
+
+Salida esperada:
+
+- CSV y XLSX en `data/raw/sniim/`
+- Nombre tipo `sniim_producto_<producto_id>_<fecha_inicio>_<fecha_final>.csv`
+
+### 2. Cierre Agricola SIAP por HTTP
+
+Ejemplo:
+
+```powershell
+python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024.xls
+```
+
+Con modo debug:
+
+```powershell
+python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024.xls --debug --debug-dir debug_cierre_agricola
+```
+
+Salida esperada:
+
+- Archivo `.xls` en la ruta indicada por `--output`
+- El portal suele devolver una tabla HTML compatible con Excel en lugar de un binario XLS nativo; esto es esperado en esta fuente
+- XML/HTML de depuracion en `debug_cierre_agricola/` si usas `--debug`
+
+### 3. Cierre Agricola SIAP con Playwright
+
+Usa esta variante si el flujo por HTTP falla por cambios en la pagina o por comportamiento del frontend.
+
+```powershell
+python src/extract/scraper_cierre_agricola_playwright.py --year 2024 --crop Aguacate --download-dir data/raw/cierre_agricola
+```
+
+Salida esperada:
+
+- Archivo descargado en el directorio indicado por `--download-dir`
+
+### 4. Walmart produce scraper
+
+Ejemplo:
+
+```powershell
+python src/extract/walmart_produce_scraper.py
+```
+
+Salida esperada:
+
+- Un CSV en el directorio actual con nombre tipo `walmart_produce_YYYYMMDD_HHMMSS.csv`
+- El script imprime en consola los registros seleccionados por cultivo
+
+## Tests
+
+Para correr las pruebas actuales:
+
+```powershell
+python -m unittest discover -s tests -p "test_*.py"
+```
+
+O por modulo:
+
+```powershell
+python -m unittest tests.test_sniim
+python -m unittest tests.test_walmart_produce_scraper
+```
+
+## Notas y limitaciones
+
+- Los scrapers dependen de sitios externos y pueden romperse si cambia el HTML o el flujo del formulario.
+- Walmart puede bloquear solicitudes automatizadas en ciertos momentos.
+- Cierre Agricola es especialmente fragil porque usa un flujo legado con xajax.
+- El repo todavia esta mas cerca de una base de extraccion validada que de un producto de forecast completo.
