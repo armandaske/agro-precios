@@ -22,6 +22,10 @@ build/
 
 # Logs
 *.log
+logs/
+
+# Runtime outputs
+data/daily_runs/
 
 # Environment variables
 .env

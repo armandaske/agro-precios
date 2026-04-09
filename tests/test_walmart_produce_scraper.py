@@ -3,6 +3,7 @@ import unittest
 
 from src.extract.walmart_produce_scraper import (
     choose_best_record_per_crop,
+    choose_best_records,
     extract_next_data,
     extract_search_items,
     item_to_record,
@@ -144,6 +145,56 @@ class WalmartProduceScraperTests(unittest.TestCase):
         best_by_crop = {record["product_canonical"]: record for record in best}
         self.assertEqual(best_by_crop["aguacate"]["product_raw"], "Aguacate Hass por kilo")
         self.assertEqual(best_by_crop["tomate"]["product_raw"], "Jitomate saladet por kilo")
+
+    def test_item_to_record_supports_configured_product_outside_hardcoded_catalog(self) -> None:
+        item = {
+            "name": "Manzana golden por kilo",
+            "canonicalUrl": "/ip/manzana-golden-por-kilo/00000000000001",
+            "salesUnitType": "EACH_WEIGHT",
+            "averageWeight": 0.2,
+            "priceInfo": {
+                "linePrice": "$39.90/kg",
+                "itemPrice": "",
+                "wasPrice": "",
+                "savingsAmt": 0,
+            },
+        }
+
+        record = item_to_record(item, "manzana", configured_product="manzana")
+
+        self.assertIsNotNone(record)
+        self.assertEqual(record["product_canonical"], "manzana")
+        self.assertIsNone(record["product_inferred"])
+        self.assertEqual(record["price_mxn"], 39.9)
+
+    def test_choose_best_records_supports_custom_product_keys(self) -> None:
+        records = [
+            {
+                "product_canonical": "manzana",
+                "product_raw": "Manzana golden por kilo",
+                "source_query": "manzana",
+                "price_mxn": 39.9,
+                "promo_flag": False,
+                "unit_raw": "kg",
+                "estimated_price_per_kg_mxn": 39.9,
+                "fresh_produce_flag": True,
+            },
+            {
+                "product_canonical": "manzana",
+                "product_raw": "Manzana golden en bolsa 1 kg",
+                "source_query": "apple",
+                "price_mxn": 45.0,
+                "promo_flag": False,
+                "unit_raw": "g_pack",
+                "estimated_price_per_kg_mxn": 45.0,
+                "fresh_produce_flag": True,
+            },
+        ]
+
+        best = choose_best_records(records, ["manzana"], {"manzana": ["manzana", "apple"]})
+
+        self.assertEqual(len(best), 1)
+        self.assertEqual(best[0]["product_raw"], "Manzana golden por kilo")
 
 
 if __name__ == "__main__":

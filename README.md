@@ -27,6 +27,8 @@ No implementado aun como flujo formal:
 - `src/extract/cierre_agricola_requests.py`: scraper HTTP para Cierre Agricola.
 - `src/extract/scraper_cierre_agricola_playwright.py`: alternativa con navegador.
 - `src/extract/walmart_produce_scraper.py`: scraper de frutas y verduras en Walmart.
+- `scripts/run_daily_extracts.py`: orquestador diario para las 3 fuentes.
+- `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
 - `tests/`: pruebas unitarias.
 - `data/raw/sniim/`: salidas generadas por el extractor SNIIM.
 - `debug_cierre_agricola/`: respuestas de depuracion del scraper de Cierre Agricola.
@@ -164,6 +166,91 @@ Salida esperada:
 - Un archivo en formato `csv`, `xls` o `xlsx`
 - Si no pasas `--output`, el script genera un nombre tipo `walmart_produce_YYYYMMDD_HHMMSS.<ext>`
 - El script imprime en consola los registros seleccionados por cultivo
+
+## Extraccion diaria
+
+Hay un runner diario que lee un workbook editable por el usuario y genera salidas consolidadas en XLSX para Walmart, SNIIM y Cierre Agricola.
+
+### Archivo de configuracion
+
+Template incluido:
+
+```powershell
+config/products.xlsx
+```
+
+Sheet requerida:
+
+- `products`
+
+Columnas requeridas:
+
+- `active`
+- `canonical_product`
+- `walmart_enabled`
+- `walmart_search_terms`
+- `sniim_enabled`
+- `sniim_producto_id`
+- `sniim_origen_id`
+- `sniim_destino_id`
+- `sniim_precios_por_id`
+- `cierre_enabled`
+- `cierre_crop_name`
+
+Reglas importantes:
+
+- `active = FALSE` omite toda la fila
+- `walmart_search_terms` acepta valores separados por `|`
+- Si `walmart_search_terms` esta vacio y Walmart esta habilitado, se usa `canonical_product`
+- Si `sniim_origen_id`, `sniim_destino_id` o `sniim_precios_por_id` estan vacios, se usan `-1`, `-1` y `2`
+- Si una fila habilita una fuente pero le falta un mapping requerido, la corrida continua y el error queda en `run_summary.json`
+
+### Correr el runner diario manualmente
+
+```powershell
+python scripts/run_daily_extracts.py --config config/products.xlsx --output-root data/daily_runs
+```
+
+Con fecha fija:
+
+```powershell
+python scripts/run_daily_extracts.py --config config/products.xlsx --output-root data/daily_runs --run-date 2026-04-08
+```
+
+Comportamiento:
+
+- Walmart toma snapshot del dia de corrida
+- SNIIM consulta el dia anterior
+- Cierre Agricola usa el año de `run-date`
+- El runner continua aunque falle una fila o una fuente
+
+Salida esperada por corrida:
+
+- `data/daily_runs/YYYY-MM-DD/walmart_YYYY-MM-DD.xlsx`
+- `data/daily_runs/YYYY-MM-DD/sniim_YYYY-MM-DD.xlsx`
+- `data/daily_runs/YYYY-MM-DD/cierre_agricola_YYYY-MM-DD.xlsx`
+- `data/daily_runs/YYYY-MM-DD/products_snapshot.xlsx`
+- `data/daily_runs/YYYY-MM-DD/run_summary.json`
+
+Cada workbook consolidado genera:
+
+- Sheet `data`
+- Sheet `failures` si hubo errores
+- Sheet `meta`
+
+## Cron
+
+Ejemplo para Linux:
+
+```cron
+0 6 * * * cd /absolute/path/to/agro-precios && /absolute/path/to/.venv/bin/python scripts/run_daily_extracts.py --config config/products.xlsx --output-root data/daily_runs >> logs/daily_extracts.log 2>&1
+```
+
+Notas operativas:
+
+- `logs/` se crea automaticamente si no existe
+- El runner sale con codigo no cero si no puede iniciar o si ninguna fuente tuvo resultados exitosos
+- Si hubo resultados parciales, igual se escriben los XLSX y el `run_summary.json`
 
 ## Tests
 

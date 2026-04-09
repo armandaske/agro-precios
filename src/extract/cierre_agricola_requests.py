@@ -660,15 +660,13 @@ def save_report(session: requests.Session, output_path: Path, output_format: str
     return resolved_output
 
 
-def build_report(
+def prepare_report_session(
     year: str,
     crop: str,
-    output: Path,
-    output_format: str,
     *,
     debug: bool,
     debug_dir: Path | None,
-) -> None:
+) -> requests.Session:
     session = requests.Session()
     session.headers.update(
         {
@@ -739,7 +737,38 @@ def build_report(
         debug_dir=debug_dir,
         call_counter=call_counter,
     )
-    save_report(session, output, output_format)
+    return session
+
+
+def fetch_report_dataframe(
+    year: str,
+    crop: str,
+    *,
+    debug: bool = False,
+    debug_dir: Path | None = None,
+) -> pd.DataFrame:
+    session = prepare_report_session(year=year, crop=crop, debug=debug, debug_dir=debug_dir)
+    try:
+        content = _fetch_report_content(session)
+    finally:
+        session.close()
+    return _html_report_to_dataframe(content)
+
+
+def build_report(
+    year: str,
+    crop: str,
+    output: Path,
+    output_format: str,
+    *,
+    debug: bool,
+    debug_dir: Path | None,
+) -> None:
+    session = prepare_report_session(year=year, crop=crop, debug=debug, debug_dir=debug_dir)
+    try:
+        save_report(session, output, output_format)
+    finally:
+        session.close()
 
 
 

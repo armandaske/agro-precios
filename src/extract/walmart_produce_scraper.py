@@ -256,10 +256,15 @@ def is_fresh_produce_item(item: Dict[str, Any], product_name: str) -> bool:
     return any(term in product_name_normalized for term in positive_terms)
 
 
-def item_to_record(item: Dict[str, Any], query_term: str) -> Optional[Dict[str, Any]]:
+def item_to_record(
+    item: Dict[str, Any],
+    query_term: str,
+    configured_product: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
     product_name = item.get("name") or ""
-    crop = canonical_crop(product_name)
-    if crop not in TARGET_CROPS:
+    inferred_crop = canonical_crop(product_name)
+    crop = configured_product or inferred_crop
+    if crop is None:
         return None
 
     price_info = item.get("priceInfo") or {}
@@ -286,6 +291,7 @@ def item_to_record(item: Dict[str, Any], query_term: str) -> Optional[Dict[str, 
         "source_query": query_term,
         "product_raw": product_name,
         "product_canonical": crop,
+        "product_inferred": inferred_crop,
         "price_mxn": price_mxn,
         "old_price_mxn": old_price_mxn,
         "promo_flag": bool(price_info.get("savingsAmt")) or old_price_mxn is not None,
@@ -300,7 +306,10 @@ def item_to_record(item: Dict[str, Any], query_term: str) -> Optional[Dict[str, 
     }
 
 
-def record_rank(record: Dict[str, Any]) -> Tuple[int, int, int, int, float]:
+def record_rank(
+    record: Dict[str, Any],
+    preferred_terms_map: Optional[Dict[str, List[str]]] = None,
+) -> Tuple[int, int, int, int, float]:
     unit = record.get("unit_raw")
     has_ppkg = record.get("estimated_price_per_kg_mxn") is not None
     promo_penalty = 0 if record.get("promo_flag") else 1
@@ -314,13 +323,25 @@ def record_rank(record: Dict[str, Any]) -> Tuple[int, int, int, int, float]:
         unit_rank = 2
 
     price_sort = record.get("estimated_price_per_kg_mxn") or record.get("price_mxn") or 999999
-    return (fresh_penalty, unit_rank, promo_penalty, query_relevance_penalty(record), price_sort)
+    return (
+        fresh_penalty,
+        unit_rank,
+        promo_penalty,
+        query_relevance_penalty(record, preferred_terms_map),
+        price_sort,
+    )
 
 
-def query_relevance_penalty(record: Dict[str, Any]) -> int:
+def query_relevance_penalty(
+    record: Dict[str, Any],
+    preferred_terms_map: Optional[Dict[str, List[str]]] = None,
+) -> int:
     crop = record.get("product_canonical")
     query = normalize_text(record.get("source_query") or "")
-    preferred_terms = [normalize_text(term) for term in TARGET_SEARCH_TERMS.get(crop, [])]
+    preferred_map = preferred_terms_map or TARGET_SEARCH_TERMS
+    preferred_terms = [normalize_text(term) for term in preferred_map.get(crop, [])]
+    if not preferred_terms:
+        return 0
     return 0 if query in preferred_terms else 1
 
 
@@ -331,41 +352,56 @@ def collect_search_records(
     client = session or requests.Session()
     query_map = search_terms or TARGET_SEARCH_TERMS
 
-    deduped_records: Dict[Tuple[str, float], Dict[str, Any]] = {}
+    deduped_records: Dict[Tuple[str, str, float], Dict[str, Any]] = {}
 
-    for terms in query_map.values():
+    for configured_product, terms in query_map.items():
         for query_term in terms:
             html = fetch_html(build_search_url(query_term), session=client)
             next_data = extract_next_data(html)
             items = extract_search_items(next_data)
 
             for item in items:
-                record = item_to_record(item, query_term)
+                record = item_to_record(
+                    item,
+                    query_term,
+                    configured_product=configured_product if search_terms is not None else None,
+                )
                 if record is None:
                     continue
 
-                key = (record["product_raw"], record["price_mxn"])
+                key = (record["product_canonical"], record["product_raw"], record["price_mxn"])
                 previous = deduped_records.get(key)
-                if previous is None or record_rank(record) < record_rank(previous):
+                if previous is None or record_rank(record, query_map) < record_rank(previous, query_map):
                     deduped_records[key] = record
 
     return list(deduped_records.values())
 
 
-def choose_best_record_per_crop(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def choose_best_records(
+    records: List[Dict[str, Any]],
+    product_keys: Iterable[str],
+    preferred_terms_map: Optional[Dict[str, List[str]]] = None,
+) -> List[Dict[str, Any]]:
     best_records: List[Dict[str, Any]] = []
 
-    for crop in TARGET_CROPS:
+    for crop in product_keys:
         crop_records = [record for record in records if record["product_canonical"] == crop]
         if not crop_records:
             continue
-        best_records.append(sort_records(crop_records)[0])
+        best_records.append(sort_records(crop_records, preferred_terms_map)[0])
 
-    return sort_records(best_records)
+    return sort_records(best_records, preferred_terms_map)
 
 
-def sort_records(records: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    return sorted(records, key=record_rank)
+def choose_best_record_per_crop(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return choose_best_records(records, TARGET_CROPS, TARGET_SEARCH_TERMS)
+
+
+def sort_records(
+    records: Iterable[Dict[str, Any]],
+    preferred_terms_map: Optional[Dict[str, List[str]]] = None,
+) -> List[Dict[str, Any]]:
+    return sorted(records, key=lambda record: record_rank(record, preferred_terms_map))
 
 
 def _records_to_dataframe(records: List[Dict[str, Any]]) -> pd.DataFrame:
