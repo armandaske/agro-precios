@@ -4,12 +4,18 @@ import argparse
 import json
 import logging
 import shutil
+import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+# Allow execution both as `python scripts/run_daily_extracts.py` and `python -m scripts.run_daily_extracts`.
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from src.extract.cierre_agricola_requests import fetch_report_dataframe
 from src.extract.sniim import fetch_sniim_fruits_vegetables

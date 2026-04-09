@@ -238,17 +238,38 @@ Cada workbook consolidado genera:
 - Sheet `failures` si hubo errores
 - Sheet `meta`
 
-## Cron
+## Windows Task Scheduler
 
-Ejemplo para Linux:
+Para este proyecto en tu maquina local, usa Windows Task Scheduler en lugar de cron de WSL.
 
-```cron
-0 6 * * * cd /absolute/path/to/agro-precios && /absolute/path/to/.venv/bin/python scripts/run_daily_extracts.py --config config/products.xlsx --output-root data/daily_runs >> logs/daily_extracts.log 2>&1
+Nombre de la tarea:
+
+- `AgroPrecios Daily Extract`
+
+Comando exacto para registrar la tarea:
+
+```cmd
+schtasks /Create /SC DAILY /ST 06:00 /TN "AgroPrecios Daily Extract" /TR "cmd /c C:\Users\Dell-G3\Documents\Jupyter-projects\Others\agro-precios\scripts\run_daily_extracts_task.cmd" /F
+```
+
+Verificacion:
+
+```cmd
+schtasks /Query /TN "AgroPrecios Daily Extract" /V /FO LIST
+```
+
+Para correrla manualmente una vez:
+
+```cmd
+schtasks /Run /TN "AgroPrecios Daily Extract"
 ```
 
 Notas operativas:
 
-- `logs/` se crea automaticamente si no existe
+- La tarea corre diario a las `06:00`
+- Usa el Python del virtualenv local del proyecto
+- Usa `scripts\run_daily_extracts_task.cmd` para evitar el limite de longitud de `/TR` en `schtasks`
+- Los logs se escriben en `logs/daily_extracts.log`
 - El runner sale con codigo no cero si no puede iniciar o si ninguna fuente tuvo resultados exitosos
 - Si hubo resultados parciales, igual se escriben los XLSX y el `run_summary.json`
 
