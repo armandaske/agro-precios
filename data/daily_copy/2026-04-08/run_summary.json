@@ -1,0 +1,37 @@
+{
+  "run_date": "2026-04-08",
+  "generated_at": "2026-04-08T19:31:33",
+  "config_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\config\\products.xlsx",
+  "run_directory": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\daily_runs\\2026-04-08",
+  "active_products": 0,
+  "sources": {
+    "walmart": {
+      "source_name": "walmart",
+      "attempted": 0,
+      "succeeded": 0,
+      "failed": 0,
+      "status": "skipped",
+      "output_path": null,
+      "records": 0
+    },
+    "sniim": {
+      "source_name": "sniim",
+      "attempted": 0,
+      "succeeded": 0,
+      "failed": 0,
+      "status": "skipped",
+      "output_path": null,
+      "records": 0
+    },
+    "cierre_agricola": {
+      "source_name": "cierre_agricola",
+      "attempted": 0,
+      "succeeded": 0,
+      "failed": 0,
+      "status": "skipped",
+      "output_path": null,
+      "records": 0
+    }
+  },
+  "failures": []
+}
