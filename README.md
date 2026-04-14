@@ -246,19 +246,74 @@ Nombre de la tarea:
 
 - `AgroPrecios Daily Extract`
 
-Comando exacto para registrar la tarea:
+Recomendacion: registra la tarea con PowerShell `ScheduledTasks` en lugar de `schtasks /Create` para poder habilitar:
 
-```cmd
-schtasks /Create /SC DAILY /ST 06:00 /TN "AgroPrecios Daily Extract" /TR "cmd /c C:\Users\Dell-G3\Documents\Jupyter-projects\Others\agro-precios\scripts\run_daily_extracts_task.cmd" /F
+- ejecucion aunque no hayas iniciado sesion
+- `StartWhenAvailable` para intentar correr una tarea perdida cuando la maquina vuelva a estar disponible
+- `WakeToRun` para intentar despertar la laptop si estaba suspendida
+
+### Registrar o reemplazar la tarea recomendada
+
+Ejecuta PowerShell como administrador y corre:
+
+```powershell
+$taskName = "AgroPrecios Daily Extract"
+$taskUser = "$env:COMPUTERNAME\$env:USERNAME"
+$taskPassword = Read-Host "Windows password for $taskUser"
+
+$action = New-ScheduledTaskAction `
+    -Execute "cmd.exe" `
+    -Argument "/c C:\Users\Dell-G3\Documents\Jupyter-projects\Others\agro-precios\scripts\run_daily_extracts_task.cmd"
+
+$trigger = New-ScheduledTaskTrigger `
+    -Daily `
+    -At 06:00AM
+
+$settings = New-ScheduledTaskSettingsSet `
+    -StartWhenAvailable `
+    -WakeToRun `
+    -AllowStartIfOnBatteries `
+    -DontStopIfGoingOnBatteries `
+    -ExecutionTimeLimit (New-TimeSpan -Hours 2)
+
+Register-ScheduledTask `
+    -TaskName $taskName `
+    -Action $action `
+    -Trigger $trigger `
+    -Settings $settings `
+    -User $taskUser `
+    -Password $taskPassword `
+    -RunLevel Limited `
+    -Force
 ```
 
-Verificacion:
+Notas:
+
+- `-Force` reemplaza la tarea existente con el mismo nombre
+- Si quieres cambiar la hora a `04:00 PM`, cambia `-At 06:00AM` por `-At 04:00PM` y vuelve a ejecutar el bloque
+- Esta configuracion requiere la contrasena de Windows del usuario porque la tarea queda lista para correr aunque no tengas sesion abierta
+
+### Comportamiento esperado
+
+- Si la laptop esta encendida a las `06:00`, la tarea corre en ese momento
+- Si la laptop esta suspendida, `WakeToRun` intentara despertarla; depende de que Windows y el hardware permitan wake timers
+- Si la laptop esta apagada o hibernada, no puede correr exactamente a las `06:00`
+- Si la hora programada se pierde porque la maquina no estaba disponible, `StartWhenAvailable` hace que Windows intente correrla cuando el equipo vuelva a estar disponible
+- No es una garantia de tiempo exacto; el catch-up ocurre "tan pronto como sea posible" segun Task Scheduler
+
+### Verificacion
 
 ```cmd
 schtasks /Query /TN "AgroPrecios Daily Extract" /V /FO LIST
 ```
 
-Para correrla manualmente una vez:
+Puntos a revisar en la salida:
+
+- `Modo de inicio de sesion` no debe quedar en `Solo interactivo`
+- `Hora proxima ejecucion` debe reflejar la siguiente corrida
+- `Ultimo resultado: 0` indica ejecucion exitosa
+
+### Correrla manualmente una vez
 
 ```cmd
 schtasks /Run /TN "AgroPrecios Daily Extract"
@@ -266,9 +321,8 @@ schtasks /Run /TN "AgroPrecios Daily Extract"
 
 Notas operativas:
 
-- La tarea corre diario a las `06:00`
-- Usa el Python del virtualenv local del proyecto
-- Usa `scripts\run_daily_extracts_task.cmd` para evitar el limite de longitud de `/TR` en `schtasks`
+- La tarea usa el Python del virtualenv local del proyecto
+- Usa `scripts\run_daily_extracts_task.cmd` para evitar el limite de longitud de argumentos y fijar `cwd`
 - Los logs se escriben en `logs/daily_extracts.log`
 - El runner sale con codigo no cero si no puede iniciar o si ninguna fuente tuvo resultados exitosos
 - Si hubo resultados parciales, igual se escriben los XLSX y el `run_summary.json`
