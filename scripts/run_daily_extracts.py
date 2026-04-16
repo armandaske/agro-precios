@@ -18,13 +18,23 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.extract.cierre_agricola_requests import fetch_report_dataframe
+from src.extract.spreadsheet_localization import (
+    CONFIG_COLUMN_ALIASES,
+    DAILY_FAILURE_COLUMN_MAP,
+    DAILY_META_COLUMN_MAP,
+    DAILY_SHEET_NAMES,
+    DAILY_SOURCE_COLUMN_MAPS,
+    PRODUCT_SHEET_NAME,
+    PRODUCT_SHEET_NAME_ALIASES,
+    rename_columns,
+    rename_mapping_keys,
+)
 from src.extract.sniim import fetch_sniim_fruits_vegetables
 from src.extract.walmart_produce_scraper import choose_best_records, collect_search_records
 
 
 LOGGER = logging.getLogger("daily_extracts")
 
-PRODUCT_SHEET_NAME = "products"
 REQUIRED_COLUMNS = [
     "active",
     "canonical_product",
@@ -117,8 +127,24 @@ def parse_run_date(raw_value: str | None) -> date:
     return datetime.now().date()
 
 
+def _read_products_sheet(config_path: Path) -> pd.DataFrame:
+    last_error: Exception | None = None
+    for sheet_name in PRODUCT_SHEET_NAME_ALIASES:
+        try:
+            return pd.read_excel(config_path, sheet_name=sheet_name, engine="openpyxl")
+        except ValueError as exc:
+            last_error = exc
+
+    available_sheets = pd.ExcelFile(config_path, engine="openpyxl").sheet_names
+    available = ", ".join(available_sheets)
+    raise ValueError(
+        f"No se encontrÃ³ la hoja de configuraciÃ³n '{PRODUCT_SHEET_NAME}'. Hojas disponibles: {available}"
+    ) from last_error
+
+
 def load_products_config(config_path: Path) -> list[ProductConfig]:
-    df = pd.read_excel(config_path, sheet_name=PRODUCT_SHEET_NAME, engine="openpyxl")
+    df = _read_products_sheet(config_path)
+    df = df.rename(columns=lambda column: CONFIG_COLUMN_ALIASES.get(str(column), str(column)))
     missing_columns = [column for column in REQUIRED_COLUMNS if column not in df.columns]
     if missing_columns:
         raise ValueError(f"Missing required columns in '{PRODUCT_SHEET_NAME}': {', '.join(missing_columns)}")
@@ -178,16 +204,19 @@ def _write_source_workbook(
     failures: list[dict[str, Any]],
     meta: dict[str, Any],
     *,
+    source_name: str,
     default_columns: list[str],
 ) -> None:
-    failures_df = pd.DataFrame(failures, columns=FAILURE_COLUMNS)
+    failures_df = rename_columns(pd.DataFrame(failures, columns=FAILURE_COLUMNS), DAILY_FAILURE_COLUMN_MAP)
     data_to_write = data_df if not data_df.empty else pd.DataFrame(columns=default_columns)
+    localized_data_df = rename_columns(data_to_write, DAILY_SOURCE_COLUMN_MAPS[source_name])
+    localized_meta_df = pd.DataFrame([rename_mapping_keys(meta, DAILY_META_COLUMN_MAP)])
 
     with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
-        data_to_write.to_excel(writer, sheet_name="data", index=False)
+        localized_data_df.to_excel(writer, sheet_name=DAILY_SHEET_NAMES["data"], index=False)
         if not failures_df.empty:
-            failures_df.to_excel(writer, sheet_name="failures", index=False)
-        pd.DataFrame([meta]).to_excel(writer, sheet_name="meta", index=False)
+            failures_df.to_excel(writer, sheet_name=DAILY_SHEET_NAMES["failures"], index=False)
+        localized_meta_df.to_excel(writer, sheet_name=DAILY_SHEET_NAMES["meta"], index=False)
 
 
 def run_walmart(configs: list[ProductConfig], run_date: date, output_dir: Path, config_path: Path) -> dict[str, Any]:
@@ -242,6 +271,7 @@ def run_walmart(configs: list[ProductConfig], run_date: date, output_dir: Path, 
                 "rows_succeeded": len(frames),
                 "rows_failed": len(failures),
             },
+            source_name=source_name,
             default_columns=DEFAULT_DATA_COLUMNS[source_name],
         )
 
@@ -315,6 +345,7 @@ def run_sniim(configs: list[ProductConfig], run_date: date, output_dir: Path, co
                 "query_start_date": query_date_str,
                 "query_end_date": query_date_str,
             },
+            source_name=source_name,
             default_columns=DEFAULT_DATA_COLUMNS[source_name],
         )
 
@@ -384,6 +415,7 @@ def run_cierre_agricola(
                 "rows_failed": len(failures),
                 "query_year": int(query_year),
             },
+            source_name=source_name,
             default_columns=DEFAULT_DATA_COLUMNS[source_name],
         )
 

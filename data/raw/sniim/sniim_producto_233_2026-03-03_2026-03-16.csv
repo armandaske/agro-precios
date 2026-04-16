@@ -1,4 +1,4 @@
-﻿fecha,presentacion,origen,destino,precio_minimo,precio_maximo,precio_frecuente,obs,fecha_inicio_query,fecha_final_query,producto_id,origen_id,destino_id,origen_query,destino_query,precios_por_id,registros_por_pagina,fuente,fecha_extraccion
+﻿fecha,presentacion,origen,destino,precio_minimo,precio_maximo,precio_frecuente,observaciones,fecha_inicio_consulta,fecha_fin_consulta,id_producto,id_origen,id_destino,origen_consulta,destino_consulta,id_precios_por,registros_por_pagina,fuente,fecha_extraccion
 03/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
 04/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36
 05/03/2026,Kilogramo,Sinaloa,Aguascalientes: Centro Comercial Agropecuario de Aguascalientes,20.0,24.0,22.0,,2026-03-03,2026-03-16,233,-1,-1,-1,-1,2,,sniim_frutas_hortalizas,2026-03-16T22:34:36

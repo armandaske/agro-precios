@@ -35,7 +35,8 @@ No implementado aun como flujo formal:
 
 ## Requisitos
 
-- Python 3.10+ recomendado.
+- Python 3.12 recomendado.
+- Python 3.13 no esta validado con los pins actuales de `requirements.txt`.
 - Crear y activar un entorno virtual.
 - Instalar dependencias:
 
@@ -181,28 +182,28 @@ config/products.xlsx
 
 Sheet requerida:
 
-- `products`
+- `productos`
 
 Columnas requeridas:
 
-- `active`
-- `canonical_product`
-- `walmart_enabled`
-- `walmart_search_terms`
-- `sniim_enabled`
-- `sniim_producto_id`
-- `sniim_origen_id`
-- `sniim_destino_id`
-- `sniim_precios_por_id`
-- `cierre_enabled`
-- `cierre_crop_name`
+- `activo`
+- `producto_canonico`
+- `walmart_habilitado`
+- `terminos_busqueda_walmart`
+- `sniim_habilitado`
+- `sniim_id_producto`
+- `sniim_id_origen`
+- `sniim_id_destino`
+- `sniim_id_precios_por`
+- `cierre_agricola_habilitado`
+- `cultivo_cierre_agricola`
 
 Reglas importantes:
 
-- `active = FALSE` omite toda la fila
-- `walmart_search_terms` acepta valores separados por `|`
-- Si `walmart_search_terms` esta vacio y Walmart esta habilitado, se usa `canonical_product`
-- Si `sniim_origen_id`, `sniim_destino_id` o `sniim_precios_por_id` estan vacios, se usan `-1`, `-1` y `2`
+- `activo = FALSE` omite toda la fila
+- `terminos_busqueda_walmart` acepta valores separados por `|`
+- Si `terminos_busqueda_walmart` esta vacio y Walmart esta habilitado, se usa `producto_canonico`
+- Si `sniim_id_origen`, `sniim_id_destino` o `sniim_id_precios_por` estan vacios, se usan `-1`, `-1` y `2`
 - Si una fila habilita una fuente pero le falta un mapping requerido, la corrida continua y el error queda en `run_summary.json`
 
 ### Correr el runner diario manualmente
@@ -234,9 +235,9 @@ Salida esperada por corrida:
 
 Cada workbook consolidado genera:
 
-- Sheet `data`
-- Sheet `failures` si hubo errores
-- Sheet `meta`
+- Sheet `datos`
+- Sheet `errores` si hubo errores
+- Sheet `metadatos`
 
 ## Windows Task Scheduler
 

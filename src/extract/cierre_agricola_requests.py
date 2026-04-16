@@ -17,6 +17,7 @@ import json
 import logging
 import re
 import time
+import unicodedata
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
@@ -27,11 +28,37 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+from src.extract.spreadsheet_localization import CIERRE_EXPORT_COLUMN_MAP, rename_columns
+
 BASE_URL = "https://nube.agricultura.gob.mx/cierre_agricola/"
 REPORTE_XLS_URL = BASE_URL + "Clases/reporte.php"
 DEFAULT_TIMEOUT = 45
 
 LOGGER = logging.getLogger("cierre_agricola_http")
+REPORT_COLUMN_ALIASES = {
+    "entidad": "entidad",
+    "superficie_ha_sembrada": "superficie_sembrada_ha",
+    "superficie_ha_cosechada": "superficie_cosechada_ha",
+    "superficie_ha_siniestrada": "superficie_siniestrada_ha",
+    "produccion": "produccion",
+    "rendimiento_udm_ha": "rendimiento_udm_ha",
+    "pmr_udm": "pmr_mxn_udm",
+    "valor_produccion_miles_de_pesos": "valor_produccion_miles_pesos",
+}
+MOJIBAKE_REPLACEMENTS = {
+    "Ã¡": "a",
+    "Ã©": "e",
+    "Ã­": "i",
+    "Ã³": "o",
+    "Ãº": "u",
+    "Ã±": "n",
+    "Ã": "a",
+    "Ã‰": "e",
+    "Ã": "i",
+    "Ã“": "o",
+    "Ãš": "u",
+    "Ã‘": "n",
+}
 
 
 @dataclass
@@ -633,6 +660,58 @@ def _html_report_to_dataframe(content: bytes) -> pd.DataFrame:
     return best_table
 
 
+def _slugify_report_label(value: str) -> str:
+    normalized = value
+    for source, target in MOJIBAKE_REPLACEMENTS.items():
+        normalized = normalized.replace(source, target)
+    normalized = unicodedata.normalize("NFKD", normalized)
+    normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    normalized = normalized.casefold()
+    normalized = re.sub(r"[^a-z0-9]+", "_", normalized)
+    return re.sub(r"_+", "_", normalized).strip("_")
+
+
+def _normalize_report_column_name(column: Any) -> str:
+    parts = [str(part).strip() for part in column] if isinstance(column, tuple) else [str(column).strip()]
+    cleaned_parts = [
+        part
+        for part in parts
+        if part and part != "nan" and not part.lower().startswith("unnamed:")
+    ]
+
+    if not cleaned_parts:
+        return "numero"
+
+    combined = " ".join(dict.fromkeys(cleaned_parts))
+    normalized = _slugify_report_label(combined)
+    return REPORT_COLUMN_ALIASES.get(normalized, normalized or "columna")
+
+
+def _normalize_report_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    normalized = df.copy()
+    normalized.columns = [_normalize_report_column_name(column) for column in normalized.columns]
+    normalized = normalized.loc[:, ~normalized.columns.duplicated()].copy()
+
+    numeric_columns = [
+        "numero",
+        "superficie_sembrada_ha",
+        "superficie_cosechada_ha",
+        "superficie_siniestrada_ha",
+        "produccion",
+        "rendimiento_udm_ha",
+        "pmr_mxn_udm",
+        "valor_produccion_miles_pesos",
+    ]
+    for column in numeric_columns:
+        if column in normalized.columns:
+            try:
+                normalized[column] = pd.to_numeric(normalized[column])
+            except (TypeError, ValueError):
+                continue
+
+    return normalized
+
+
 def _write_html_xls(df: pd.DataFrame, output_path: Path) -> None:
     html = df.to_html(index=False, na_rep="", border=1)
     output_path.write_text(html, encoding="utf-8")
@@ -643,18 +722,21 @@ def save_report(session: requests.Session, output_path: Path, output_format: str
     content = _fetch_report_content(session)
     resolved_output.parent.mkdir(parents=True, exist_ok=True)
 
-    if output_format == "xls":
+    if output_format == "xls" and not _looks_like_html(content):
         resolved_output.write_bytes(content)
         LOGGER.info("Archivo guardado: %s (%s bytes)", resolved_output, len(content))
         return resolved_output
 
-    report_df = _html_report_to_dataframe(content)
+    report_df = rename_columns(_normalize_report_dataframe(_html_report_to_dataframe(content)), CIERRE_EXPORT_COLUMN_MAP)
     if output_format == "csv":
         report_df.to_csv(resolved_output, index=False, encoding="utf-8-sig")
         LOGGER.info("CSV guardado: %s (%s filas)", resolved_output, len(report_df))
     elif output_format == "xlsx":
         report_df.to_excel(resolved_output, index=False, engine="openpyxl")
         LOGGER.info("XLSX guardado: %s (%s filas)", resolved_output, len(report_df))
+    elif output_format == "xls":
+        _write_html_xls(report_df, resolved_output)
+        LOGGER.info("XLS guardado: %s (%s filas)", resolved_output, len(report_df))
     else:
         raise ValueError(f"Formato de salida no soportado: {output_format}")
     return resolved_output
@@ -752,7 +834,7 @@ def fetch_report_dataframe(
         content = _fetch_report_content(session)
     finally:
         session.close()
-    return _html_report_to_dataframe(content)
+    return _normalize_report_dataframe(_html_report_to_dataframe(content))
 
 
 def build_report(

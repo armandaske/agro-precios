@@ -1,5 +1,9 @@
 import json
+import tempfile
 import unittest
+from pathlib import Path
+
+import pandas as pd
 
 from src.extract.walmart_produce_scraper import (
     choose_best_record_per_crop,
@@ -7,6 +11,7 @@ from src.extract.walmart_produce_scraper import (
     extract_next_data,
     extract_search_items,
     item_to_record,
+    save_output,
 )
 
 
@@ -195,6 +200,40 @@ class WalmartProduceScraperTests(unittest.TestCase):
 
         self.assertEqual(len(best), 1)
         self.assertEqual(best[0]["product_raw"], "Manzana golden por kilo")
+
+    def test_save_output_exports_spanish_headers(self) -> None:
+        records = [
+            {
+                "scraped_at_utc": "2026-04-08T12:00:00+00:00",
+                "source": "walmart_mx",
+                "source_page": "https://www.walmart.com.mx/ip/aguacate",
+                "source_query": "aguacate",
+                "product_raw": "Aguacate Hass por kilo",
+                "product_canonical": "aguacate",
+                "product_inferred": "aguacate",
+                "price_mxn": 49.9,
+                "old_price_mxn": None,
+                "promo_flag": False,
+                "unit_raw": "kg",
+                "estimated_price_per_kg_mxn": 49.9,
+                "presentation_weight_kg": None,
+                "sales_unit_type": "EACH_WEIGHT",
+                "average_weight_kg": 0.265,
+                "brand_raw": "Frutas y verduras frescas",
+                "category_path": "Frutas y Verduras > Frutas",
+                "fresh_produce_flag": True,
+            }
+        ]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "walmart.csv"
+            save_output(records, str(output_path), "csv")
+
+            exported = pd.read_csv(output_path)
+            self.assertIn("fecha_extraccion_utc", exported.columns)
+            self.assertIn("producto_original", exported.columns)
+            self.assertIn("producto_canonico", exported.columns)
+            self.assertIn("esta_en_promocion", exported.columns)
 
 
 if __name__ == "__main__":

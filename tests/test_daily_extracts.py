@@ -13,7 +13,7 @@ class DailyExtractsTests(unittest.TestCase):
     def _write_products_workbook(self, path: Path, rows: list[dict]) -> None:
         df = pd.DataFrame(rows)
         with pd.ExcelWriter(path, engine="openpyxl") as writer:
-            df.to_excel(writer, sheet_name="products", index=False)
+            df.to_excel(writer, sheet_name="productos", index=False)
 
     def test_load_products_config_parses_terms_and_defaults(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -22,17 +22,17 @@ class DailyExtractsTests(unittest.TestCase):
                 workbook_path,
                 [
                     {
-                        "active": True,
-                        "canonical_product": "tomate",
-                        "walmart_enabled": True,
-                        "walmart_search_terms": "jitomate|tomate",
-                        "sniim_enabled": True,
-                        "sniim_producto_id": 133,
-                        "sniim_origen_id": None,
-                        "sniim_destino_id": None,
-                        "sniim_precios_por_id": None,
-                        "cierre_enabled": True,
-                        "cierre_crop_name": "Tomate rojo (jitomate)",
+                        "activo": True,
+                        "producto_canonico": "tomate",
+                        "walmart_habilitado": True,
+                        "terminos_busqueda_walmart": "jitomate|tomate",
+                        "sniim_habilitado": True,
+                        "sniim_id_producto": 133,
+                        "sniim_id_origen": None,
+                        "sniim_id_destino": None,
+                        "sniim_id_precios_por": None,
+                        "cierre_agricola_habilitado": True,
+                        "cultivo_cierre_agricola": "Tomate rojo (jitomate)",
                     }
                 ],
             )
@@ -52,9 +52,9 @@ class DailyExtractsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             workbook_path = Path(temp_dir) / "products.xlsx"
             with pd.ExcelWriter(workbook_path, engine="openpyxl") as writer:
-                pd.DataFrame([{"active": True, "canonical_product": "aguacate"}]).to_excel(
+                pd.DataFrame([{"activo": True, "producto_canonico": "aguacate"}]).to_excel(
                     writer,
-                    sheet_name="products",
+                    sheet_name="productos",
                     index=False,
                 )
 
@@ -96,30 +96,30 @@ class DailyExtractsTests(unittest.TestCase):
                 config_path,
                 [
                     {
-                        "active": True,
-                        "canonical_product": "aguacate",
-                        "walmart_enabled": True,
-                        "walmart_search_terms": "aguacate|avocado",
-                        "sniim_enabled": True,
-                        "sniim_producto_id": 133,
-                        "sniim_origen_id": -1,
-                        "sniim_destino_id": -1,
-                        "sniim_precios_por_id": 2,
-                        "cierre_enabled": True,
-                        "cierre_crop_name": "Aguacate",
+                        "activo": True,
+                        "producto_canonico": "aguacate",
+                        "walmart_habilitado": True,
+                        "terminos_busqueda_walmart": "aguacate|avocado",
+                        "sniim_habilitado": True,
+                        "sniim_id_producto": 133,
+                        "sniim_id_origen": -1,
+                        "sniim_id_destino": -1,
+                        "sniim_id_precios_por": 2,
+                        "cierre_agricola_habilitado": True,
+                        "cultivo_cierre_agricola": "Aguacate",
                     },
                     {
-                        "active": True,
-                        "canonical_product": "mango",
-                        "walmart_enabled": False,
-                        "walmart_search_terms": "",
-                        "sniim_enabled": True,
-                        "sniim_producto_id": None,
-                        "sniim_origen_id": None,
-                        "sniim_destino_id": None,
-                        "sniim_precios_por_id": None,
-                        "cierre_enabled": True,
-                        "cierre_crop_name": "",
+                        "activo": True,
+                        "producto_canonico": "mango",
+                        "walmart_habilitado": False,
+                        "terminos_busqueda_walmart": "",
+                        "sniim_habilitado": True,
+                        "sniim_id_producto": None,
+                        "sniim_id_origen": None,
+                        "sniim_id_destino": None,
+                        "sniim_id_precios_por": None,
+                        "cierre_agricola_habilitado": True,
+                        "cultivo_cierre_agricola": "",
                     },
                 ],
             )
@@ -148,9 +148,18 @@ class DailyExtractsTests(unittest.TestCase):
             self.assertEqual(mock_fetch_cierre.call_args.kwargs["year"], "2026")
 
             with pd.ExcelFile(run_dir / "sniim_2026-04-08.xlsx") as sniim_workbook:
-                self.assertIn("data", sniim_workbook.sheet_names)
-                self.assertIn("failures", sniim_workbook.sheet_names)
-                self.assertIn("meta", sniim_workbook.sheet_names)
+                self.assertIn("datos", sniim_workbook.sheet_names)
+                self.assertIn("errores", sniim_workbook.sheet_names)
+                self.assertIn("metadatos", sniim_workbook.sheet_names)
+
+            sniim_data = pd.read_excel(run_dir / "sniim_2026-04-08.xlsx", sheet_name="datos")
+            self.assertIn("fecha_corrida", sniim_data.columns)
+            self.assertIn("nombre_fuente", sniim_data.columns)
+            self.assertIn("fecha_inicio_consulta", sniim_data.columns)
+
+            walmart_data = pd.read_excel(run_dir / "walmart_2026-04-08.xlsx", sheet_name="datos")
+            self.assertIn("producto_original", walmart_data.columns)
+            self.assertIn("terminos_busqueda_utilizados", walmart_data.columns)
 
 
 if __name__ == "__main__":
