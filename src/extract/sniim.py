@@ -16,6 +16,8 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+from src.extract.spreadsheet_localization import SNIIM_EXPORT_COLUMN_MAP, rename_columns
+
 CONSULTA_URL = (
     "https://www.economia-sniim.gob.mx/Nuevo/Consultas/MercadosNacionales/"
     "PreciosDeMercado/Agricolas/ConsultaFrutasYHortalizas.aspx?SubOpcion=4"
@@ -469,13 +471,14 @@ def _write_html_xls(df: pd.DataFrame, output_path: Path) -> None:
 
 def save_sniim_output(df: pd.DataFrame, output_dir: str, base_name: str, output_format: str) -> Path:
     output_path = _resolve_output_path(output_dir, base_name, output_format)
+    localized_df = rename_columns(df, SNIIM_EXPORT_COLUMN_MAP)
 
     if output_format == "csv":
-        df.to_csv(output_path, index=False, encoding="utf-8-sig")
+        localized_df.to_csv(output_path, index=False, encoding="utf-8-sig")
     elif output_format == "xlsx":
-        df.to_excel(output_path, index=False, engine="openpyxl")
+        localized_df.to_excel(output_path, index=False, engine="openpyxl")
     elif output_format == "xls":
-        _write_html_xls(df, output_path)
+        _write_html_xls(localized_df, output_path)
     else:
         raise ValueError(f"Formato de salida no soportado: {output_format}")
 

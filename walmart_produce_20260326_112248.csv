@@ -1,4 +1,4 @@
-scraped_at_utc,source,source_page,source_query,product_raw,product_canonical,price_mxn,old_price_mxn,promo_flag,unit_raw,estimated_price_per_kg_mxn,presentation_weight_kg,sales_unit_type,average_weight_kg
+﻿fecha_extraccion_utc,fuente,pagina_fuente,termino_busqueda,producto_original,producto_canonico,precio_mxn,precio_anterior_mxn,esta_en_promocion,unidad_detectada,precio_estimado_por_kg_mxn,peso_presentacion_kg,tipo_unidad_venta,peso_promedio_kg
 2026-03-26T17:22:37.170863+00:00,walmart_mx,https://www.walmart.com.mx/ip/zanahoria-por-kilo/00000000004094?athbdg=L1300,zanahoria,Zanahoria por kilo,zanahoria,13.0,26.9,True,kg,13.0,,EACH_WEIGHT,0.14
 2026-03-26T17:22:39.323563+00:00,walmart_mx,https://www.walmart.com.mx/ip/cebolla-blanca-por-kilo/00000000004663?athbdg=L1300,cebolla,Cebolla Blanca por kilo,cebolla,22.5,39.9,True,kg,22.5,,EACH_WEIGHT,0.335
 2026-03-26T17:22:48.566507+00:00,walmart_mx,https://www.walmart.com.mx/ip/papa-blanca-alfa-por-kilo/00000000004083?athbdg=L1300,papa,Papa blanca alfa por kilo,papa,28.9,59.9,True,kg,28.9,,EACH_WEIGHT,0.265
