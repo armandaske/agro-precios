@@ -6,7 +6,9 @@ from pathlib import Path
 import pandas as pd
 
 from src.extract.chedraui_produce_scraper import (
+    collect_search_records,
     choose_best_record_per_crop,
+    canonical_crop,
     extract_search_items,
     item_to_record,
     save_output,
@@ -146,6 +148,48 @@ class ChedrauiProduceScraperTests(unittest.TestCase):
 
         self.assertEqual(len(best), 1)
         self.assertEqual(best[0]["product_raw"], "Aguacate Hass por Kg")
+
+    def test_canonical_crop_does_not_classify_papaya_as_papa(self) -> None:
+        self.assertIsNone(canonical_crop("Papaya Maradol por kg"))
+        self.assertEqual(canonical_crop("Papa blanca por kg"), "papa")
+
+    def test_collect_search_records_filters_out_papaya_for_papa_query(self) -> None:
+        html = make_supermercado_html(
+            [
+                {
+                    "@type": "Product",
+                    "name": "Papaya Maradol por Kg",
+                    "url": "/papaya-maradol-por-kg/p",
+                    "offers": {"price": "32.5"},
+                },
+                {
+                    "@type": "Product",
+                    "name": "Papa blanca por Kg",
+                    "url": "/papa-blanca-por-kg/p",
+                    "offers": {"price": "41.9"},
+                },
+            ]
+        )
+
+        class FakeSession:
+            def get(self, url, headers=None, timeout=None):
+                class Response:
+                    text = html
+
+                    @staticmethod
+                    def raise_for_status():
+                        return None
+
+                return Response()
+
+        records = collect_search_records(
+            session=FakeSession(),
+            search_terms={"papa": ["papa"]},
+        )
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["product_raw"], "Papa blanca por Kg")
+        self.assertEqual(records[0]["product_canonical"], "papa")
 
     def test_save_output_exports_spanish_headers(self) -> None:
         records = [

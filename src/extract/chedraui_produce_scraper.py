@@ -49,6 +49,15 @@ def normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", text)
 
 
+def _contains_term_as_word(text: str, term: str) -> bool:
+    normalized_text = normalize_text(text)
+    normalized_term = normalize_text(term)
+    if not normalized_term:
+        return False
+    pattern = rf"(?<![a-z0-9]){re.escape(normalized_term)}(?![a-z0-9])"
+    return re.search(pattern, normalized_text) is not None
+
+
 def build_search_urls(query: str) -> List[str]:
     encoded_query = urlencode({"q": query})
     return [
@@ -313,7 +322,7 @@ def canonical_crop(product_name: str) -> Optional[str]:
         return "platano"
     if "mango" in n:
         return "mango"
-    if "papa" in n:
+    if _contains_term_as_word(n, "papa"):
         return "papa"
     return None
 
@@ -498,7 +507,7 @@ def collect_search_records(
                 normalized_name = normalize_text(product_name)
                 # Skip items that do not contain the query term.  This helps remove
                 # unrelated products that might otherwise pollute the results.
-                if normalized_query not in normalized_name:
+                if not _contains_term_as_word(normalized_name, normalized_query):
                     continue
 
                 record = item_to_record(
