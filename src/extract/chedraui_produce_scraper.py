@@ -339,29 +339,68 @@ def collect_search_records(
     query_map = search_terms or TARGET_SEARCH_TERMS
     deduped_records: Dict[Tuple[str, str, float], Dict[str, Any]] = {}
 
+    # Iterate through each configured crop (e.g. "aguacate", "tomate", etc.) and the list of
+    # associated search terms.  By default ``search_terms`` will be ``None`` which
+    # triggers the use of ``TARGET_SEARCH_TERMS``.  We always set
+    # ``configured_product`` when building records so that the resulting
+    # ``product_canonical`` field corresponds to the crop we are currently
+    # processing.  This avoids mis‑classifying products whose names might
+    # contain ambiguous words.
     for configured_product, terms in query_map.items():
         for query_term in terms:
             items: List[Dict[str, Any]] = []
+            # Try each search URL variant until we obtain at least one set of results.
             for search_url in build_search_urls(query_term):
                 html = fetch_html(search_url, session=client)
                 items = extract_search_items(html)
                 if items:
                     break
 
+            # If no items were returned for this query we simply continue.
+            if not items:
+                continue
+
+            # Normalize the query term once for efficient comparisons.  We use this to
+            # filter out obviously unrelated products (e.g. when the search page returns
+            # generic or promotional items unrelated to the term).  This prevents a
+            # situation where the same unrelated product is selected across different
+            # crops, such as "calabacita" appearing as the result for all searches.
+            normalized_query = normalize_text(query_term)
+
             for item in items:
+                # Extract the product name from the raw item data.  Some payloads use
+                # different keys for the name, so we check them in order of priority.
+                product_name = str(
+                    item.get("name")
+                    or item.get("productName")
+                    or item.get("title")
+                    or ""
+                ).strip()
+                normalized_name = normalize_text(product_name)
+                # Skip items that do not contain the query term.  This helps remove
+                # unrelated products that might otherwise pollute the results.
+                if normalized_query not in normalized_name:
+                    continue
+
                 record = item_to_record(
                     item,
                     query_term,
-                    configured_product=configured_product if search_terms is not None else None,
+                    # Always pass the configured crop name so that the canonical
+                    # product assignment does not rely solely on heuristic matching.
+                    configured_product=configured_product,
                 )
                 if record is None:
                     continue
 
+                # Use a tuple of canonical crop, raw product name and price as a key
+                # for deduplication.  If we encounter the same product more than
+                # once, keep whichever record sorts higher based on ``record_rank``.
                 key = (record["product_canonical"], record["product_raw"], record["price_mxn"])
                 previous = deduped_records.get(key)
                 if previous is None or record_rank(record, query_map) < record_rank(previous, query_map):
                     deduped_records[key] = record
 
+    # Return the list of unique records
     return list(deduped_records.values())
 
 
