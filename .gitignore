@@ -16,6 +16,10 @@ venv/
 dist/
 build/
 *.log
+*.zip
+*.tar
+*.tar.gz
+*.tgz
 
 # Jupyter
 .ipynb_checkpoints/
@@ -29,3 +33,6 @@ data/daily_runs/
 
 # Environment variables
 .env
+
+# Frontend package managers
+.yarn/

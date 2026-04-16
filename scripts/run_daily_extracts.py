@@ -30,6 +30,10 @@ from src.extract.spreadsheet_localization import (
     rename_mapping_keys,
 )
 from src.extract.sniim import fetch_sniim_fruits_vegetables
+from src.extract.chedraui_produce_scraper import (
+    choose_best_records as choose_best_records_chedraui,
+    collect_search_records as collect_search_records_chedraui,
+)
 from src.extract.walmart_produce_scraper import choose_best_records, collect_search_records
 
 
@@ -48,6 +52,10 @@ REQUIRED_COLUMNS = [
     "cierre_enabled",
     "cierre_crop_name",
 ]
+OPTIONAL_COLUMNS = [
+    "chedraui_enabled",
+    "chedraui_search_terms",
+]
 FAILURE_COLUMNS = [
     "row_number",
     "canonical_product",
@@ -57,6 +65,7 @@ FAILURE_COLUMNS = [
 ]
 DEFAULT_DATA_COLUMNS = {
     "walmart": ["run_date", "canonical_product", "source_name", "search_terms_used"],
+    "chedraui": ["run_date", "canonical_product", "source_name", "search_terms_used"],
     "sniim": ["run_date", "canonical_product", "source_name", "query_start_date", "query_end_date"],
     "cierre_agricola": ["run_date", "canonical_product", "source_name", "query_year", "cierre_crop_name"],
 }
@@ -68,6 +77,8 @@ class ProductConfig:
     canonical_product: str
     walmart_enabled: bool
     walmart_search_terms: list[str]
+    chedraui_enabled: bool
+    chedraui_search_terms: list[str]
     sniim_enabled: bool
     sniim_producto_id: int | None
     sniim_origen_id: int
@@ -145,11 +156,16 @@ def _read_products_sheet(config_path: Path) -> pd.DataFrame:
 def load_products_config(config_path: Path) -> list[ProductConfig]:
     df = _read_products_sheet(config_path)
     df = df.rename(columns=lambda column: CONFIG_COLUMN_ALIASES.get(str(column), str(column)))
+    if "chedraui_enabled" not in df.columns:
+        df["chedraui_enabled"] = False
+    if "chedraui_search_terms" not in df.columns:
+        df["chedraui_search_terms"] = ""
+
     missing_columns = [column for column in REQUIRED_COLUMNS if column not in df.columns]
     if missing_columns:
         raise ValueError(f"Missing required columns in '{PRODUCT_SHEET_NAME}': {', '.join(missing_columns)}")
 
-    df = df[REQUIRED_COLUMNS].dropna(how="all")
+    df = df[REQUIRED_COLUMNS + OPTIONAL_COLUMNS].dropna(how="all")
     configs: list[ProductConfig] = []
 
     for idx, row in df.iterrows():
@@ -163,6 +179,8 @@ def load_products_config(config_path: Path) -> list[ProductConfig]:
                 canonical_product=canonical_product,
                 walmart_enabled=_parse_bool(row["walmart_enabled"]),
                 walmart_search_terms=_parse_walmart_terms(row["walmart_search_terms"], canonical_product),
+                chedraui_enabled=_parse_bool(row["chedraui_enabled"]),
+                chedraui_search_terms=_parse_walmart_terms(row["chedraui_search_terms"], canonical_product),
                 sniim_enabled=_parse_bool(row["sniim_enabled"]),
                 sniim_producto_id=_parse_optional_int(row["sniim_producto_id"]),
                 sniim_origen_id=_value_or_default(_parse_optional_int(row["sniim_origen_id"], -1), -1),
@@ -361,6 +379,74 @@ def run_sniim(configs: list[ProductConfig], run_date: date, output_dir: Path, co
     }
 
 
+def run_chedraui(configs: list[ProductConfig], run_date: date, output_dir: Path, config_path: Path) -> dict[str, Any]:
+    source_name = "chedraui"
+    source_configs = [config for config in configs if config.chedraui_enabled]
+    failures: list[dict[str, Any]] = []
+    frames: list[pd.DataFrame] = []
+
+    for config in source_configs:
+        if not config.canonical_product:
+            failures.append(_failure_record(config, source_name, "canonical_product is required"))
+            continue
+        if not config.chedraui_search_terms:
+            failures.append(_failure_record(config, source_name, "No Chedraui search terms configured"))
+            continue
+
+        try:
+            search_map = {config.canonical_product: config.chedraui_search_terms}
+            records = collect_search_records_chedraui(search_terms=search_map)
+            best_records = choose_best_records_chedraui(records, [config.canonical_product], search_map)
+            if not best_records:
+                raise ValueError("No Chedraui records found for configured terms")
+
+            frame = pd.DataFrame(best_records)
+            frame["run_date"] = run_date.isoformat()
+            frame["canonical_product"] = config.canonical_product
+            frame["source_name"] = source_name
+            frame["search_terms_used"] = " | ".join(config.chedraui_search_terms)
+            frames.append(frame)
+        except Exception as exc:  # noqa: BLE001
+            failures.append(
+                _failure_record(
+                    config,
+                    source_name,
+                    str(exc),
+                    identifier=" | ".join(config.chedraui_search_terms),
+                )
+            )
+
+    data_df = _concat_frames(frames, DEFAULT_DATA_COLUMNS[source_name])
+    output_path = output_dir / f"{source_name}_{run_date.isoformat()}.xlsx"
+    if source_configs:
+        _write_source_workbook(
+            output_path,
+            data_df,
+            failures,
+            {
+                "source_name": source_name,
+                "run_date": run_date.isoformat(),
+                "config_path": str(config_path),
+                "rows_attempted": len(source_configs),
+                "rows_succeeded": len(frames),
+                "rows_failed": len(failures),
+            },
+            source_name=source_name,
+            default_columns=DEFAULT_DATA_COLUMNS[source_name],
+        )
+
+    return {
+        "source_name": source_name,
+        "attempted": len(source_configs),
+        "succeeded": len(frames),
+        "failed": len(failures),
+        "status": _source_status(len(source_configs), len(frames), len(failures)),
+        "output_path": str(output_path) if source_configs else None,
+        "failures": failures,
+        "records": int(len(data_df)),
+    }
+
+
 def run_cierre_agricola(
     configs: list[ProductConfig],
     run_date: date,
@@ -454,6 +540,7 @@ def orchestrate_daily_run(config_path: Path, output_root: Path, run_date: date) 
 
     source_results = [
         run_walmart(configs, run_date, run_dir, config_path),
+        run_chedraui(configs, run_date, run_dir, config_path),
         run_sniim(configs, run_date, run_dir, config_path),
         run_cierre_agricola(configs, run_date, run_dir, config_path),
     ]
@@ -475,7 +562,7 @@ def orchestrate_daily_run(config_path: Path, output_root: Path, run_date: date) 
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the 3 daily extraction jobs and save consolidated XLSX outputs.")
+    parser = argparse.ArgumentParser(description="Run the daily extraction jobs and save consolidated XLSX outputs.")
     parser.add_argument("--config", required=True, type=Path, help="Path to the products workbook (.xlsx)")
     parser.add_argument("--output-root", required=True, type=Path, help="Root directory for dated run folders")
     parser.add_argument("--run-date", help="Override run date in YYYY-MM-DD format")
