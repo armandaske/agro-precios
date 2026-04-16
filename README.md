@@ -12,7 +12,9 @@ Implementado:
 - Descarga de reportes de Cierre Agricola SIAP via flujo HTTP/xajax.
 - Alternativa con Playwright para Cierre Agricola cuando el flujo HTTP no sea suficiente.
 - Scraper de precios de productos frescos de Walmart Mexico.
+- Scraper de precios de productos frescos de Chedraui Mexico.
 - Tests unitarios para parsing de SNIIM y Walmart.
+- Tests unitarios para parsing de SNIIM, Walmart y Chedraui.
 
 No implementado aun como flujo formal:
 
@@ -27,7 +29,8 @@ No implementado aun como flujo formal:
 - `src/extract/cierre_agricola_requests.py`: scraper HTTP para Cierre Agricola.
 - `src/extract/scraper_cierre_agricola_playwright.py`: alternativa con navegador.
 - `src/extract/walmart_produce_scraper.py`: scraper de frutas y verduras en Walmart.
-- `scripts/run_daily_extracts.py`: orquestador diario para las 3 fuentes.
+- `src/extract/chedraui_produce_scraper.py`: scraper de frutas y verduras en Chedraui.
+- `scripts/run_daily_extracts.py`: orquestador diario para las 4 fuentes.
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
 - `tests/`: pruebas unitarias.
 - `data/raw/sniim/`: salidas generadas por el extractor SNIIM.
@@ -168,9 +171,41 @@ Salida esperada:
 - Si no pasas `--output`, el script genera un nombre tipo `walmart_produce_YYYYMMDD_HHMMSS.<ext>`
 - El script imprime en consola los registros seleccionados por cultivo
 
+### 5. Chedraui produce scraper
+
+Ejemplo:
+
+```powershell
+python src/extract/chedraui_produce_scraper.py --output-format csv
+```
+
+Ejemplo en XLS:
+
+```powershell
+python src/extract/chedraui_produce_scraper.py --output-format xls
+```
+
+Ejemplo en XLSX:
+
+```powershell
+python src/extract/chedraui_produce_scraper.py --output-format xlsx
+```
+
+Con ruta explicita:
+
+```powershell
+python src/extract/chedraui_produce_scraper.py --output-format xlsx --output data/raw/chedraui/chedraui_produce_latest.xlsx
+```
+
+Salida esperada:
+
+- Un archivo en formato `csv`, `xls` o `xlsx`
+- Si no pasas `--output`, el script genera un nombre tipo `chedraui_produce_YYYYMMDD_HHMMSS.<ext>`
+- El script imprime en consola los registros seleccionados por cultivo
+
 ## Extraccion diaria
 
-Hay un runner diario que lee un workbook editable por el usuario y genera salidas consolidadas en XLSX para Walmart, SNIIM y Cierre Agricola.
+Hay un runner diario que lee un workbook editable por el usuario y genera salidas consolidadas en XLSX para Walmart, Chedraui, SNIIM y Cierre Agricola.
 
 ### Archivo de configuracion
 
@@ -198,11 +233,18 @@ Columnas requeridas:
 - `cierre_agricola_habilitado`
 - `cultivo_cierre_agricola`
 
+Columnas opcionales (para habilitar Chedraui):
+
+- `chedraui_habilitado`
+- `terminos_busqueda_chedraui`
+
 Reglas importantes:
 
 - `activo = FALSE` omite toda la fila
 - `terminos_busqueda_walmart` acepta valores separados por `|`
+- `terminos_busqueda_chedraui` acepta valores separados por `|`
 - Si `terminos_busqueda_walmart` esta vacio y Walmart esta habilitado, se usa `producto_canonico`
+- Si `terminos_busqueda_chedraui` esta vacio y Chedraui esta habilitado, se usa `producto_canonico`
 - Si `sniim_id_origen`, `sniim_id_destino` o `sniim_id_precios_por` estan vacios, se usan `-1`, `-1` y `2`
 - Si una fila habilita una fuente pero le falta un mapping requerido, la corrida continua y el error queda en `run_summary.json`
 
@@ -228,6 +270,7 @@ Comportamiento:
 Salida esperada por corrida:
 
 - `data/daily_runs/YYYY-MM-DD/walmart_YYYY-MM-DD.xlsx`
+- `data/daily_runs/YYYY-MM-DD/chedraui_YYYY-MM-DD.xlsx`
 - `data/daily_runs/YYYY-MM-DD/sniim_YYYY-MM-DD.xlsx`
 - `data/daily_runs/YYYY-MM-DD/cierre_agricola_YYYY-MM-DD.xlsx`
 - `data/daily_runs/YYYY-MM-DD/products_snapshot.xlsx`

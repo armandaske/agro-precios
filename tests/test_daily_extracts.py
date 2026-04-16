@@ -26,6 +26,8 @@ class DailyExtractsTests(unittest.TestCase):
                         "producto_canonico": "tomate",
                         "walmart_habilitado": True,
                         "terminos_busqueda_walmart": "jitomate|tomate",
+                        "chedraui_habilitado": True,
+                        "terminos_busqueda_chedraui": "jitomate|tomate",
                         "sniim_habilitado": True,
                         "sniim_id_producto": 133,
                         "sniim_id_origen": None,
@@ -61,14 +63,45 @@ class DailyExtractsTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Missing required columns"):
                 load_products_config(workbook_path)
 
+    def test_load_products_config_defaults_chedraui_when_columns_are_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workbook_path = Path(temp_dir) / "products.xlsx"
+            self._write_products_workbook(
+                workbook_path,
+                [
+                    {
+                        "activo": True,
+                        "producto_canonico": "aguacate",
+                        "walmart_habilitado": True,
+                        "terminos_busqueda_walmart": "aguacate",
+                        "sniim_habilitado": True,
+                        "sniim_id_producto": 133,
+                        "sniim_id_origen": -1,
+                        "sniim_id_destino": -1,
+                        "sniim_id_precios_por": 2,
+                        "cierre_agricola_habilitado": True,
+                        "cultivo_cierre_agricola": "Aguacate",
+                    }
+                ],
+            )
+
+            configs = load_products_config(workbook_path)
+            self.assertEqual(len(configs), 1)
+            self.assertFalse(configs[0].chedraui_enabled)
+            self.assertEqual(configs[0].chedraui_search_terms, ["aguacate"])
+
     @patch("scripts.run_daily_extracts.fetch_report_dataframe")
     @patch("scripts.run_daily_extracts.fetch_sniim_fruits_vegetables")
+    @patch("scripts.run_daily_extracts.choose_best_records_chedraui")
+    @patch("scripts.run_daily_extracts.collect_search_records_chedraui")
     @patch("scripts.run_daily_extracts.choose_best_records")
     @patch("scripts.run_daily_extracts.collect_search_records")
     def test_orchestrate_daily_run_writes_outputs_and_summary(
         self,
         mock_collect_search_records,
         mock_choose_best_records,
+        mock_collect_search_records_chedraui,
+        mock_choose_best_records_chedraui,
         mock_fetch_sniim,
         mock_fetch_cierre,
     ) -> None:
@@ -85,6 +118,8 @@ class DailyExtractsTests(unittest.TestCase):
             }
         ]
         mock_choose_best_records.return_value = mock_collect_search_records.return_value
+        mock_collect_search_records_chedraui.return_value = mock_collect_search_records.return_value
+        mock_choose_best_records_chedraui.return_value = mock_collect_search_records.return_value
         mock_fetch_sniim.return_value = pd.DataFrame([{"precio_frecuente": 10.5, "origen": "Michoacán"}])
         mock_fetch_cierre.return_value = pd.DataFrame([{"Entidad": "Michoacán", "Producción": 100}])
 
@@ -100,6 +135,8 @@ class DailyExtractsTests(unittest.TestCase):
                         "producto_canonico": "aguacate",
                         "walmart_habilitado": True,
                         "terminos_busqueda_walmart": "aguacate|avocado",
+                        "chedraui_habilitado": True,
+                        "terminos_busqueda_chedraui": "aguacate|avocado",
                         "sniim_habilitado": True,
                         "sniim_id_producto": 133,
                         "sniim_id_origen": -1,
@@ -113,6 +150,8 @@ class DailyExtractsTests(unittest.TestCase):
                         "producto_canonico": "mango",
                         "walmart_habilitado": False,
                         "terminos_busqueda_walmart": "",
+                        "chedraui_habilitado": False,
+                        "terminos_busqueda_chedraui": "",
                         "sniim_habilitado": True,
                         "sniim_id_producto": None,
                         "sniim_id_origen": None,
@@ -130,10 +169,12 @@ class DailyExtractsTests(unittest.TestCase):
             self.assertTrue((run_dir / "products_snapshot.xlsx").exists())
             self.assertTrue((run_dir / "run_summary.json").exists())
             self.assertTrue((run_dir / "walmart_2026-04-08.xlsx").exists())
+            self.assertTrue((run_dir / "chedraui_2026-04-08.xlsx").exists())
             self.assertTrue((run_dir / "sniim_2026-04-08.xlsx").exists())
             self.assertTrue((run_dir / "cierre_agricola_2026-04-08.xlsx").exists())
 
             self.assertEqual(summary["sources"]["walmart"]["succeeded"], 1)
+            self.assertEqual(summary["sources"]["chedraui"]["succeeded"], 1)
             self.assertEqual(summary["sources"]["sniim"]["failed"], 1)
             self.assertEqual(summary["sources"]["cierre_agricola"]["failed"], 1)
 
