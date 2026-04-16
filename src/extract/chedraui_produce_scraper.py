@@ -66,19 +66,44 @@ def fetch_html(url: str, session: Optional[requests.Session] = None) -> str:
 
 
 def extract_embedded_json_payloads(html: str) -> List[Dict[str, Any]]:
-    soup = BeautifulSoup(html, "html.parser")
-    payloads: List[Dict[str, Any]] = []
+    """Extract JSON payloads embedded in HTML or returned as raw JSON.
 
+    The Chedraui site sometimes returns pages built with React/Next.js that embed
+    data in ``<script id="__NEXT_DATA__">`` tags or ``<script type="application/ld+json">``
+    tags.  The site also exposes a public VTEX API that returns pure JSON without
+    any surrounding HTML.  This function normalizes both cases by returning a
+    list of dictionaries ready for traversal.  Plain JSON responses are detected
+    by inspecting the initial characters of the input.
+    """
+    payloads: List[Dict[str, Any]] = []
+    # Check if the provided HTML is actually a JSON document.  If so, parse it
+    # directly rather than attempting to use BeautifulSoup.  We do a simple
+    # check on the first non‑whitespace character.
+    stripped = html.lstrip()
+    if stripped.startswith("{") or stripped.startswith("["):
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError:
+            parsed = None
+        if isinstance(parsed, dict):
+            payloads.append(parsed)
+            return payloads
+        elif isinstance(parsed, list):
+            payloads.extend([entry for entry in parsed if isinstance(entry, dict)])
+            return payloads
+
+    # Fallback to HTML parsing for Next.js/ld+json scripts
+    soup = BeautifulSoup(html, "html.parser")
     for script in soup.find_all("script", attrs={"id": "__NEXT_DATA__"}):
-        if not script.string:
+        raw = script.string or script.get_text() or ""
+        if not raw:
             continue
         try:
-            parsed = json.loads(script.string)
-            if isinstance(parsed, dict):
-                payloads.append(parsed)
+            parsed = json.loads(raw)
         except json.JSONDecodeError:
             continue
-
+        if isinstance(parsed, dict):
+            payloads.append(parsed)
     for script in soup.find_all("script", attrs={"type": "application/ld+json"}):
         raw_text = script.string or script.get_text() or ""
         if not raw_text.strip():
@@ -87,12 +112,10 @@ def extract_embedded_json_payloads(html: str) -> List[Dict[str, Any]]:
             parsed = json.loads(raw_text)
         except json.JSONDecodeError:
             continue
-
         if isinstance(parsed, dict):
             payloads.append(parsed)
         elif isinstance(parsed, list):
             payloads.extend([entry for entry in parsed if isinstance(entry, dict)])
-
     return payloads
 
 
@@ -108,28 +131,124 @@ def _safe_float(value: Any) -> Optional[float]:
     return float(match.group(1))
 
 
-def _extract_price_values(node: Dict[str, Any]) -> Tuple[Optional[float], Optional[float]]:
-    current_candidates = [
-        node.get("price"),
-        node.get("currentPrice"),
-        node.get("spotPrice"),
-        node.get("priceValue"),
-        node.get("bestPrice"),
-    ]
-    old_candidates = [
-        node.get("oldPrice"),
-        node.get("listPrice"),
-        node.get("priceWithoutDiscount"),
-        node.get("highPrice"),
-    ]
+def _is_weighted_product_name(product_name: str) -> bool:
+    normalized_name = normalize_text(product_name)
+    return "por kg" in normalized_name or "por kilo" in normalized_name
 
+
+def _extract_price_values(node: Dict[str, Any]) -> Tuple[Optional[float], Optional[float]]:
+    """Extract current and old price values from a product node.
+
+    The site uses a variety of field names for pricing.  This function attempts
+    to find a reasonable current price (precio actual) and an old price (precio
+    anterior) from any case of these fields.  It also falls back to prices
+    nested inside VTEX API structures such as ``items -> sellers -> commertialOffer``.
+    """
+    current_candidates: List[Any] = []
+    old_candidates: List[Any] = []
+    product_name = str(node.get("name") or node.get("productName") or node.get("title") or "")
+    is_weighted_product = _is_weighted_product_name(product_name)
+
+    # Include values from keys regardless of case.  We consider several synonyms
+    # for current and old prices.  Lower‑case the key for matching but store
+    # the original value.
+    for key, value in node.items():
+        if value is None:
+            continue
+        k = key.lower()
+        if k in {"price", "currentprice", "spotprice", "pricevalue", "bestprice", "sellprice", "sellingprice", "pricewithtax"}:
+            current_candidates.append(value)
+        if k in {"oldprice", "listprice", "pricewithoutdiscount", "highprice", "wasprice"}:
+            old_candidates.append(value)
+
+    # Handle "offers" dictionary similar to schema.org Product
     offers = node.get("offers")
     if isinstance(offers, dict):
-        current_candidates.extend([offers.get("price"), offers.get("lowPrice")])
-        old_candidates.extend([offers.get("highPrice"), offers.get("listPrice")])
+        offer_type = str(offers.get("@type") or "").lower()
+        is_aggregate_offer = offer_type == "aggregateoffer"
 
-    current_price = next((price for price in (_safe_float(value) for value in current_candidates) if price is not None), None)
-    old_price = next((price for price in (_safe_float(value) for value in old_candidates) if price is not None), None)
+        if is_aggregate_offer:
+            low_price = offers.get("lowPrice")
+            high_price = offers.get("highPrice")
+            if is_weighted_product:
+                # VTEX publishes weighted produce as an AggregateOffer where
+                # lowPrice is the minimum purchasable amount (e.g. 0.15 kg)
+                # and highPrice is the displayed per-kg price shown on the site.
+                # This range is not a promotion, so it must not populate the old price.
+                if high_price is not None:
+                    current_candidates.append(high_price)
+                elif low_price is not None:
+                    current_candidates.append(low_price)
+            else:
+                nested_offers = offers.get("offers")
+                if isinstance(nested_offers, list):
+                    for nested_offer in nested_offers:
+                        if not isinstance(nested_offer, dict):
+                            continue
+                        for k in ("price", "priceValue", "bestPrice"):
+                            val = nested_offer.get(k)
+                            if val is not None:
+                                current_candidates.append(val)
+                if low_price is not None:
+                    current_candidates.append(low_price)
+                elif high_price is not None:
+                    current_candidates.append(high_price)
+        else:
+            for k in ("price", "priceValue", "bestPrice", "lowPrice"):
+                val = offers.get(k)
+                if val is not None:
+                    current_candidates.append(val)
+            for k in ("oldPrice", "highPrice", "listPrice", "priceWithoutDiscount"):
+                val = offers.get(k)
+                if val is not None:
+                    old_candidates.append(val)
+
+    # If present, look into VTEX API structures: items -> sellers -> commertialOffer
+    items = node.get("items")
+    if isinstance(items, list):
+        for item in items:
+            sellers = item.get("sellers") or []
+            for seller in sellers:
+                # In VTEX naming, the field may be "commertialOffer" or "commercialOffer"
+                offer = seller.get("commertialOffer") or seller.get("commercialOffer")
+                if not isinstance(offer, dict):
+                    continue
+                # VTEX's commertialOffer exposes fields like Price (discounted price),
+                # ListPrice (original list price), PriceWithoutDiscount (price before
+                # applying campaign discounts) and BestPrice.  The current price
+                # should come from fields like Price, PriceValue or BestPrice.  The
+                # PriceWithoutDiscount is considered an old or reference price
+                # because it reflects the value before discounts.  Therefore we treat
+                # priceWithoutDiscount as an old candidate instead of a current one.
+                for k, v in offer.items():
+                    key_lower = k.lower()
+                    if v is None:
+                        continue
+                    # Determine candidate lists by key semantics.  The set for
+                    # current prices excludes 'pricewithoutdiscount'.
+                    if key_lower in {"price", "pricevalue", "bestprice"}:
+                        current_candidates.append(v)
+                    if key_lower in {"listprice", "highprice", "wasprice", "pricewithoutdiscount"}:
+                        old_candidates.append(v)
+
+    # Coerce all candidate values to floats
+    current_vals: List[float] = [p for p in (_safe_float(v) for v in current_candidates) if p is not None]
+    old_vals: List[float] = [p for p in (_safe_float(v) for v in old_candidates) if p is not None]
+
+    current_price = None
+    old_price = None
+    if current_vals:
+        # Choose the lowest value from the current price candidates.  This guards
+        # against cases where a high reference price accidentally appears in the
+        # current candidate set (e.g. PriceWithoutDiscount mistakenly classified).
+        current_price = min(current_vals)
+    if old_vals:
+        # Choose the highest value from the old price candidates; this aims to
+        # capture the original list price when multiple reference prices are
+        # present.
+        old_price = max(old_vals)
+    # If the extracted old price is not greater than the current price, treat it as
+    # not a promotion and drop it.  Some sources report equal or smaller old prices.
     if old_price is not None and current_price is not None and old_price <= current_price:
         old_price = None
     return current_price, old_price

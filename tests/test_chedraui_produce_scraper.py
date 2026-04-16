@@ -67,6 +67,59 @@ class ChedrauiProduceScraperTests(unittest.TestCase):
         self.assertEqual(record["unit_raw"], "kg")
         self.assertTrue(record["promo_flag"])
 
+    def test_item_to_record_uses_high_price_as_current_for_weighted_aggregate_offer(self) -> None:
+        item = {
+            "name": "Tomate Saladet por kg",
+            "url": "/tomate-saladet-por-kg/p",
+            "brand": "Chedraui",
+            "offers": {
+                "@type": "AggregateOffer",
+                "lowPrice": 8.85,
+                "highPrice": 59.0,
+                "offers": [{"@type": "Offer", "price": 8.85}],
+            },
+        }
+
+        record = item_to_record(item, "tomate")
+
+        self.assertIsNotNone(record)
+        self.assertEqual(record["price_mxn"], 59.0)
+        self.assertIsNone(record["old_price_mxn"])
+        self.assertFalse(record["promo_flag"])
+
+    def test_item_to_record_prefers_vtex_offer_prices_when_available(self) -> None:
+        item = {
+            "name": "Tomate Saladet por kg",
+            "url": "/tomate-saladet-por-kg/p",
+            "brand": "Chedraui",
+            "offers": {
+                "@type": "AggregateOffer",
+                "lowPrice": 8.85,
+                "highPrice": 59.0,
+                "offers": [{"@type": "Offer", "price": 8.85}],
+            },
+            "items": [
+                {
+                    "sellers": [
+                        {
+                            "commertialOffer": {
+                                "Price": 59.0,
+                                "ListPrice": 72.0,
+                                "PriceWithoutDiscount": 72.0,
+                            }
+                        }
+                    ]
+                }
+            ],
+        }
+
+        record = item_to_record(item, "tomate")
+
+        self.assertIsNotNone(record)
+        self.assertEqual(record["price_mxn"], 59.0)
+        self.assertEqual(record["old_price_mxn"], 72.0)
+        self.assertTrue(record["promo_flag"])
+
     def test_choose_best_record_per_crop_prefers_kg_listing(self) -> None:
         records = [
             {
