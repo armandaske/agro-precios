@@ -1,6 +1,7 @@
 import argparse
 import json
 import re
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -46,6 +47,9 @@ def normalize_text(text: str) -> str:
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
+    text = "".join(
+        character for character in unicodedata.normalize("NFKD", text) if not unicodedata.combining(character)
+    )
     return re.sub(r"\s+", " ", text)
 
 
@@ -60,10 +64,15 @@ def _contains_term_as_word(text: str, term: str) -> bool:
 
 def build_search_urls(query: str) -> List[str]:
     encoded_query = urlencode({"q": query})
+    encoded_search = urlencode({"s": query})
+    encoded_api_query = urlencode({"query": query})
+    encoded_catalog_query = urlencode({"ft": query})
     return [
+        f"{BASE_URL}/api/io/_v/api/intelligent-search/product_search?{encoded_api_query}",
+        f"{BASE_URL}/api/io/_v/api/intelligent-search/product_search/trade-policy/1?{encoded_api_query}",
+        f"{BASE_URL}/api/catalog_system/pub/products/search?{encoded_catalog_query}",
         f"{BASE_URL}/supermercado?{encoded_query}",
-        f"{BASE_URL}/supermercado?s={query}",
-        f"{BASE_URL}/busca?ft={query}",
+        f"{BASE_URL}/supermercado?{encoded_search}",
     ]
 
 
@@ -476,13 +485,21 @@ def collect_search_records(
     # contain ambiguous words.
     for configured_product, terms in query_map.items():
         for query_term in terms:
-            items: List[Dict[str, Any]] = []
-            # Try each search URL variant until we obtain at least one set of results.
+            items_by_name: Dict[str, Dict[str, Any]] = {}
+            # Merge results across all search variants because some storefront
+            # pages return a generic produce listing while the VTEX APIs
+            # return the actual query-specific products.
             for search_url in build_search_urls(query_term):
-                html = fetch_html(search_url, session=client)
-                items = extract_search_items(html)
-                if items:
-                    break
+                try:
+                    html = fetch_html(search_url, session=client)
+                except requests.RequestException:
+                    continue
+                for item in extract_search_items(html):
+                    item_name = normalize_text(str(item.get("name") or item.get("productName") or item.get("title") or ""))
+                    if item_name:
+                        items_by_name.setdefault(item_name, item)
+
+            items = list(items_by_name.values())
 
             # If no items were returned for this query we simply continue.
             if not items:

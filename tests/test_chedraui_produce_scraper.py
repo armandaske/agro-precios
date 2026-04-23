@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -152,6 +153,8 @@ class ChedrauiProduceScraperTests(unittest.TestCase):
     def test_canonical_crop_does_not_classify_papaya_as_papa(self) -> None:
         self.assertIsNone(canonical_crop("Papaya Maradol por kg"))
         self.assertEqual(canonical_crop("Papa blanca por kg"), "papa")
+        self.assertEqual(canonical_crop("Chile Jalapeño por kg"), "chile_jalapeno")
+        self.assertEqual(canonical_crop("Limón sin Semilla por Kg"), "limon")
 
     def test_collect_search_records_filters_out_papaya_for_papa_query(self) -> None:
         html = make_supermercado_html(
@@ -190,6 +193,55 @@ class ChedrauiProduceScraperTests(unittest.TestCase):
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["product_raw"], "Papa blanca por Kg")
         self.assertEqual(records[0]["product_canonical"], "papa")
+
+    def test_collect_search_records_uses_api_results_when_storefront_results_are_generic(self) -> None:
+        generic_html = make_supermercado_html(
+            [
+                {
+                    "@type": "Product",
+                    "name": "Tomate Saladet por Kg",
+                    "url": "/tomate-saladet-por-kg/p",
+                    "offers": {"price": "34.9"},
+                }
+            ]
+        )
+        api_payload = json.dumps(
+            {
+                "products": [
+                    {
+                        "productName": "Chile Jalapeño por Kg",
+                        "link": "/chile-jalapeno-por-kg/p",
+                        "brand": "Chedraui",
+                        "items": [
+                            {
+                                "sellers": [
+                                    {
+                                        "commertialOffer": {
+                                            "Price": 49.9,
+                                            "ListPrice": 59.9,
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+
+        with patch(
+            "src.extract.chedraui_produce_scraper.build_search_urls",
+            return_value=["https://example.test/storefront", "https://example.test/api"],
+        ), patch(
+            "src.extract.chedraui_produce_scraper.fetch_html",
+            side_effect=[generic_html, api_payload],
+        ):
+            records = collect_search_records(search_terms={"chile_jalapeno": ["jalapeno"]})
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["product_raw"], "Chile Jalapeño por Kg")
+        self.assertEqual(records[0]["product_canonical"], "chile_jalapeno")
+        self.assertEqual(records[0]["unit_raw"], "kg")
 
     def test_save_output_exports_spanish_headers(self) -> None:
         records = [
