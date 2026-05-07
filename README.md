@@ -4,6 +4,11 @@ POC para extraer y preparar datos de precios agroalimentarios en Mexico.
 
 Hoy el repositorio esta centrado principalmente en la capa de extraccion. Ya hay scrapers funcionales para fuentes publicas clave y pruebas para parte del parsing, pero todavia no existe un pipeline completo de transformacion, modelado y forecast como producto final.
 
+## Guia para agentes y mantenimiento de docs
+
+- Revisa `AGENTS.md` antes de hacer cambios importantes; ahi vive la guia operativa especifica del repo para agentes Codex.
+- Cada vez que un agente cree o modifique algo que valga la pena documentar, debe actualizar `README.md` y `AGENTS.md` en el mismo cambio para evitar que las instrucciones queden desfasadas.
+
 ## Estado actual del repo
 
 Implementado:
