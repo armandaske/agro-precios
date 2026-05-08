@@ -35,6 +35,7 @@ No implementado aun como flujo formal:
 - `src/extract/walmart_produce_scraper.py`: scraper de frutas y verduras en Walmart.
 - `src/extract/chedraui_produce_scraper.py`: scraper de frutas y verduras en Chedraui.
 - `scripts/run_daily_extracts.py`: orquestador diario para las 4 fuentes.
+- `scripts/fetch_cierre_batch.py`: descarga en lote exportes normalizados de Cierre Agricola para los productos canonicos configurados.
 - `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui y Cierre Agricola.
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
 - `notebooks/master_price_eda.ipynb`: notebook base para graficar y explorar el workbook maestro.
@@ -105,25 +106,25 @@ Salida esperada:
 Ejemplo:
 
 ```powershell
-python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format xls
+python -m src.extract.cierre_agricola_requests --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format xls
 ```
 
 Ejemplo en CSV:
 
 ```powershell
-python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format csv
+python -m src.extract.cierre_agricola_requests --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format csv
 ```
 
 Ejemplo en XLSX:
 
 ```powershell
-python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format xlsx
+python -m src.extract.cierre_agricola_requests --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format xlsx
 ```
 
 Con modo debug:
 
 ```powershell
-python src/extract/cierre_agricola_requests.py --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format xls --debug --debug-dir debug_cierre_agricola
+python -m src.extract.cierre_agricola_requests --year 2024 --crop Aguacate --output data/raw/cierre_agricola/aguacate_2024 --output-format xls --debug --debug-dir debug_cierre_agricola
 ```
 
 Salida esperada:
@@ -136,13 +137,34 @@ Salida esperada:
 - XML/HTML de depuracion en `debug_cierre_agricola/` si usas `--debug`
 - `debug_cierre_agricola/funciones_cierre.js` es solo una referencia del JavaScript original del portal para entender el flujo xajax; no se ejecuta como parte del scraper Python
 - La salida normalizada ahora conserva `cultivo_cierre_agricola_original` y `unidad_cierre_agricola` para poder reutilizar PMR anual de forma trazable en analisis comparativos
+- Ejecuta Cierre Agricola con `python -m src.extract.cierre_agricola_requests` desde la raiz del repo; no uses `python src.extract.cierre_agricola_requests.py ...`
+
+### 2.1. Cierre Agricola por lote para alimentar el workbook maestro
+
+Si quieres poblar rapido los PMR anuales para los productos canonicos del `config/products.xlsx`, usa el batch runner:
+
+```powershell
+python -m scripts.fetch_cierre_batch --config config/products.xlsx --output-root data/raw/cierre_agricola_batch --years 2023 2024 --output-format xlsx
+```
+
+Salida esperada:
+
+- Un archivo por `producto_canonico` y por año dentro de `data/raw/cierre_agricola_batch/`
+- Un resumen en `data/raw/cierre_agricola_batch/batch_summary.json`
+- Si `cultivo_cierre_agricola` viene vacio en la configuracion, el script usa un fallback interno para los 10 productos canonicos actuales
+
+Despues de generar ese lote, reconstruye el workbook maestro con:
+
+```powershell
+python -m scripts.build_master_price_workbook --daily-root data/daily_runs --cierre-root data/raw/cierre_agricola_batch --output data/analysis/master_price_workbook.xlsx
+```
 
 ### 3. Cierre Agricola SIAP con Playwright
 
 Usa esta variante si el flujo por HTTP falla por cambios en la pagina o por comportamiento del frontend.
 
 ```powershell
-python src/extract/scraper_cierre_agricola_playwright.py --year 2024 --crop Aguacate --download-dir data/raw/cierre_agricola
+python -m src.extract.scraper_cierre_agricola_playwright --year 2024 --crop Aguacate --download-dir data/raw/cierre_agricola
 ```
 
 Salida esperada:
@@ -154,25 +176,25 @@ Salida esperada:
 Ejemplo:
 
 ```powershell
-python src/extract/walmart_produce_scraper.py --output-format csv
+python -m src.extract.walmart_produce_scraper --output-format csv
 ```
 
 Ejemplo en XLS:
 
 ```powershell
-python src/extract/walmart_produce_scraper.py --output-format xls
+python -m src.extract.walmart_produce_scraper --output-format xls
 ```
 
 Ejemplo en XLSX:
 
 ```powershell
-python src/extract/walmart_produce_scraper.py --output-format xlsx
+python -m src.extract.walmart_produce_scraper --output-format xlsx
 ```
 
 Con ruta explicita:
 
 ```powershell
-python src/extract/walmart_produce_scraper.py --output-format xlsx --output data/raw/walmart/walmart_produce_latest.xlsx
+python -m src.extract.walmart_produce_scraper --output-format xlsx --output data/raw/walmart/walmart_produce_latest.xlsx
 ```
 
 Salida esperada:
@@ -186,25 +208,25 @@ Salida esperada:
 Ejemplo:
 
 ```powershell
-python src/extract/chedraui_produce_scraper.py --output-format csv
+python -m src.extract.chedraui_produce_scraper --output-format csv
 ```
 
 Ejemplo en XLS:
 
 ```powershell
-python src/extract/chedraui_produce_scraper.py --output-format xls
+python -m src.extract.chedraui_produce_scraper --output-format xls
 ```
 
 Ejemplo en XLSX:
 
 ```powershell
-python src/extract/chedraui_produce_scraper.py --output-format xlsx
+python -m src.extract.chedraui_produce_scraper --output-format xlsx
 ```
 
 Con ruta explicita:
 
 ```powershell
-python src/extract/chedraui_produce_scraper.py --output-format xlsx --output data/raw/chedraui/chedraui_produce_latest.xlsx
+python -m src.extract.chedraui_produce_scraper --output-format xlsx --output data/raw/chedraui/chedraui_produce_latest.xlsx
 ```
 
 Salida esperada:

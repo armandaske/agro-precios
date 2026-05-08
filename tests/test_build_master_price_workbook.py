@@ -97,6 +97,34 @@ class BuildMasterPriceWorkbookTests(unittest.TestCase):
             self.assertIn("estimated_price_per_kg_mxn", localized_df.columns)
             self.assertEqual(str(localized_df.iloc[0]["canonical_product"]), "aguacate")
 
+    def test_read_source_workbook_supports_standalone_cierre_exports_without_meta_sheet(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            standalone = root / "aguacate_2024.xlsx"
+
+            with pd.ExcelWriter(standalone, engine="openpyxl") as writer:
+                pd.DataFrame(
+                    [
+                        {
+                            "entidad_entidad": "Michoacán",
+                            "produccion_produccion": 100.0,
+                            "pmr_udm_pmr_udm": 25.5,
+                            "cultivo_cierre_agricola_original": "Aguacate",
+                            "unidad_cierre_agricola": "ton",
+                            "cultivo_cierre_agricola": "Aguacate",
+                            "anio_consulta": 2024,
+                            "nombre_fuente": "cierre_agricola",
+                        }
+                    ]
+                ).to_excel(writer, sheet_name="Sheet1", index=False)
+
+            data_df, meta_df, failures_df = _read_source_workbook(standalone, "cierre_agricola")
+
+            self.assertIn("pmr_mxn_udm", data_df.columns)
+            self.assertIn("produccion", data_df.columns)
+            self.assertTrue(meta_df.empty)
+            self.assertTrue(failures_df.empty)
+
     def test_build_sniim_daily_stats_aggregates_mean_median_and_count(self) -> None:
         df = pd.DataFrame(
             [
@@ -366,6 +394,63 @@ class BuildMasterPriceWorkbookTests(unittest.TestCase):
                         "coverage",
                     },
                 )
+
+    def test_build_master_workbook_resolves_cierre_product_from_filename_and_keeps_wide_schema_without_year_match(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            daily_root = root / "daily_runs"
+            cierre_root = root / "cierre_exports"
+            output_path = root / "analysis" / "master.xlsx"
+            cierre_root.mkdir(parents=True, exist_ok=True)
+
+            run_dir = daily_root / "2026-04-18"
+            run_dir.mkdir(parents=True, exist_ok=True)
+            self._write_products_snapshot(run_dir / "products_snapshot.xlsx")
+
+            self._write_workbook(
+                run_dir / "walmart_2026-04-18.xlsx",
+                pd.DataFrame(
+                    [
+                        {
+                            "precio_mxn": 54.0,
+                            "precio_estimado_por_kg_mxn": 52.0,
+                            "unidad_detectada": "kg",
+                            "producto_original": "Tomate saladet por kilo",
+                            "producto_inferido": "tomate rojo",
+                            "pagina_fuente": "https://walmart.example/tomate",
+                            "terminos_busqueda_utilizados": "tomate rojo",
+                            "fecha_corrida": "2026-04-18",
+                            "producto_canonico.1": "tomate rojo",
+                        }
+                    ]
+                ),
+                localized=True,
+            )
+
+            with pd.ExcelWriter(cierre_root / "tomate_rojo_2024.xlsx", engine="openpyxl") as writer:
+                pd.DataFrame(
+                    [
+                        {
+                            "entidad_entidad": "Sinaloa",
+                            "produccion_produccion": 100.0,
+                            "pmr_udm_pmr_udm": 11.5,
+                            "cultivo_cierre_agricola_original": "Tomate rojo (jitomate)",
+                            "unidad_cierre_agricola": "ton",
+                            "cultivo_cierre_agricola": "Tomate rojo (jitomate)",
+                            "anio_consulta": 2024,
+                            "nombre_fuente": "cierre_agricola",
+                        }
+                    ]
+                ).to_excel(writer, sheet_name="Sheet1", index=False)
+
+            tables = build_master_workbook(daily_root, cierre_root, output_path)
+
+            annual = tables["cierre_annual_stats"]
+            self.assertEqual(str(annual.iloc[0]["canonical_product"]), "tomate rojo")
+
+            compare = tables["compare_daily_wide"]
+            self.assertIn("cierre_annual_weighted_pmr_mxn_udm", compare.columns)
+            self.assertTrue(compare["cierre_annual_weighted_pmr_mxn_udm"].isna().all())
 
 
 if __name__ == "__main__":

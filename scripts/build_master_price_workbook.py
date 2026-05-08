@@ -122,13 +122,18 @@ SNIIM_READ_COLUMN_MAP = {
 CIERRE_READ_COLUMN_MAP = {
     "numero": "numero",
     "entidad": "entidad",
+    "entidad_entidad": "entidad",
     "superficie_sembrada_ha": "superficie_sembrada_ha",
     "superficie_cosechada_ha": "superficie_cosechada_ha",
     "superficie_siniestrada_ha": "superficie_siniestrada_ha",
     "produccion": "produccion",
+    "produccion_produccion": "produccion",
     "rendimiento_udm_ha": "rendimiento_udm_ha",
+    "rendimiento_udm_ha_rendimiento_udm_ha": "rendimiento_udm_ha",
     "pmr_mxn_udm": "pmr_mxn_udm",
+    "pmr_udm_pmr_udm": "pmr_mxn_udm",
     "valor_produccion_miles_pesos": "valor_produccion_miles_pesos",
+    "valor_produccion_miles_de_pesos_valor_produccion_miles_de_pesos": "valor_produccion_miles_pesos",
     "cierre_crop_label_raw": "cierre_crop_label_raw",
     "cultivo_cierre_agricola_original": "cierre_crop_label_raw",
     "cierre_unit_label": "cierre_unit_label",
@@ -183,22 +188,31 @@ def _normalize_key(value: object) -> str:
     return re.sub(r"_+", "_", normalized).strip("_")
 
 
-def _read_sheet_with_aliases(path: Path, aliases: Iterable[str]) -> pd.DataFrame:
+def _read_sheet_with_aliases(path: Path, aliases: Iterable[str], *, fallback_first_sheet: bool = False) -> pd.DataFrame:
     with pd.ExcelFile(path) as excel:
         alias_map = {_normalize_key(name): name for name in excel.sheet_names}
         for alias in aliases:
             resolved = alias_map.get(_normalize_key(alias))
             if resolved:
                 return pd.read_excel(path, sheet_name=resolved)
+        if fallback_first_sheet and excel.sheet_names:
+            return pd.read_excel(path, sheet_name=excel.sheet_names[0])
     raise ValueError(f"No matching sheet found in {path} for aliases: {', '.join(aliases)}")
 
 
 def _read_data_sheet(path: Path) -> pd.DataFrame:
-    return _read_sheet_with_aliases(path, DATA_SHEET_ALIASES)
+    return _read_sheet_with_aliases(path, DATA_SHEET_ALIASES, fallback_first_sheet=True)
 
 
 def _read_meta_sheet(path: Path) -> pd.DataFrame:
     return _read_sheet_with_aliases(path, META_SHEET_ALIASES)
+
+
+def _read_optional_meta_sheet(path: Path) -> pd.DataFrame:
+    try:
+        return _read_meta_sheet(path)
+    except ValueError:
+        return pd.DataFrame()
 
 
 def _read_failures_sheet(path: Path) -> pd.DataFrame:
@@ -216,7 +230,7 @@ def _rename_columns(df: pd.DataFrame, column_map: dict[str, str]) -> pd.DataFram
 
 def _read_source_workbook(path: Path, source_name: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     data_df = _read_data_sheet(path)
-    meta_df = _read_meta_sheet(path)
+    meta_df = _read_optional_meta_sheet(path)
     failures_df = _read_failures_sheet(path)
 
     if source_name == "walmart":
@@ -303,6 +317,14 @@ def _derive_query_year_from_path(path: Path) -> int | None:
     return int(match.group(1))
 
 
+def _derive_canonical_product_from_path(path: Path) -> str | None:
+    stem = path.stem
+    stem = re.sub(r"[_-]?(20\d{2})$", "", stem).strip("_- ")
+    if not stem:
+        return None
+    return stem.replace("_", " ").replace("-", " ").strip() or None
+
+
 def _strip_trailing_unit_from_crop_label(raw_label: str | None, unit_label: str | None) -> str | None:
     if not raw_label:
         return None
@@ -318,6 +340,8 @@ def _strip_trailing_unit_from_crop_label(raw_label: str | None, unit_label: str 
 def _resolve_canonical_product_for_cierre(
     df: pd.DataFrame,
     crop_name_map: dict[str, str],
+    *,
+    path_canonical_product: str | None = None,
 ) -> pd.DataFrame:
     resolved = df.copy()
 
@@ -343,6 +367,9 @@ def _resolve_canonical_product_for_cierre(
             matched = crop_name_map.get(_normalize_key(raw_label))
             if matched:
                 return matched
+
+        if path_canonical_product:
+            return path_canonical_product
 
         return pd.NA
 
@@ -374,7 +401,11 @@ def _load_cierre_frames(cierre_root: Path, daily_root: Path) -> pd.DataFrame:
             normalized["query_year"] = _derive_query_year_from_path(workbook_path)
         if "source_name" not in normalized.columns:
             normalized["source_name"] = "cierre_agricola"
-        normalized = _resolve_canonical_product_for_cierre(normalized, crop_name_map)
+        normalized = _resolve_canonical_product_for_cierre(
+            normalized,
+            crop_name_map,
+            path_canonical_product=_derive_canonical_product_from_path(workbook_path),
+        )
         frames.append(normalized)
 
     if not frames:
@@ -602,6 +633,21 @@ def _build_cierre_daily_panel(base_daily_keys: pd.DataFrame, cierre_annual_stats
     return panel.reindex(columns=MASTER_PANEL_COLUMNS)
 
 
+def _ensure_cierre_compare_columns(compare_daily_wide: pd.DataFrame) -> pd.DataFrame:
+    ensured = compare_daily_wide.copy()
+    for column in (
+        "cierre_annual_weighted_pmr_mxn_udm",
+        "cierre_unit_label",
+        "cierre_rows_used",
+        "cierre_total_produccion",
+        "cierre_crop_name",
+        "cierre_crop_label_raw",
+    ):
+        if column not in ensured.columns:
+            ensured[column] = pd.NA
+    return ensured
+
+
 def build_master_tables(daily_root: Path, cierre_root: Path) -> dict[str, pd.DataFrame]:
     sniim_df = _load_daily_source_frames(daily_root, "sniim")
     walmart_df = _load_daily_source_frames(daily_root, "walmart")
@@ -683,6 +729,7 @@ def build_master_tables(daily_root: Path, cierre_root: Path) -> dict[str, pd.Dat
             ]
         ].rename(columns={"unit_label": "cierre_unit_label"})
         compare_daily_wide = compare_daily_wide.merge(cierre_wide, on=["run_date", "canonical_product"], how="left")
+    compare_daily_wide = _ensure_cierre_compare_columns(compare_daily_wide)
 
     if not compare_daily_wide.empty:
         compare_daily_wide = compare_daily_wide.sort_values(["run_date", "canonical_product"]).reset_index(drop=True)

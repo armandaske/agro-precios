@@ -45,6 +45,7 @@ When you work in this repo, optimize for these outcomes:
 - `src/extract/chedraui_produce_scraper.py`: Chedraui produce scraper and search-result normalization.
 - `src/extract/spreadsheet_localization.py`: column aliases, workbook sheet names, and Spanish export naming.
 - `scripts/run_daily_extracts.py`: main daily orchestrator across enabled sources.
+- `scripts/fetch_cierre_batch.py`: batch runner that fetches normalized annual Cierre Agricola exports for the configured canonical products.
 - `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Cierre exports.
 - `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
 - `config/products.xlsx`: operational config workbook for product mappings and enabled sources.
@@ -92,6 +93,8 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 ### SIAP Cierre Agricola
 
 - Prefer `src/extract/cierre_agricola_requests.py` first. It is faster and better for automation than browser-only scraping.
+- Run the HTTP extractor from the repo root as `python -m src.extract.cierre_agricola_requests ...` so the package path stays consistent with the current layout.
+- Use `python -m scripts.fetch_cierre_batch ...` when you need a year-by-product batch of normalized Cierre exports to feed the comparative workbook.
 - Use Playwright only as a fallback when the HTTP/xajax flow changes or the portal behavior can no longer be reproduced reliably with requests.
 - When debugging this source, keep `--debug` and `--debug-dir` workflows intact. The XML/HTML snapshots are valuable when the portal changes.
 - Treat `debug_cierre_agricola/funciones_cierre.js` as a reverse-engineering aid for the original SIAP browser flow, not as runtime code used by the scraper.
@@ -120,6 +123,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 ### Comparative workbook
 
 - `scripts/build_master_price_workbook.py` should treat `data/daily_runs/YYYY-MM-DD` as the source of truth for daily comparison inputs.
+- A practical refresh workflow is: batch-fetch annual Cierre exports first, then rebuild the master workbook against that `--cierre-root`.
 - Keep the comparative output decision-complete for Excel analysis: one long panel sheet, one wide comparison sheet, and explicit supporting stats/coverage sheets.
 - Do not hide unit ambiguity for Cierre Agricola. Preserve and surface the annual PMR unit rather than pretending it is directly kg-comparable when it is not.
 

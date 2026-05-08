@@ -749,7 +749,7 @@ def _append_report_metadata(
     report_metadata: dict[str, str | None],
 ) -> pd.DataFrame:
     enriched = df.copy()
-    enriched["cierre_crop_label_raw"] = report_metadata.get("cierre_crop_label_raw")
+    enriched["cierre_crop_label_raw"] = report_metadata.get("cierre_crop_label_raw") or crop
     enriched["cierre_unit_label"] = report_metadata.get("cierre_unit_label")
     enriched["cierre_crop_name"] = crop
     enriched["query_year"] = int(year)

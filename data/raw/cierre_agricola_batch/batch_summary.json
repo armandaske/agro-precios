@@ -1,0 +1,174 @@
+{
+  "config_path": "config\\products.xlsx",
+  "output_root": "data\\raw\\cierre_agricola_batch",
+  "years": [
+    2023,
+    2024
+  ],
+  "requested_products": 10,
+  "requested_jobs": 20,
+  "succeeded_jobs": 20,
+  "failed_jobs": 0,
+  "jobs": [
+    {
+      "canonical_product": "Aguacate",
+      "cierre_crop_name": "Aguacate",
+      "year": 2023,
+      "output_path": "data\\raw\\cierre_agricola_batch\\aguacate_2023.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Aguacate",
+      "cierre_crop_name": "Aguacate",
+      "year": 2024,
+      "output_path": "data\\raw\\cierre_agricola_batch\\aguacate_2024.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Tomate rojo",
+      "cierre_crop_name": "Tomate rojo (jitomate)",
+      "year": 2023,
+      "output_path": "data\\raw\\cierre_agricola_batch\\tomate_rojo_2023.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Tomate rojo",
+      "cierre_crop_name": "Tomate rojo (jitomate)",
+      "year": 2024,
+      "output_path": "data\\raw\\cierre_agricola_batch\\tomate_rojo_2024.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Elote",
+      "cierre_crop_name": "Elote",
+      "year": 2023,
+      "output_path": "data\\raw\\cierre_agricola_batch\\elote_2023.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Elote",
+      "cierre_crop_name": "Elote",
+      "year": 2024,
+      "output_path": "data\\raw\\cierre_agricola_batch\\elote_2024.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Zanahoria",
+      "cierre_crop_name": "Zanahoria",
+      "year": 2023,
+      "output_path": "data\\raw\\cierre_agricola_batch\\zanahoria_2023.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Zanahoria",
+      "cierre_crop_name": "Zanahoria",
+      "year": 2024,
+      "output_path": "data\\raw\\cierre_agricola_batch\\zanahoria_2024.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Cebolla",
+      "cierre_crop_name": "Cebolla",
+      "year": 2023,
+      "output_path": "data\\raw\\cierre_agricola_batch\\cebolla_2023.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Cebolla",
+      "cierre_crop_name": "Cebolla",
+      "year": 2024,
+      "output_path": "data\\raw\\cierre_agricola_batch\\cebolla_2024.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Chile verde",
+      "cierre_crop_name": "Chile verde",
+      "year": 2023,
+      "output_path": "data\\raw\\cierre_agricola_batch\\chile_verde_2023.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Chile verde",
+      "cierre_crop_name": "Chile verde",
+      "year": 2024,
+      "output_path": "data\\raw\\cierre_agricola_batch\\chile_verde_2024.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Limón",
+      "cierre_crop_name": "Limón",
+      "year": 2023,
+      "output_path": "data\\raw\\cierre_agricola_batch\\limon_2023.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Limón",
+      "cierre_crop_name": "Limón",
+      "year": 2024,
+      "output_path": "data\\raw\\cierre_agricola_batch\\limon_2024.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Plátano",
+      "cierre_crop_name": "Plátano",
+      "year": 2023,
+      "output_path": "data\\raw\\cierre_agricola_batch\\platano_2023.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Plátano",
+      "cierre_crop_name": "Plátano",
+      "year": 2024,
+      "output_path": "data\\raw\\cierre_agricola_batch\\platano_2024.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Mango",
+      "cierre_crop_name": "Mango",
+      "year": 2023,
+      "output_path": "data\\raw\\cierre_agricola_batch\\mango_2023.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Mango",
+      "cierre_crop_name": "Mango",
+      "year": 2024,
+      "output_path": "data\\raw\\cierre_agricola_batch\\mango_2024.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Papa",
+      "cierre_crop_name": "Papa",
+      "year": 2023,
+      "output_path": "data\\raw\\cierre_agricola_batch\\papa_2023.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Papa",
+      "cierre_crop_name": "Papa",
+      "year": 2024,
+      "output_path": "data\\raw\\cierre_agricola_batch\\papa_2024.xlsx",
+      "status": "success",
+      "error": ""
+    }
+  ]
+}
