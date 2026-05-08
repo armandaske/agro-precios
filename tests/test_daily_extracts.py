@@ -120,7 +120,9 @@ class DailyExtractsTests(unittest.TestCase):
         mock_choose_best_records.return_value = mock_collect_search_records.return_value
         mock_collect_search_records_chedraui.return_value = mock_collect_search_records.return_value
         mock_choose_best_records_chedraui.return_value = mock_collect_search_records.return_value
-        mock_fetch_sniim.return_value = pd.DataFrame([{"precio_frecuente": 10.5, "origen": "Michoacán"}])
+        mock_fetch_sniim.return_value = pd.DataFrame(
+            [{"precio_frecuente": 10.5, "origen": "Michoacán", "producto_nombre_sitio": "Aguacate Hass"}]
+        )
         mock_fetch_cierre.return_value = pd.DataFrame([{"Entidad": "Michoacán", "Producción": 100}])
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -197,6 +199,8 @@ class DailyExtractsTests(unittest.TestCase):
             self.assertIn("fecha_corrida", sniim_data.columns)
             self.assertIn("nombre_fuente", sniim_data.columns)
             self.assertIn("fecha_inicio_consulta", sniim_data.columns)
+            self.assertIn("producto_sniim", sniim_data.columns)
+            self.assertEqual(str(sniim_data.iloc[0]["producto_sniim"]), "Aguacate Hass")
 
             walmart_data = pd.read_excel(run_dir / "walmart_2026-04-08.xlsx", sheet_name="datos")
             self.assertIn("producto_original", walmart_data.columns)

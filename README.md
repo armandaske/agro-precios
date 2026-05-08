@@ -18,7 +18,6 @@ Implementado:
 - Alternativa con Playwright para Cierre Agricola cuando el flujo HTTP no sea suficiente.
 - Scraper de precios de productos frescos de Walmart Mexico.
 - Scraper de precios de productos frescos de Chedraui Mexico.
-- Tests unitarios para parsing de SNIIM y Walmart.
 - Tests unitarios para parsing de SNIIM, Walmart y Chedraui.
 
 No implementado aun como flujo formal:
@@ -69,25 +68,25 @@ Todos los comandos siguientes se ejecutan desde la raiz del repo.
 Ejemplo:
 
 ```powershell
-python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133 --output-format xlsx
+python -m src.extract.sniim --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133 --output-format xlsx
 ```
 
 Ejemplo en CSV:
 
 ```powershell
-python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133 --output-format csv
+python -m src.extract.sniim --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133 --output-format csv
 ```
 
 Ejemplo en XLS:
 
 ```powershell
-python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133 --output-format xls
+python -m src.extract.sniim --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 133 --output-format xls
 ```
 
 Con parametros opcionales:
 
 ```powershell
-python src/extract/sniim.py --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 233 --origen-id -1 --destino-id -1 --precios-por-id 2 --output-dir data/raw/sniim --output-format xlsx
+python -m src.extract.sniim --fecha-inicio 2026-03-03 --fecha-final 2026-03-16 --producto-id 233 --origen-id -1 --destino-id -1 --precios-por-id 2 --output-dir data/raw/sniim --output-format xlsx
 ```
 
 Salida esperada:
@@ -96,6 +95,8 @@ Salida esperada:
 - `--output-format xls` genera `.xls`
 - `--output-format xlsx` genera `.xlsx`
 - Nombre tipo `sniim_producto_<producto_id>_<fecha_inicio>_<fecha_final>.<ext>`
+- La salida SNIIM incluye `producto_sniim`, que guarda el nombre exacto mostrado por el sitio en la cabecera del reporte, por ejemplo `Aguacate Hass`
+- Ejecuta SNIIM con `python -m src.extract.sniim` desde la raiz del repo; `python src/extract/sniim.py ...` rompe los imports del paquete actual
 
 ### 2. Cierre Agricola SIAP por HTTP
 
@@ -279,6 +280,7 @@ Salida esperada por corrida:
 - `data/daily_runs/YYYY-MM-DD/sniim_YYYY-MM-DD.xlsx`
 - `data/daily_runs/YYYY-MM-DD/cierre_agricola_YYYY-MM-DD.xlsx`
 - `data/daily_runs/YYYY-MM-DD/products_snapshot.xlsx`
+- En el XLSX de SNIIM, la hoja `datos` tambien conserva `producto_sniim` para distinguir el nombre real desplegado por SNIIM del producto canonico configurado
 - `data/daily_runs/YYYY-MM-DD/run_summary.json`
 
 Cada workbook consolidado genera:

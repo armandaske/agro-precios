@@ -3,6 +3,7 @@ from pathlib import Path
 
 from src.extract.sniim import (
     _append_metadata,
+    _extract_site_product_name,
     _normalize_dataframe,
     _parse_results_table_or_raise,
     normalize_column_name,
@@ -59,6 +60,9 @@ class SniimParserTests(unittest.TestCase):
         self.assertNotEqual(str(normalized.iloc[0]["fecha"]).lower(), "frutas")
         self.assertRegex(str(normalized.iloc[0]["fecha"]), r"^\d{2}/\d{2}/\d{4}$")
 
+    def test_extract_site_product_name_from_fixture(self) -> None:
+        self.assertEqual(_extract_site_product_name(self.html), "Aguacate Hass")
+
     def test_append_metadata_preserves_market_origin_and_destination(self) -> None:
         parsed = _parse_results_table_or_raise(self.html)
         normalized = _normalize_dataframe(parsed)
@@ -67,15 +71,18 @@ class SniimParserTests(unittest.TestCase):
             fecha_inicio="2026-03-03",
             fecha_final="2026-03-16",
             producto_id=133,
+            producto_nombre_sitio="Aguacate Hass",
             origen_id=-1,
             destino_id=-1,
             precios_por_id=1,
         )
 
+        self.assertIn("producto_nombre_sitio", enriched.columns)
         self.assertIn("origen", enriched.columns)
         self.assertIn("destino", enriched.columns)
         self.assertIn("origen_query", enriched.columns)
         self.assertIn("destino_query", enriched.columns)
+        self.assertEqual(str(enriched.iloc[0]["producto_nombre_sitio"]), "Aguacate Hass")
         self.assertNotEqual(str(enriched.iloc[0]["origen"]), "-1")
         self.assertNotEqual(str(enriched.iloc[0]["destino"]), "-1")
         self.assertEqual(str(enriched.iloc[0]["origen_query"]), "-1")

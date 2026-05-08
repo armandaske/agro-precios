@@ -81,8 +81,10 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 ### SNIIM
 
 - `src/extract/sniim.py` uses the real ASP.NET form flow.
+- Run the extractor from the repo root as `python -m src.extract.sniim ...` so package imports resolve correctly with the current layout.
 - Preserve hidden fields and result-page validation; do not simplify the flow unless you verify the site still behaves correctly.
 - Keep query metadata in the exported DataFrame so consulting outputs can be audited later.
+- Preserve the report-header product label from the result page in the exported rows when available, because SNIIM may display a more specific market product name such as `Aguacate Hass`.
 - Parser robustness matters because table headers and encodings can be inconsistent.
 
 ### SIAP Cierre Agricola

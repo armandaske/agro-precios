@@ -319,6 +319,41 @@ def _parse_results_table_or_raise(html: str) -> pd.DataFrame:
     return _select_result_table_or_raise(tables)
 
 
+def _extract_site_product_name(html: str) -> str | None:
+    product_row_match = re.search(
+        r"Producto</td>.*?Calidad</td>.*?<td[^>]*class=\"DatTAB2\"[^>]*>\s*&nbsp;&nbsp;(.*?)</td>",
+        html,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if product_row_match:
+        product_name = BeautifulSoup(product_row_match.group(1), "html.parser").get_text(" ", strip=True)
+        if product_name:
+            return product_name
+
+    soup = BeautifulSoup(html, "html.parser")
+    for header_cell in soup.find_all(["td", "th"]):
+        if normalize_column_name(header_cell.get_text(" ", strip=True)) != "producto":
+            continue
+
+        row = header_cell.find_parent("tr")
+        if row is None:
+            continue
+
+        next_row = row.find_next("tr")
+        if next_row is None or next_row is row:
+            continue
+
+        data_cells = [
+            cell.get_text(" ", strip=True)
+            for cell in next_row.find_all(["td", "th"])
+            if cell.get_text(" ", strip=True)
+        ]
+        if data_cells:
+            return data_cells[0]
+
+    return None
+
+
 def _normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     result = _drop_category_marker_rows(df.copy())
     result.columns = [normalize_column_name(c) for c in result.columns]
@@ -340,6 +375,7 @@ def _append_metadata(
     fecha_inicio: str,
     fecha_final: str,
     producto_id: int,
+    producto_nombre_sitio: str | None,
     origen_id: int,
     destino_id: int,
     precios_por_id: int,
@@ -348,6 +384,7 @@ def _append_metadata(
     result["fecha_inicio_query"] = fecha_inicio
     result["fecha_final_query"] = fecha_final
     result["producto_id"] = producto_id
+    result["producto_nombre_sitio"] = producto_nombre_sitio
     result["origen_id"] = origen_id
     result["destino_id"] = destino_id
     if "origen" in result.columns:
@@ -437,6 +474,7 @@ def fetch_sniim_fruits_vegetables(
             f"status_code={response.status_code}, url={response.url}, body_preview={preview!r}"
         ) from exc
 
+    producto_nombre_sitio = _extract_site_product_name(response.text)
     cleaned = _normalize_dataframe(parsed)
     if cleaned.empty:
         preview = (response.text or "")[:500]
@@ -451,6 +489,7 @@ def fetch_sniim_fruits_vegetables(
         fecha_inicio=fecha_inicio,
         fecha_final=fecha_final,
         producto_id=producto_id,
+        producto_nombre_sitio=producto_nombre_sitio,
         origen_id=origen_id,
         destino_id=destino_id,
         precios_por_id=precios_por_id,

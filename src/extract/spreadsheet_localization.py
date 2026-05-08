@@ -101,6 +101,7 @@ CHEDRAUI_EXPORT_COLUMN_MAP = {
 SNIIM_EXPORT_COLUMN_MAP = {
     "fecha": "fecha",
     "producto": "producto",
+    "producto_nombre_sitio": "producto_sniim",
     "presentacion": "presentacion",
     "origen": "origen",
     "destino": "destino",
