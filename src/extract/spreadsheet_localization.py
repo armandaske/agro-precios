@@ -132,6 +132,11 @@ CIERRE_EXPORT_COLUMN_MAP = {
     "rendimiento_udm_ha": "rendimiento_udm_ha",
     "pmr_mxn_udm": "pmr_mxn_udm",
     "valor_produccion_miles_pesos": "valor_produccion_miles_pesos",
+    "cierre_crop_label_raw": "cultivo_cierre_agricola_original",
+    "cierre_unit_label": "unidad_cierre_agricola",
+    "cierre_crop_name": "cultivo_cierre_agricola",
+    "query_year": "anio_consulta",
+    "source_name": "nombre_fuente",
 }
 
 DAILY_FAILURE_COLUMN_MAP = {
@@ -187,9 +192,6 @@ DAILY_SOURCE_COLUMN_MAPS = {
         **CIERRE_EXPORT_COLUMN_MAP,
         "run_date": "fecha_corrida",
         "canonical_product": "producto_canonico",
-        "source_name": "nombre_fuente",
-        "query_year": "anio_consulta",
-        "cierre_crop_name": "cultivo_cierre_agricola",
     },
 }
 

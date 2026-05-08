@@ -45,8 +45,10 @@ When you work in this repo, optimize for these outcomes:
 - `src/extract/chedraui_produce_scraper.py`: Chedraui produce scraper and search-result normalization.
 - `src/extract/spreadsheet_localization.py`: column aliases, workbook sheet names, and Spanish export naming.
 - `scripts/run_daily_extracts.py`: main daily orchestrator across enabled sources.
+- `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Cierre exports.
 - `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
 - `config/products.xlsx`: operational config workbook for product mappings and enabled sources.
+- `notebooks/master_price_eda.ipynb`: starter notebook for charting the comparative workbook.
 - `tests/`: unit tests and fixtures.
 - `data/`: generated raw data and daily runs.
 - `debug_cierre_agricola/`: saved HTTP/xajax debug artifacts plus frontend reference files such as `funciones_cierre.js`.
@@ -93,6 +95,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - Use Playwright only as a fallback when the HTTP/xajax flow changes or the portal behavior can no longer be reproduced reliably with requests.
 - When debugging this source, keep `--debug` and `--debug-dir` workflows intact. The XML/HTML snapshots are valuable when the portal changes.
 - Treat `debug_cierre_agricola/funciones_cierre.js` as a reverse-engineering aid for the original SIAP browser flow, not as runtime code used by the scraper.
+- Preserve `cierre_crop_label_raw` and `cierre_unit_label` in normalized outputs so annual PMR can be reused later without losing the source unit context.
 - Be careful with session-dependent behavior. The downloader depends on the xajax flow creating the report state before calling `reporte.php`.
 
 ### Walmart
@@ -113,6 +116,12 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - It is intentionally fault-tolerant: one source or one product row may fail without killing the entire run.
 - Preserve `run_summary.json`, workbook metadata sheets, and per-source failure reporting.
 - If you add a new source, integrate it in a way that keeps partial success possible and makes failures diagnosable per row and per source.
+
+### Comparative workbook
+
+- `scripts/build_master_price_workbook.py` should treat `data/daily_runs/YYYY-MM-DD` as the source of truth for daily comparison inputs.
+- Keep the comparative output decision-complete for Excel analysis: one long panel sheet, one wide comparison sheet, and explicit supporting stats/coverage sheets.
+- Do not hide unit ambiguity for Cierre Agricola. Preserve and surface the annual PMR unit rather than pretending it is directly kg-comparable when it is not.
 
 ## Data and output rules
 

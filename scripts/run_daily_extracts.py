@@ -67,7 +67,15 @@ DEFAULT_DATA_COLUMNS = {
     "walmart": ["run_date", "canonical_product", "source_name", "search_terms_used"],
     "chedraui": ["run_date", "canonical_product", "source_name", "search_terms_used"],
     "sniim": ["run_date", "canonical_product", "source_name", "query_start_date", "query_end_date"],
-    "cierre_agricola": ["run_date", "canonical_product", "source_name", "query_year", "cierre_crop_name"],
+    "cierre_agricola": [
+        "run_date",
+        "canonical_product",
+        "source_name",
+        "query_year",
+        "cierre_crop_name",
+        "cierre_crop_label_raw",
+        "cierre_unit_label",
+    ],
 }
 
 

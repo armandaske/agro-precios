@@ -35,7 +35,9 @@ No implementado aun como flujo formal:
 - `src/extract/walmart_produce_scraper.py`: scraper de frutas y verduras en Walmart.
 - `src/extract/chedraui_produce_scraper.py`: scraper de frutas y verduras en Chedraui.
 - `scripts/run_daily_extracts.py`: orquestador diario para las 4 fuentes.
+- `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui y Cierre Agricola.
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
+- `notebooks/master_price_eda.ipynb`: notebook base para graficar y explorar el workbook maestro.
 - `tests/`: pruebas unitarias.
 - `data/raw/sniim/`: salidas generadas por el extractor SNIIM.
 - `debug_cierre_agricola/`: respuestas de depuracion del scraper de Cierre Agricola y archivos de referencia del frontend SIAP, como `funciones_cierre.js`.
@@ -133,6 +135,7 @@ Salida esperada:
 - El portal suele devolver una tabla HTML compatible con Excel en lugar de un binario XLS nativo; esto es esperado en esta fuente
 - XML/HTML de depuracion en `debug_cierre_agricola/` si usas `--debug`
 - `debug_cierre_agricola/funciones_cierre.js` es solo una referencia del JavaScript original del portal para entender el flujo xajax; no se ejecuta como parte del scraper Python
+- La salida normalizada ahora conserva `cultivo_cierre_agricola_original` y `unidad_cierre_agricola` para poder reutilizar PMR anual de forma trazable en analisis comparativos
 
 ### 3. Cierre Agricola SIAP con Playwright
 
@@ -289,6 +292,32 @@ Cada workbook consolidado genera:
 - Sheet `datos`
 - Sheet `errores` si hubo errores
 - Sheet `metadatos`
+
+## Workbook maestro comparativo
+
+Despues de tener `data/daily_runs` y un directorio de exportes normalizados de Cierre Agricola, puedes construir un workbook maestro para comparacion diaria y EDA.
+
+Comando:
+
+```powershell
+python -m scripts.build_master_price_workbook --daily-root data/daily_runs --cierre-root data/raw/cierre_agricola --output data/analysis/master_price_workbook.xlsx
+```
+
+Salida esperada:
+
+- `data/analysis/master_price_workbook.xlsx`
+- Sheet `panel_daily_long`
+- Sheet `compare_daily_wide`
+- Sheet `sniim_daily_stats`
+- Sheet `cierre_annual_stats`
+- Sheet `coverage`
+
+Reglas del workbook maestro:
+
+- SNIIM agrega `precio_frecuente` por `fecha_corrida + producto_canonico` con media, mediana, minimo, maximo y conteo
+- Walmart y Chedraui usan `precio_estimado_por_kg_mxn` cuando existe; si no, caen a `precio_mxn`
+- Cierre Agricola calcula PMR anual ponderado por produccion y lo repite sobre cada fecha diaria del mismo anio y producto
+- El notebook `notebooks/master_price_eda.ipynb` ya viene listo para leer `compare_daily_wide` y graficar comparaciones, spreads y cobertura
 
 ## Windows Task Scheduler
 

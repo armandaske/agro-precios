@@ -660,6 +660,35 @@ def _html_report_to_dataframe(content: bytes) -> pd.DataFrame:
     return best_table
 
 
+def _extract_report_header_metadata(html: str) -> dict[str, str | None]:
+    soup = BeautifulSoup(html, "html.parser")
+    text = soup.get_text("\n", strip=True)
+    raw_label: str | None = None
+
+    for line in text.splitlines():
+        cleaned = re.sub(r"\s+", " ", line).strip()
+        if cleaned.casefold().startswith("cultivo:"):
+            raw_label = cleaned.split(":", 1)[1].strip() or None
+            break
+
+    return {
+        "cierre_crop_label_raw": raw_label,
+        "cierre_unit_label": _extract_cierre_unit_label(raw_label),
+    }
+
+
+def _extract_cierre_unit_label(crop_label_raw: str | None) -> str | None:
+    if not crop_label_raw:
+        return None
+
+    groups = re.findall(r"\(([^()]*)\)", crop_label_raw)
+    if not groups:
+        return None
+
+    unit_candidate = groups[-1].strip()
+    return unit_candidate or None
+
+
 def _slugify_report_label(value: str) -> str:
     normalized = value
     for source, target in MOJIBAKE_REPLACEMENTS.items():
@@ -712,12 +741,35 @@ def _normalize_report_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return normalized
 
 
+def _append_report_metadata(
+    df: pd.DataFrame,
+    *,
+    year: str,
+    crop: str,
+    report_metadata: dict[str, str | None],
+) -> pd.DataFrame:
+    enriched = df.copy()
+    enriched["cierre_crop_label_raw"] = report_metadata.get("cierre_crop_label_raw")
+    enriched["cierre_unit_label"] = report_metadata.get("cierre_unit_label")
+    enriched["cierre_crop_name"] = crop
+    enriched["query_year"] = int(year)
+    enriched["source_name"] = "cierre_agricola"
+    return enriched
+
+
+def _report_content_to_dataframe(content: bytes, *, year: str, crop: str) -> pd.DataFrame:
+    html = content.decode("utf-8", errors="ignore")
+    report_df = _normalize_report_dataframe(_html_report_to_dataframe(content))
+    report_metadata = _extract_report_header_metadata(html)
+    return _append_report_metadata(report_df, year=year, crop=crop, report_metadata=report_metadata)
+
+
 def _write_html_xls(df: pd.DataFrame, output_path: Path) -> None:
     html = df.to_html(index=False, na_rep="", border=1)
     output_path.write_text(html, encoding="utf-8")
 
 
-def save_report(session: requests.Session, output_path: Path, output_format: str) -> Path:
+def save_report(session: requests.Session, output_path: Path, output_format: str, *, year: str, crop: str) -> Path:
     resolved_output = _resolve_output_path(output_path, output_format)
     content = _fetch_report_content(session)
     resolved_output.parent.mkdir(parents=True, exist_ok=True)
@@ -727,7 +779,7 @@ def save_report(session: requests.Session, output_path: Path, output_format: str
         LOGGER.info("Archivo guardado: %s (%s bytes)", resolved_output, len(content))
         return resolved_output
 
-    report_df = rename_columns(_normalize_report_dataframe(_html_report_to_dataframe(content)), CIERRE_EXPORT_COLUMN_MAP)
+    report_df = rename_columns(_report_content_to_dataframe(content, year=year, crop=crop), CIERRE_EXPORT_COLUMN_MAP)
     if output_format == "csv":
         report_df.to_csv(resolved_output, index=False, encoding="utf-8-sig")
         LOGGER.info("CSV guardado: %s (%s filas)", resolved_output, len(report_df))
@@ -834,7 +886,7 @@ def fetch_report_dataframe(
         content = _fetch_report_content(session)
     finally:
         session.close()
-    return _normalize_report_dataframe(_html_report_to_dataframe(content))
+    return _report_content_to_dataframe(content, year=year, crop=crop)
 
 
 def build_report(
@@ -848,7 +900,7 @@ def build_report(
 ) -> None:
     session = prepare_report_session(year=year, crop=crop, debug=debug, debug_dir=debug_dir)
     try:
-        save_report(session, output, output_format)
+        save_report(session, output, output_format, year=year, crop=crop)
     finally:
         session.close()
 
