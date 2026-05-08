@@ -19,6 +19,8 @@ if str(REPO_ROOT) not in sys.path:
 
 from src.extract.cierre_agricola_requests import fetch_report_dataframe
 from src.extract.spreadsheet_localization import (
+    ARCHIVO_INSTANTANEA_PRODUCTOS,
+    ARCHIVO_RESUMEN_CORRIDA,
     CONFIG_COLUMN_ALIASES,
     DAILY_FAILURE_COLUMN_MAP,
     DAILY_META_COLUMN_MAP,
@@ -544,7 +546,7 @@ def orchestrate_daily_run(config_path: Path, output_root: Path, run_date: date) 
     run_dir.mkdir(parents=True, exist_ok=True)
 
     configs = load_products_config(config_path)
-    shutil.copy2(config_path, run_dir / "products_snapshot.xlsx")
+    shutil.copy2(config_path, run_dir / ARCHIVO_INSTANTANEA_PRODUCTOS)
 
     source_results = [
         run_walmart(configs, run_date, run_dir, config_path),
@@ -563,17 +565,17 @@ def orchestrate_daily_run(config_path: Path, output_root: Path, run_date: date) 
         "failures": [failure for result in source_results for failure in result["failures"]],
     }
 
-    summary_path = run_dir / "run_summary.json"
+    summary_path = run_dir / ARCHIVO_RESUMEN_CORRIDA
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     summary["summary_path"] = str(summary_path)
     return summary
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the daily extraction jobs and save consolidated XLSX outputs.")
-    parser.add_argument("--config", required=True, type=Path, help="Path to the products workbook (.xlsx)")
-    parser.add_argument("--output-root", required=True, type=Path, help="Root directory for dated run folders")
-    parser.add_argument("--run-date", help="Override run date in YYYY-MM-DD format")
+    parser = argparse.ArgumentParser(description="Ejecuta las extracciones diarias y guarda salidas consolidadas en XLSX.")
+    parser.add_argument("--config", required=True, type=Path, help="Ruta al workbook de productos (.xlsx)")
+    parser.add_argument("--output-root", required=True, type=Path, help="Directorio raíz para carpetas de corridas fechadas")
+    parser.add_argument("--run-date", help="Sobrescribe la fecha de corrida en formato YYYY-MM-DD")
     return parser.parse_args()
 
 
@@ -586,14 +588,14 @@ def main() -> int:
         run_date = parse_run_date(args.run_date)
         summary = orchestrate_daily_run(args.config, args.output_root, run_date)
     except Exception as exc:  # noqa: BLE001
-        LOGGER.error("Daily extraction run failed before completion: %s", exc)
+        LOGGER.error("La corrida diaria falló antes de completarse: %s", exc)
         return 1
 
     success_sources = sum(1 for source in summary["sources"].values() if source["succeeded"] > 0)
-    LOGGER.info("Daily extraction summary written to %s", summary["summary_path"])
+    LOGGER.info("Resumen de corrida diaria escrito en %s", summary["summary_path"])
 
     if success_sources == 0:
-        LOGGER.error("Daily extraction run completed but no source produced successful results")
+        LOGGER.error("La corrida diaria terminó, pero ninguna fuente produjo resultados exitosos")
         return 1
 
     return 0

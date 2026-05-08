@@ -8,6 +8,17 @@ PRODUCT_SHEET_NAME = "productos"
 PRODUCT_SHEET_NAME_ALIASES = ("productos", "products")
 INSTRUCTIONS_SHEET_NAME = "instrucciones"
 
+ARCHIVO_RESUMEN_CORRIDA = "resumen_corrida.json"
+ARCHIVO_RESUMEN_CORRIDA_ALIASES = (ARCHIVO_RESUMEN_CORRIDA, "run_summary.json")
+ARCHIVO_INSTANTANEA_PRODUCTOS = "instantanea_productos.xlsx"
+ARCHIVO_INSTANTANEA_PRODUCTOS_ALIASES = (ARCHIVO_INSTANTANEA_PRODUCTOS, "products_snapshot.xlsx")
+ARCHIVO_RESUMEN_LOTE_CIERRE = "resumen_lote.json"
+ARCHIVO_RESUMEN_LOTE_CIERRE_ALIASES = (ARCHIVO_RESUMEN_LOTE_CIERRE, "batch_summary.json")
+ARCHIVO_LIBRO_MAESTRO_PRECIOS = "libro_maestro_precios.xlsx"
+ARCHIVO_LIBRO_MAESTRO_PRECIOS_ALIASES = (ARCHIVO_LIBRO_MAESTRO_PRECIOS, "master_price_workbook.xlsx")
+ARCHIVO_CUADERNO_EDA_PRECIOS = "cuaderno_eda_precios.ipynb"
+ARCHIVO_CUADERNO_EDA_PRECIOS_ALIASES = (ARCHIVO_CUADERNO_EDA_PRECIOS, "master_price_eda.ipynb")
+
 CONFIG_COLUMN_ALIASES = {
     "activo": "active",
     "active": "active",
@@ -163,6 +174,22 @@ DAILY_SHEET_NAMES = {
     "data": "datos",
     "failures": "errores",
     "meta": "metadatos",
+}
+
+MASTER_WORKBOOK_SHEET_NAMES = {
+    "panel_diario_largo": "panel_diario_largo",
+    "comparativo_diario_ancho": "comparativo_diario_ancho",
+    "estadisticas_diarias_sniim": "estadisticas_diarias_sniim",
+    "estadisticas_anuales_cierre": "estadisticas_anuales_cierre",
+    "cobertura": "cobertura",
+}
+
+MASTER_WORKBOOK_SHEET_ALIASES = {
+    "panel_diario_largo": ("panel_diario_largo", "panel_daily_long"),
+    "comparativo_diario_ancho": ("comparativo_diario_ancho", "compare_daily_wide"),
+    "estadisticas_diarias_sniim": ("estadisticas_diarias_sniim", "sniim_daily_stats"),
+    "estadisticas_anuales_cierre": ("estadisticas_anuales_cierre", "cierre_annual_stats"),
+    "cobertura": ("cobertura", "coverage"),
 }
 
 DAILY_SOURCE_COLUMN_MAPS = {

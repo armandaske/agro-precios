@@ -17,6 +17,10 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.run_daily_extracts import load_products_config
+from src.extract.spreadsheet_localization import (
+    ARCHIVO_INSTANTANEA_PRODUCTOS_ALIASES,
+    MASTER_WORKBOOK_SHEET_NAMES,
+)
 
 LOGGER = logging.getLogger("build_master_price_workbook")
 
@@ -174,6 +178,97 @@ MASTER_PANEL_COLUMNS = [
     "cierre_crop_label_raw",
 ]
 
+MASTER_PANEL_EXPORT_COLUMN_MAP = {
+    "run_date": "fecha_corrida",
+    "canonical_product": "producto_canonico",
+    "source": "fuente",
+    "comparison_price_mxn": "precio_comparable_mxn",
+    "price_basis": "base_precio",
+    "raw_price_mxn": "precio_original_mxn",
+    "unit_label": "unidad",
+    "source_page": "pagina_fuente",
+    "product_raw": "producto_original",
+    "product_inferred": "producto_inferido",
+    "search_terms_used": "terminos_busqueda_utilizados",
+    "source_record_count": "registros_fuente",
+    "sniim_daily_mean_mxn": "sniim_precio_promedio_diario_mxn",
+    "sniim_daily_median_mxn": "sniim_precio_mediana_diaria_mxn",
+    "sniim_daily_min_mxn": "sniim_precio_minimo_diario_mxn",
+    "sniim_daily_max_mxn": "sniim_precio_maximo_diario_mxn",
+    "cierre_annual_weighted_pmr_mxn_udm": "cierre_pmr_anual_ponderado_mxn_udm",
+    "cierre_rows_used": "cierre_registros_utilizados",
+    "cierre_total_produccion": "cierre_produccion_total",
+    "cierre_crop_name": "cultivo_cierre_agricola",
+    "cierre_crop_label_raw": "cultivo_cierre_agricola_original",
+}
+
+SNIIM_STATS_EXPORT_COLUMN_MAP = {
+    "run_date": "fecha_corrida",
+    "canonical_product": "producto_canonico",
+    "sniim_daily_mean_mxn": "sniim_precio_promedio_diario_mxn",
+    "sniim_daily_median_mxn": "sniim_precio_mediana_diaria_mxn",
+    "sniim_daily_min_mxn": "sniim_precio_minimo_diario_mxn",
+    "sniim_daily_max_mxn": "sniim_precio_maximo_diario_mxn",
+    "sniim_source_row_count": "sniim_registros_fuente",
+    "producto_nombre_sitio": "producto_sniim",
+}
+
+CIERRE_ANNUAL_EXPORT_COLUMN_MAP = {
+    "query_year": "anio_consulta",
+    "canonical_product": "producto_canonico",
+    "cierre_unit_label": "unidad_cierre_agricola",
+    "cierre_annual_weighted_pmr_mxn_udm": "cierre_pmr_anual_ponderado_mxn_udm",
+    "cierre_rows_used": "cierre_registros_utilizados",
+    "cierre_total_produccion": "cierre_produccion_total",
+    "cierre_crop_name": "cultivo_cierre_agricola",
+    "cierre_crop_label_raw": "cultivo_cierre_agricola_original",
+}
+
+COMPARE_WIDE_EXPORT_COLUMN_MAP = {
+    "run_date": "fecha_corrida",
+    "canonical_product": "producto_canonico",
+    "query_year": "anio_consulta",
+    "sniim_daily_mean_mxn": "sniim_precio_promedio_diario_mxn",
+    "sniim_daily_median_mxn": "sniim_precio_mediana_diaria_mxn",
+    "sniim_daily_min_mxn": "sniim_precio_minimo_diario_mxn",
+    "sniim_daily_max_mxn": "sniim_precio_maximo_diario_mxn",
+    "sniim_source_row_count": "sniim_registros_fuente",
+    "producto_nombre_sitio": "producto_sniim",
+    "walmart_comparison_mxn": "walmart_precio_comparable_mxn",
+    "walmart_price_basis": "walmart_base_precio",
+    "walmart_raw_price_mxn": "walmart_precio_original_mxn",
+    "walmart_unit_label": "walmart_unidad",
+    "walmart_source_page": "walmart_pagina_fuente",
+    "walmart_product_raw": "walmart_producto_original",
+    "walmart_product_inferred": "walmart_producto_inferido",
+    "walmart_search_terms_used": "walmart_terminos_busqueda_utilizados",
+    "chedraui_comparison_mxn": "chedraui_precio_comparable_mxn",
+    "chedraui_price_basis": "chedraui_base_precio",
+    "chedraui_raw_price_mxn": "chedraui_precio_original_mxn",
+    "chedraui_unit_label": "chedraui_unidad",
+    "chedraui_source_page": "chedraui_pagina_fuente",
+    "chedraui_product_raw": "chedraui_producto_original",
+    "chedraui_product_inferred": "chedraui_producto_inferido",
+    "chedraui_search_terms_used": "chedraui_terminos_busqueda_utilizados",
+    "cierre_annual_weighted_pmr_mxn_udm": "cierre_pmr_anual_ponderado_mxn_udm",
+    "cierre_unit_label": "unidad_cierre_agricola",
+    "cierre_rows_used": "cierre_registros_utilizados",
+    "cierre_total_produccion": "cierre_produccion_total",
+    "cierre_crop_name": "cultivo_cierre_agricola",
+    "cierre_crop_label_raw": "cultivo_cierre_agricola_original",
+}
+
+COVERAGE_EXPORT_COLUMN_MAP = {
+    "run_date": "fecha_corrida",
+    "canonical_product": "producto_canonico",
+    "has_sniim": "tiene_sniim",
+    "has_walmart": "tiene_walmart",
+    "has_chedraui": "tiene_chedraui",
+    "has_cierre": "tiene_cierre_agricola",
+    "available_sources_count": "fuentes_disponibles_conteo",
+    "missing_sources_count": "fuentes_faltantes_conteo",
+}
+
 
 def configure_logging() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
@@ -226,6 +321,18 @@ def _rename_columns(df: pd.DataFrame, column_map: dict[str, str]) -> pd.DataFram
     renamed = df.copy()
     renamed.columns = [column_map.get(str(column), str(column)) for column in renamed.columns]
     return renamed
+
+
+def _export_columns(df: pd.DataFrame, column_map: dict[str, str]) -> pd.DataFrame:
+    return _rename_columns(df, column_map)
+
+
+def _find_first_existing_path(directory: Path, candidate_names: Iterable[str]) -> Path | None:
+    for candidate_name in candidate_names:
+        candidate_path = directory / candidate_name
+        if candidate_path.exists():
+            return candidate_path
+    return None
 
 
 def _read_source_workbook(path: Path, source_name: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -296,8 +403,8 @@ def _load_daily_source_frames(daily_root: Path, source_name: str) -> pd.DataFram
 def _load_cierre_crop_name_map(daily_root: Path) -> dict[str, str]:
     mapping: dict[str, str] = {}
     for run_dir in sorted(path for path in daily_root.iterdir() if path.is_dir()):
-        snapshot_path = run_dir / "products_snapshot.xlsx"
-        if not snapshot_path.exists():
+        snapshot_path = _find_first_existing_path(run_dir, ARCHIVO_INSTANTANEA_PRODUCTOS_ALIASES)
+        if snapshot_path is None:
             continue
         try:
             configs = load_products_config(snapshot_path)
@@ -751,11 +858,26 @@ def build_master_tables(daily_root: Path, cierre_root: Path) -> dict[str, pd.Dat
         coverage["missing_sources_count"] = 4 - coverage["available_sources_count"]
 
     return {
-        "panel_daily_long": panel_daily_long,
-        "compare_daily_wide": compare_daily_wide,
-        "sniim_daily_stats": sniim_stats,
-        "cierre_annual_stats": cierre_annual_stats,
-        "coverage": coverage,
+        MASTER_WORKBOOK_SHEET_NAMES["panel_diario_largo"]: _export_columns(
+            panel_daily_long,
+            MASTER_PANEL_EXPORT_COLUMN_MAP,
+        ),
+        MASTER_WORKBOOK_SHEET_NAMES["comparativo_diario_ancho"]: _export_columns(
+            compare_daily_wide,
+            COMPARE_WIDE_EXPORT_COLUMN_MAP,
+        ),
+        MASTER_WORKBOOK_SHEET_NAMES["estadisticas_diarias_sniim"]: _export_columns(
+            sniim_stats,
+            SNIIM_STATS_EXPORT_COLUMN_MAP,
+        ),
+        MASTER_WORKBOOK_SHEET_NAMES["estadisticas_anuales_cierre"]: _export_columns(
+            cierre_annual_stats,
+            CIERRE_ANNUAL_EXPORT_COLUMN_MAP,
+        ),
+        MASTER_WORKBOOK_SHEET_NAMES["cobertura"]: _export_columns(
+            coverage,
+            COVERAGE_EXPORT_COLUMN_MAP,
+        ),
     }
 
 
@@ -773,15 +895,15 @@ def build_master_workbook(daily_root: Path, cierre_root: Path, output_path: Path
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build a master comparative workbook from daily source exports.")
-    parser.add_argument("--daily-root", required=True, type=Path, help="Root directory with dated daily run folders")
+    parser = argparse.ArgumentParser(description="Construye el libro maestro comparativo a partir de corridas diarias.")
+    parser.add_argument("--daily-root", required=True, type=Path, help="Directorio raiz con carpetas de corridas diarias")
     parser.add_argument(
         "--cierre-root",
         required=True,
         type=Path,
-        help="Root directory with normalized Cierre Agricola xlsx exports",
+        help="Directorio raiz con exportes normalizados de Cierre Agricola en xlsx",
     )
-    parser.add_argument("--output", required=True, type=Path, help="Path to the master comparative workbook")
+    parser.add_argument("--output", required=True, type=Path, help="Ruta de salida del libro maestro comparativo")
     return parser.parse_args()
 
 
@@ -790,17 +912,17 @@ def main() -> int:
     configure_logging()
 
     if not args.daily_root.exists():
-        LOGGER.error("Daily root not found: %s", args.daily_root)
+        LOGGER.error("No se encontró el directorio daily-root: %s", args.daily_root)
         return 1
     if not args.cierre_root.exists():
-        LOGGER.error("Cierre root not found: %s", args.cierre_root)
+        LOGGER.error("No se encontró el directorio cierre-root: %s", args.cierre_root)
         return 1
 
     tables = build_master_workbook(args.daily_root, args.cierre_root, args.output)
     LOGGER.info(
-        "Master workbook written to %s with %s compare rows",
+        "Libro maestro escrito en %s con %s filas comparativas",
         args.output,
-        len(tables["compare_daily_wide"]),
+        len(tables[MASTER_WORKBOOK_SHEET_NAMES["comparativo_diario_ancho"]]),
     )
     return 0
 

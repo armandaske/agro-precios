@@ -4,6 +4,10 @@ POC para extraer y preparar datos de precios agroalimentarios en Mexico.
 
 Hoy el repositorio esta centrado principalmente en la capa de extraccion. Ya hay scrapers funcionales para fuentes publicas clave y pruebas para parte del parsing, pero todavia no existe un pipeline completo de transformacion, modelado y forecast como producto final.
 
+## Regla de idioma para salidas publicas
+
+Toda salida publica de este repo debe estar en espanol. Eso incluye nombres de columnas, nombres de archivos generados, hojas de Excel, notebooks, titulos y etiquetas visibles. El ingles puede mantenerse solo en variables internas o detalles privados de implementacion.
+
 ## Guia para agentes y mantenimiento de docs
 
 - Revisa `AGENTS.md` antes de hacer cambios importantes; ahi vive la guia operativa especifica del repo para agentes Codex.
@@ -36,9 +40,9 @@ No implementado aun como flujo formal:
 - `src/extract/chedraui_produce_scraper.py`: scraper de frutas y verduras en Chedraui.
 - `scripts/run_daily_extracts.py`: orquestador diario para las 4 fuentes.
 - `scripts/fetch_cierre_batch.py`: descarga en lote exportes normalizados de Cierre Agricola para los productos canonicos configurados.
-- `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui y Cierre Agricola.
+- `scripts/build_master_price_workbook.py`: constructor del libro maestro comparativo para SNIIM, Walmart, Chedraui y Cierre Agricola.
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
-- `notebooks/master_price_eda.ipynb`: notebook base para graficar y explorar el workbook maestro.
+- `notebooks/cuaderno_eda_precios.ipynb`: notebook base para graficar y explorar el libro maestro.
 - `tests/`: pruebas unitarias.
 - `data/raw/sniim/`: salidas generadas por el extractor SNIIM.
 - `debug_cierre_agricola/`: respuestas de depuracion del scraper de Cierre Agricola y archivos de referencia del frontend SIAP, como `funciones_cierre.js`.
@@ -150,13 +154,13 @@ python -m scripts.fetch_cierre_batch --config config/products.xlsx --output-root
 Salida esperada:
 
 - Un archivo por `producto_canonico` y por año dentro de `data/raw/cierre_agricola_batch/`
-- Un resumen en `data/raw/cierre_agricola_batch/batch_summary.json`
+- Un resumen en `data/raw/cierre_agricola_batch/resumen_lote.json`
 - Si `cultivo_cierre_agricola` viene vacio en la configuracion, el script usa un fallback interno para los 10 productos canonicos actuales
 
 Despues de generar ese lote, reconstruye el workbook maestro con:
 
 ```powershell
-python -m scripts.build_master_price_workbook --daily-root data/daily_runs --cierre-root data/raw/cierre_agricola_batch --output data/analysis/master_price_workbook.xlsx
+python -m scripts.build_master_price_workbook --daily-root data/daily_runs --cierre-root data/raw/cierre_agricola_batch --output data/analysis/libro_maestro_precios.xlsx
 ```
 
 ### 3. Cierre Agricola SIAP con Playwright
@@ -278,7 +282,7 @@ Reglas importantes:
 - Si `terminos_busqueda_walmart` esta vacio y Walmart esta habilitado, se usa `producto_canonico`
 - Si `terminos_busqueda_chedraui` esta vacio y Chedraui esta habilitado, se usa `producto_canonico`
 - Si `sniim_id_origen`, `sniim_id_destino` o `sniim_id_precios_por` estan vacios, se usan `-1`, `-1` y `2`
-- Si una fila habilita una fuente pero le falta un mapping requerido, la corrida continua y el error queda en `run_summary.json`
+- Si una fila habilita una fuente pero le falta un mapping requerido, la corrida continua y el error queda en `resumen_corrida.json`
 
 ### Correr el runner diario manualmente
 
@@ -305,9 +309,9 @@ Salida esperada por corrida:
 - `data/daily_runs/YYYY-MM-DD/chedraui_YYYY-MM-DD.xlsx`
 - `data/daily_runs/YYYY-MM-DD/sniim_YYYY-MM-DD.xlsx`
 - `data/daily_runs/YYYY-MM-DD/cierre_agricola_YYYY-MM-DD.xlsx`
-- `data/daily_runs/YYYY-MM-DD/products_snapshot.xlsx`
+- `data/daily_runs/YYYY-MM-DD/instantanea_productos.xlsx`
 - En el XLSX de SNIIM, la hoja `datos` tambien conserva `producto_sniim` para distinguir el nombre real desplegado por SNIIM del producto canonico configurado
-- `data/daily_runs/YYYY-MM-DD/run_summary.json`
+- `data/daily_runs/YYYY-MM-DD/resumen_corrida.json`
 
 Cada workbook consolidado genera:
 
@@ -315,31 +319,31 @@ Cada workbook consolidado genera:
 - Sheet `errores` si hubo errores
 - Sheet `metadatos`
 
-## Workbook maestro comparativo
+## Libro maestro comparativo
 
-Despues de tener `data/daily_runs` y un directorio de exportes normalizados de Cierre Agricola, puedes construir un workbook maestro para comparacion diaria y EDA.
+Despues de tener `data/daily_runs` y un directorio de exportes normalizados de Cierre Agricola, puedes construir un libro maestro para comparacion diaria y EDA.
 
 Comando:
 
 ```powershell
-python -m scripts.build_master_price_workbook --daily-root data/daily_runs --cierre-root data/raw/cierre_agricola --output data/analysis/master_price_workbook.xlsx
+python -m scripts.build_master_price_workbook --daily-root data/daily_runs --cierre-root data/raw/cierre_agricola --output data/analysis/libro_maestro_precios.xlsx
 ```
 
 Salida esperada:
 
-- `data/analysis/master_price_workbook.xlsx`
-- Sheet `panel_daily_long`
-- Sheet `compare_daily_wide`
-- Sheet `sniim_daily_stats`
-- Sheet `cierre_annual_stats`
-- Sheet `coverage`
+- `data/analysis/libro_maestro_precios.xlsx`
+- Sheet `panel_diario_largo`
+- Sheet `comparativo_diario_ancho`
+- Sheet `estadisticas_diarias_sniim`
+- Sheet `estadisticas_anuales_cierre`
+- Sheet `cobertura`
 
 Reglas del workbook maestro:
 
 - SNIIM agrega `precio_frecuente` por `fecha_corrida + producto_canonico` con media, mediana, minimo, maximo y conteo
 - Walmart y Chedraui usan `precio_estimado_por_kg_mxn` cuando existe; si no, caen a `precio_mxn`
 - Cierre Agricola calcula PMR anual ponderado por produccion y lo repite sobre cada fecha diaria del mismo anio y producto
-- El notebook `notebooks/master_price_eda.ipynb` ya viene listo para leer `compare_daily_wide` y graficar comparaciones, spreads y cobertura
+- El notebook `notebooks/cuaderno_eda_precios.ipynb` ya viene listo para leer `comparativo_diario_ancho` y graficar comparaciones, spreads y cobertura
 
 ## Windows Task Scheduler
 
@@ -428,7 +432,7 @@ Notas operativas:
 - Usa `scripts\run_daily_extracts_task.cmd` para evitar el limite de longitud de argumentos y fijar `cwd`
 - Los logs se escriben en `logs/daily_extracts.log`
 - El runner sale con codigo no cero si no puede iniciar o si ninguna fuente tuvo resultados exitosos
-- Si hubo resultados parciales, igual se escriben los XLSX y el `run_summary.json`
+- Si hubo resultados parciales, igual se escriben los XLSX y el `resumen_corrida.json`
 
 ## Tests
 

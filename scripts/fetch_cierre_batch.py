@@ -18,13 +18,14 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.extract.cierre_agricola_requests import build_report, configure_logging
+from src.extract.spreadsheet_localization import ARCHIVO_RESUMEN_LOTE_CIERRE
 
 LOGGER = logging.getLogger("fetch_cierre_batch")
 
 PRODUCT_SHEET_NAME = "productos"
 DEFAULT_YEARS = (2023, 2024)
 DEFAULT_OUTPUT_ROOT = Path("data/raw/cierre_agricola_batch")
-DEFAULT_SUMMARY_NAME = "batch_summary.json"
+DEFAULT_SUMMARY_NAME = ARCHIVO_RESUMEN_LOTE_CIERRE
 REQUIRED_COLUMNS = ("activo", "producto_canonico", "cultivo_cierre_agricola")
 
 # These overrides exist because the current config workbook only fills
@@ -174,27 +175,27 @@ def fetch_cierre_batch(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Fetch normalized Cierre Agricola exports for the configured canonical products."
+        description="Descarga exportes normalizados de Cierre Agricola para los productos canónicos configurados."
     )
-    parser.add_argument("--config", default=Path("config/products.xlsx"), type=Path, help="Path to products.xlsx")
+    parser.add_argument("--config", default=Path("config/products.xlsx"), type=Path, help="Ruta a products.xlsx")
     parser.add_argument(
         "--output-root",
         default=DEFAULT_OUTPUT_ROOT,
         type=Path,
-        help="Directory where normalized Cierre exports will be written",
+        help="Directorio donde se escribirán los exportes normalizados de Cierre",
     )
     parser.add_argument(
         "--years",
         nargs="+",
         type=int,
         default=list(DEFAULT_YEARS),
-        help="Years to fetch, e.g. --years 2023 2024",
+        help="Años a descargar, por ejemplo --years 2023 2024",
     )
     parser.add_argument(
         "--output-format",
         choices=("xls", "csv", "xlsx"),
         default="xlsx",
-        help="Output format for the normalized exports",
+        help="Formato de salida para los exportes normalizados",
     )
     return parser.parse_args()
 
@@ -211,11 +212,11 @@ def main() -> int:
             output_format=args.output_format,
         )
     except Exception as exc:  # noqa: BLE001
-        LOGGER.error("Batch fetch failed before completion: %s", exc)
+        LOGGER.error("La descarga por lote falló antes de completarse: %s", exc)
         return 1
 
     LOGGER.info(
-        "Cierre batch finished: %s succeeded, %s failed. Summary: %s",
+        "Lote de Cierre terminado: %s exitosos, %s fallidos. Resumen: %s",
         summary["succeeded_jobs"],
         summary["failed_jobs"],
         summary["summary_path"],
