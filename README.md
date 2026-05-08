@@ -38,7 +38,7 @@ No implementado aun como flujo formal:
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
 - `tests/`: pruebas unitarias.
 - `data/raw/sniim/`: salidas generadas por el extractor SNIIM.
-- `debug_cierre_agricola/`: respuestas de depuracion del scraper de Cierre Agricola.
+- `debug_cierre_agricola/`: respuestas de depuracion del scraper de Cierre Agricola y archivos de referencia del frontend SIAP, como `funciones_cierre.js`.
 
 ## Requisitos
 
@@ -132,6 +132,7 @@ Salida esperada:
 - Si `--output` no trae la extension correcta, el script la ajusta automaticamente
 - El portal suele devolver una tabla HTML compatible con Excel en lugar de un binario XLS nativo; esto es esperado en esta fuente
 - XML/HTML de depuracion en `debug_cierre_agricola/` si usas `--debug`
+- `debug_cierre_agricola/funciones_cierre.js` es solo una referencia del JavaScript original del portal para entender el flujo xajax; no se ejecuta como parte del scraper Python
 
 ### 3. Cierre Agricola SIAP con Playwright
 

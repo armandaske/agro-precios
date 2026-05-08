@@ -49,7 +49,7 @@ When you work in this repo, optimize for these outcomes:
 - `config/products.xlsx`: operational config workbook for product mappings and enabled sources.
 - `tests/`: unit tests and fixtures.
 - `data/`: generated raw data and daily runs.
-- `debug_cierre_agricola*` and `src/extract/debug_cierre_agricola/`: saved HTTP/xajax debug artifacts.
+- `debug_cierre_agricola/`: saved HTTP/xajax debug artifacts plus frontend reference files such as `funciones_cierre.js`.
 
 ## Operational commands
 
@@ -92,6 +92,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - Prefer `src/extract/cierre_agricola_requests.py` first. It is faster and better for automation than browser-only scraping.
 - Use Playwright only as a fallback when the HTTP/xajax flow changes or the portal behavior can no longer be reproduced reliably with requests.
 - When debugging this source, keep `--debug` and `--debug-dir` workflows intact. The XML/HTML snapshots are valuable when the portal changes.
+- Treat `debug_cierre_agricola/funciones_cierre.js` as a reverse-engineering aid for the original SIAP browser flow, not as runtime code used by the scraper.
 - Be careful with session-dependent behavior. The downloader depends on the xajax flow creating the report state before calling `reporte.php`.
 
 ### Walmart
