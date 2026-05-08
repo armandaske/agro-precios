@@ -1,84 +1,64 @@
 # AGENTS.md
 
-## Misión del proyecto
+## Project mission
 
-Este repositorio existe para recolectar datos agroindustriales de múltiples fuentes públicas y comerciales en México y convertirlos en insumos de análisis con calidad de consultoría.
+This repository exists to collect agro-industry data from multiple public and commercial sources in Mexico and turn it into consulting-grade analysis inputs.
 
-El código actual está orientado primero a extracción:
+The current codebase is extraction-first:
 
-- La adquisición confiable de datos importa más que agregar modelado especulativo.
-- Cada dataset debe conservar procedencia, parámetros de consulta y metadatos suficientes para auditar de dónde salió cada cifra.
-- La meta de corto plazo es construir activos de datos repetibles y análisis operativos para una firma de consultoría agro.
-- La meta de largo plazo puede incluir modelado, pronósticos, inteligencia de precios y reportes ejecutivos, pero los agentes no deben fingir que ese pipeline ya existe.
+- Reliable source acquisition matters more than adding speculative modeling code.
+- Every dataset should preserve provenance, query parameters, and enough metadata to audit where a number came from.
+- The near-term goal is to build repeatable data assets and operational analyses for an agro consulting firm.
+- The longer-term goal can include modeling, forecasting, pricing intelligence, and executive reporting, but agents should not pretend that pipeline already exists.
 
-## Regla prioritaria de idioma
+## What this repo currently is
 
-Toda la superficie pública del repositorio debe estar en español.
+- Python 3.12-oriented data extraction project.
+- Main implemented value: source-specific scrapers plus a daily orchestrator.
+- Main sources today:
+  - `SNIIM` for frutas y hortalizas market prices.
+  - `SIAP Cierre Agricola` via legacy HTTP/xajax flow.
+  - `SIAP Cierre Agricola` Playwright fallback.
+  - `Walmart Mexico` fresh produce search scraping.
+  - `Chedraui Mexico` fresh produce search scraping.
+- Existing tests focus on parser behavior and daily-run orchestration.
+- `scikit-learn` and `xgboost` are installed, but there is no formal modeling or forecasting pipeline yet.
 
-Esto incluye:
+Agents should treat this repo as a data acquisition and analysis foundation, not as a finished analytics platform.
 
-- Nombres de columnas exportadas.
-- Nombres de archivos generados.
-- Nombres de hojas de Excel y tablas visibles.
-- Títulos, etiquetas y texto visible en notebooks o reportes.
-- Documentación operativa y ejemplos dirigidos al usuario.
+## Core product intent
 
-El inglés puede permanecer solo en variables internas, helpers, nombres privados de funciones o detalles de implementación que no formen parte de la salida pública.
+When you work in this repo, optimize for these outcomes:
 
-Reglas operativas:
+- Add trustworthy data sources.
+- Improve extraction resilience when source HTML or flows change.
+- Standardize outputs so cross-source comparison is easier.
+- Make consulting analysis reproducible.
+- Keep enough structure so future forecasting, dashboards, and client reporting can be built on top without redoing ingestion.
 
-- Si un agente agrega una nueva salida pública, debe nombrarla en español desde el inicio.
-- Si existe compatibilidad heredada en inglés, puede mantenerse como alias de lectura, pero no debe seguir emitiéndose como nombre oficial nuevo.
-- Cuando cambie cualquier interfaz pública visible, el agente debe actualizar `README.md` y este `AGENTS.md` en el mismo cambio.
+## Repo map
 
-## Qué es hoy este repo
+- `src/extract/sniim.py`: SNIIM extractor and export helpers.
+- `src/extract/cierre_agricola_requests.py`: primary SIAP Cierre Agricola HTTP/xajax implementation.
+- `src/extract/scraper_cierre_agricola_playwright.py`: browser fallback for SIAP when HTTP flow breaks.
+- `src/extract/walmart_produce_scraper.py`: Walmart produce scraper and record ranking logic.
+- `src/extract/chedraui_produce_scraper.py`: Chedraui produce scraper and search-result normalization.
+- `src/extract/spreadsheet_localization.py`: column aliases, workbook sheet names, and Spanish export naming.
+- `scripts/run_daily_extracts.py`: main daily orchestrator across enabled sources.
+- `scripts/fetch_cierre_batch.py`: batch runner that fetches normalized annual Cierre Agricola exports for the configured canonical products.
+- `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Cierre exports.
+- `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
+- `config/products.xlsx`: operational config workbook for product mappings and enabled sources.
+- `notebooks/master_price_eda.ipynb`: starter notebook for charting the comparative workbook.
+- `tests/`: unit tests and fixtures.
+- `data/`: generated raw data and daily runs.
+- `debug_cierre_agricola/`: saved HTTP/xajax debug artifacts plus frontend reference files such as `funciones_cierre.js`.
 
-- Proyecto de extracción de datos en Python 3.12.
-- Valor implementado principal: scrapers específicos por fuente más un orquestador diario.
-- Fuentes principales hoy:
-  - `SNIIM` para precios de frutas y hortalizas.
-  - `SIAP Cierre Agricola` vía flujo HTTP/xajax legado.
-  - `SIAP Cierre Agricola` con fallback en Playwright.
-  - Scraping de búsqueda de productos frescos en `Walmart Mexico`.
-  - Scraping de búsqueda de productos frescos en `Chedraui Mexico`.
-- Las pruebas actuales se enfocan en parsing y orquestación diaria.
-- `scikit-learn` y `xgboost` están instalados, pero todavía no existe un pipeline formal de modelado o pronóstico.
+## Operational commands
 
-Los agentes deben tratar este repo como una base de adquisición y análisis de datos, no como una plataforma analítica terminada.
+Run everything from repo root.
 
-## Intención central del producto
-
-Cuando trabajes en este repo, optimiza por estos resultados:
-
-- Agregar fuentes confiables.
-- Mejorar la resiliencia de extracción cuando cambien HTML o flujos.
-- Estandarizar salidas para facilitar comparación entre fuentes.
-- Hacer reproducible el análisis de consultoría.
-- Mantener estructura suficiente para que después se puedan construir pronósticos, dashboards y reportes para clientes sin rehacer la ingestión.
-
-## Mapa del repo
-
-- `src/extract/sniim.py`: extractor SNIIM y helpers de exportación.
-- `src/extract/cierre_agricola_requests.py`: implementación principal HTTP/xajax de SIAP Cierre Agricola.
-- `src/extract/scraper_cierre_agricola_playwright.py`: fallback con navegador para SIAP cuando falle el flujo HTTP.
-- `src/extract/walmart_produce_scraper.py`: scraper de Walmart y lógica de ranking de registros.
-- `src/extract/chedraui_produce_scraper.py`: scraper de Chedraui y normalización de resultados de búsqueda.
-- `src/extract/spreadsheet_localization.py`: aliases de columnas, nombres de hojas y nombres públicos en español.
-- `scripts/run_daily_extracts.py`: orquestador principal de corridas diarias.
-- `scripts/fetch_cierre_batch.py`: corrida en lote de exportes normalizados de Cierre Agricola para los productos canónicos configurados.
-- `scripts/build_master_price_workbook.py`: construcción del libro maestro comparativo a partir de corridas diarias y exportes normalizados de Cierre Agricola.
-- `scripts/run_daily_extracts_task.cmd`: wrapper para Windows Task Scheduler usando el virtualenv local.
-- `config/products.xlsx`: workbook operativo de configuración para mapeos de productos y fuentes habilitadas.
-- `notebooks/cuaderno_eda_precios.ipynb`: notebook base para graficar y explorar el libro maestro.
-- `tests/`: pruebas unitarias y fixtures.
-- `data/`: datos generados y corridas diarias.
-- `debug_cierre_agricola/`: artefactos de depuración HTTP/xajax y referencias frontend como `funciones_cierre.js`.
-
-## Comandos operativos
-
-Ejecuta todo desde la raíz del repo.
-
-Preparación del entorno:
+Environment setup:
 
 ```powershell
 python -m venv .venv
@@ -87,111 +67,111 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-Correr pruebas:
+Run tests:
 
 ```powershell
 python -m unittest discover -s tests -p "test_*.py"
 ```
 
-Correr el orquestador diario:
+Run the daily orchestrator:
 
 ```powershell
 python scripts/run_daily_extracts.py --config config/products.xlsx --output-root data/daily_runs
 ```
 
-## Guía por fuente
+## Source-specific guidance
 
 ### SNIIM
 
-- `src/extract/sniim.py` usa el flujo real de formularios ASP.NET.
-- Ejecuta el extractor desde la raíz como `python -m src.extract.sniim ...` para que resuelvan bien los imports del paquete.
-- Conserva campos ocultos y validación de la página resultado; no simplifiques el flujo sin verificar que el sitio siga comportándose igual.
-- Mantén metadatos de consulta en el `DataFrame` exportado para que los análisis sean auditables.
-- Conserva la etiqueta de producto que aparece en la cabecera del reporte cuando exista, porque SNIIM puede mostrar nombres más específicos como `Aguacate Hass`.
-- La robustez del parser importa porque los encabezados y codificaciones pueden ser inconsistentes.
+- `src/extract/sniim.py` uses the real ASP.NET form flow.
+- Run the extractor from the repo root as `python -m src.extract.sniim ...` so package imports resolve correctly with the current layout.
+- Preserve hidden fields and result-page validation; do not simplify the flow unless you verify the site still behaves correctly.
+- Keep query metadata in the exported DataFrame so consulting outputs can be audited later.
+- Preserve the report-header product label from the result page in the exported rows when available, because SNIIM may display a more specific market product name such as `Aguacate Hass`.
+- Parser robustness matters because table headers and encodings can be inconsistent.
 
 ### SIAP Cierre Agricola
 
-- Prefiere `src/extract/cierre_agricola_requests.py` primero; es más rápido y más automatizable que scraping solo con navegador.
-- Ejecuta el extractor HTTP desde la raíz como `python -m src.extract.cierre_agricola_requests ...`.
-- Usa `python -m scripts.fetch_cierre_batch ...` cuando necesites una corrida por año y producto para alimentar el libro comparativo.
-- Usa Playwright solo como fallback cuando el flujo HTTP/xajax cambie o ya no pueda reproducirse bien con `requests`.
-- Cuando depures esta fuente, conserva el flujo con `--debug` y `--debug-dir`; los snapshots XML/HTML son valiosos cuando cambia el portal.
-- Trata `debug_cierre_agricola/funciones_cierre.js` como ayuda de ingeniería inversa del flujo original del portal, no como código de runtime del scraper.
-- Conserva `cierre_crop_label_raw` y `cierre_unit_label` en las salidas normalizadas para no perder contexto de unidad del PMR anual.
-- Ten cuidado con el comportamiento dependiente de sesión; la descarga depende de que el flujo xajax haya creado el estado del reporte antes de llamar `reporte.php`.
+- Prefer `src/extract/cierre_agricola_requests.py` first. It is faster and better for automation than browser-only scraping.
+- Run the HTTP extractor from the repo root as `python -m src.extract.cierre_agricola_requests ...` so the package path stays consistent with the current layout.
+- Use `python -m scripts.fetch_cierre_batch ...` when you need a year-by-product batch of normalized Cierre exports to feed the comparative workbook.
+- Use Playwright only as a fallback when the HTTP/xajax flow changes or the portal behavior can no longer be reproduced reliably with requests.
+- When debugging this source, keep `--debug` and `--debug-dir` workflows intact. The XML/HTML snapshots are valuable when the portal changes.
+- Treat `debug_cierre_agricola/funciones_cierre.js` as a reverse-engineering aid for the original SIAP browser flow, not as runtime code used by the scraper.
+- Preserve `cierre_crop_label_raw` and `cierre_unit_label` in normalized outputs so annual PMR can be reused later without losing the source unit context.
+- Be careful with session-dependent behavior. The downloader depends on the xajax flow creating the report state before calling `reporte.php`.
 
 ### Walmart
 
-- El scraper lee `__NEXT_DATA__` y rankea productos candidatos por cultivo configurado.
-- Conserva la detección de página bloqueada. Un HTML silenciosamente malo es peor que un fallo explícito.
-- La calidad del ranking importa porque el análisis de consultoría necesita el mejor precio representativo por cultivo, no cualquier resultado.
+- The scraper reads `__NEXT_DATA__` and ranks candidate products per configured crop.
+- Preserve blocked-page detection. Silent bad HTML is worse than an explicit failure.
+- Ranking quality matters because consulting analyses need the best representative price per crop, not just any search result.
 
 ### Chedraui
 
-- El scraper mezcla múltiples endpoints de búsqueda y deduplica por identidad normalizada de producto.
-- Mantén el filtrado por término de búsqueda lo suficientemente estricto para evitar contaminación con productos no relacionados.
-- Trata con cuidado la extracción de precio actual y precio anterior; la lógica promocional sí afecta el análisis downstream.
+- The scraper merges multiple search endpoints and deduplicates by normalized product identity.
+- Keep query-term filtering strict enough to avoid unrelated produce contaminating a crop result.
+- Treat current-price and old-price extraction carefully; promotion logic affects downstream analysis quality.
 
-### Orquestador diario
+### Daily orchestrator
 
-- `scripts/run_daily_extracts.py` es hoy la entrada más parecida a producción.
-- Está diseñado para tolerar fallas: una fuente o una fila pueden fallar sin matar toda la corrida.
-- Conserva `resumen_corrida.json`, hojas de `metadatos` y reportes de falla por fuente.
-- Si agregas una fuente nueva, intégrala de forma que siga habiendo éxito parcial y diagnósticos por fila y por fuente.
+- `scripts/run_daily_extracts.py` is the main production-like entrypoint in this repo today.
+- It is intentionally fault-tolerant: one source or one product row may fail without killing the entire run.
+- Preserve `run_summary.json`, workbook metadata sheets, and per-source failure reporting.
+- If you add a new source, integrate it in a way that keeps partial success possible and makes failures diagnosable per row and per source.
 
-### Libro maestro comparativo
+### Comparative workbook
 
-- `scripts/build_master_price_workbook.py` debe tratar `data/daily_runs/YYYY-MM-DD` como fuente de verdad para entradas diarias.
-- Un flujo práctico de refresco es: primero correr el batch anual de Cierre Agricola y después reconstruir el libro maestro apuntando a ese `--cierre-root`.
-- Mantén la salida comparativa lista para análisis en Excel: una hoja larga, una comparativa ancha y hojas de estadísticas y cobertura explícitas.
-- No ocultes la ambigüedad de unidades en Cierre Agricola. Conserva y muestra la unidad del PMR anual en lugar de fingir comparabilidad directa con kg.
+- `scripts/build_master_price_workbook.py` should treat `data/daily_runs/YYYY-MM-DD` as the source of truth for daily comparison inputs.
+- A practical refresh workflow is: batch-fetch annual Cierre exports first, then rebuild the master workbook against that `--cierre-root`.
+- Keep the comparative output decision-complete for Excel analysis: one long panel sheet, one wide comparison sheet, and explicit supporting stats/coverage sheets.
+- Do not hide unit ambiguity for Cierre Agricola. Preserve and surface the annual PMR unit rather than pretending it is directly kg-comparable when it is not.
 
-## Reglas de datos y salidas
+## Data and output rules
 
-- Trata las salidas generadas como desechables salvo que el usuario pida explícitamente que se versionen.
-- `.gitignore` ya excluye `data/daily_runs/`, logs y salidas tabulares como `*.xlsx`, `*.xls` y `*.csv`.
-- `config/products.xlsx` es operativo e importante, pero hoy está ignorado por git, así que no asumas que sus cambios se versionarán.
-- Conserva columnas de procedencia y metadatos exportados siempre que sea posible.
-- Prefiere cambios aditivos de esquema sobre renombres rompientes, salvo que actualices juntos consumidores downstream y documentación.
+- Treat generated outputs as disposable unless the user explicitly wants them committed.
+- `.gitignore` already excludes `data/daily_runs/`, logs, and spreadsheet outputs such as `*.xlsx`, `*.xls`, and `*.csv`.
+- `config/products.xlsx` is operationally important but is currently ignored by git, so do not assume config workbook changes will be versioned automatically.
+- Preserve source provenance columns and exported metadata whenever possible.
+- Prefer additive changes to schemas over breaking renames unless you update all downstream consumers and docs together.
 
-## Reglas de pruebas y validación
+## Testing and validation rules
 
-- Prefiere pruebas unitarias de parser por encima de pruebas live-site para desarrollo normal.
-- Usa fixtures y mocks para fuentes externas siempre que sea posible.
-- Si cambias un parser, agrega o actualiza una prueba enfocada en `tests/`.
-- Si cambias columnas del workbook, nombres de hojas, nombres de archivos de salida o estructura de JSONs resumen, valida `scripts/run_daily_extracts.py` y actualiza pruebas.
-- Para investigar roturas de fuente, captura la respuesta exacta o el artefacto de debug antes de parchear heurísticas.
+- Prefer parser/unit tests over live-site tests for normal development.
+- Use fixtures and mocks for external sources whenever possible.
+- If you change a source parser, add or update a focused test in `tests/`.
+- If you change workbook columns, output sheet names, or summary JSON structure, validate `scripts/run_daily_extracts.py` behavior and update tests accordingly.
+- For source breakage investigations, capture the exact failing response or debug artifact before patching heuristics.
 
-## Reglas de colaboración para agentes
+## Coding and collaboration rules for agents
 
-- Mantén confiable la capa de extracción antes de agregar nuevas capas analíticas.
-- Favorece funciones claras y específicas por fuente sobre abstracciones genéricas grandes que oculten el comportamiento real del scraper.
-- No elimines capacidad de depuración en fuentes frágiles solo para que el código se vea más limpio.
-- Mantén alineadas las guías operativas y documentación con los comandos y rutas reales del repo.
-- Si una conducta vale la pena documentarse, documéntala de inmediato y no la dejes como conocimiento tribal escondido en el código.
+- Keep the extraction layer reliable before adding new analytics layers.
+- Favor clear, source-specific functions over large generic abstractions that hide scraper behavior.
+- Do not remove debug capability from fragile sources just to make code look cleaner.
+- Keep user-facing docs and operational guidance aligned with the real commands and file paths in this repo.
+- When behavior is worth documenting, document it immediately instead of leaving hidden tribal knowledge in code only.
 
-## Regla de mantenimiento de documentación
+## Documentation maintenance rule
 
-Cada vez que un agente cree o modifique algo que valga la pena mencionar, debe actualizar `README.md` y este `AGENTS.md` en el mismo cambio cuando la documentación pueda quedar desfasada.
+Every time an agent creates or modifies something worth mentioning, update `README.md` and this `AGENTS.md` in the same change when the docs would otherwise become stale.
 
-Ejemplos que normalmente requieren actualización de docs:
+Examples that usually require doc updates:
 
-- Nuevas integraciones de fuentes.
-- Nuevos scripts o entrypoints.
-- Cambios en columnas del workbook o nombres de hojas.
-- Cambios en archivos de salida, directorios de salida o JSONs resumen.
-- Cambios en scheduling o comandos operativos.
-- Limitaciones importantes, modos de falla o flujos de depuración.
+- New source integrations.
+- New scripts or entrypoints.
+- Changes to workbook columns or sheet names.
+- Changes to output files, output directories, or summary JSON.
+- Changes to scheduling or operational run commands.
+- Important limitations, failure modes, or debugging workflows.
 
-## Siguientes áreas de alto valor
+## Recommended next-step areas
 
-Trabajo de alto valor en este repo normalmente se parece a esto:
+High-value work in this repo usually looks like this:
 
-- Agregar un dataset intermedio normalizado que alinee campos entre retailers y fuentes públicas.
-- Agregar checks de calidad para precios faltantes, outliers y desajustes sospechosos de unidad.
-- Construir scripts reutilizables para spreads, comparaciones entre fuentes, estacionalidad y brechas PMR vs retail.
-- Versionar salidas listas para análisis por separado de los extractos crudos.
-- Agregar un pipeline formal de transformación y forecasting cuando la calidad de ingestión ya sea suficientemente estable.
+- Add a normalized intermediate dataset that aligns source fields across retailers and public market sources.
+- Add data-quality checks for missing prices, outliers, and suspicious unit mismatches.
+- Build reusable analysis scripts for spreads, source comparisons, seasonality, and PMR vs retail gaps.
+- Version analysis-ready outputs separately from raw extracts.
+- Add a formal pipeline for transformation and forecasting once ingestion quality is stable enough.
 
-Los agentes deben ser proactivos al sugerir o implementar estos pasos cuando apoyen claramente el caso de uso de consultoría.
+Agents should be proactive about suggesting or implementing these steps when they clearly support the consulting use case.

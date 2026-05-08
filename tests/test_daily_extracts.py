@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pandas as pd
 
 from scripts.run_daily_extracts import load_products_config, orchestrate_daily_run
-from src.extract.spreadsheet_localization import ARCHIVO_INSTANTANEA_PRODUCTOS, ARCHIVO_RESUMEN_CORRIDA
 
 
 class DailyExtractsTests(unittest.TestCase):
@@ -169,8 +168,8 @@ class DailyExtractsTests(unittest.TestCase):
             summary = orchestrate_daily_run(config_path, output_root, date(2026, 4, 8))
             run_dir = output_root / "2026-04-08"
 
-            self.assertTrue((run_dir / ARCHIVO_INSTANTANEA_PRODUCTOS).exists())
-            self.assertTrue((run_dir / ARCHIVO_RESUMEN_CORRIDA).exists())
+            self.assertTrue((run_dir / "products_snapshot.xlsx").exists())
+            self.assertTrue((run_dir / "run_summary.json").exists())
             self.assertTrue((run_dir / "walmart_2026-04-08.xlsx").exists())
             self.assertTrue((run_dir / "chedraui_2026-04-08.xlsx").exists())
             self.assertTrue((run_dir / "sniim_2026-04-08.xlsx").exists())

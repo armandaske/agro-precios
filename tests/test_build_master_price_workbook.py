@@ -11,7 +11,6 @@ from scripts.build_master_price_workbook import (
     build_sniim_daily_stats,
     build_retail_daily_panel,
 )
-from src.extract.spreadsheet_localization import ARCHIVO_INSTANTANEA_PRODUCTOS, MASTER_WORKBOOK_SHEET_NAMES
 
 
 class BuildMasterPriceWorkbookTests(unittest.TestCase):
@@ -212,8 +211,8 @@ class BuildMasterPriceWorkbookTests(unittest.TestCase):
             run_19 = daily_root / "2026-04-19"
             run_18.mkdir(parents=True, exist_ok=True)
             run_19.mkdir(parents=True, exist_ok=True)
-            self._write_products_snapshot(run_18 / ARCHIVO_INSTANTANEA_PRODUCTOS)
-            self._write_products_snapshot(run_19 / ARCHIVO_INSTANTANEA_PRODUCTOS)
+            self._write_products_snapshot(run_18 / "products_snapshot.xlsx")
+            self._write_products_snapshot(run_19 / "products_snapshot.xlsx")
 
             self._write_workbook(
                 run_18 / "sniim_2026-04-18.xlsx",
@@ -367,32 +366,32 @@ class BuildMasterPriceWorkbookTests(unittest.TestCase):
             self.assertEqual(
                 set(tables.keys()),
                 {
-                    "panel_diario_largo",
-                    "comparativo_diario_ancho",
-                    "estadisticas_diarias_sniim",
-                    "estadisticas_anuales_cierre",
-                    "cobertura",
+                    "panel_daily_long",
+                    "compare_daily_wide",
+                    "sniim_daily_stats",
+                    "cierre_annual_stats",
+                    "coverage",
                 },
             )
 
-            compare = tables[MASTER_WORKBOOK_SHEET_NAMES["comparativo_diario_ancho"]]
+            compare = tables["compare_daily_wide"]
             self.assertEqual(len(compare), 2)
-            self.assertIn("walmart_precio_comparable_mxn", compare.columns)
-            self.assertIn("chedraui_precio_comparable_mxn", compare.columns)
-            self.assertIn("cierre_pmr_anual_ponderado_mxn_udm", compare.columns)
-            self.assertAlmostEqual(float(compare.iloc[0]["sniim_precio_promedio_diario_mxn"]), 45.0)
-            self.assertAlmostEqual(float(compare.iloc[0]["cierre_pmr_anual_ponderado_mxn_udm"]), 13.0)
-            self.assertTrue(compare["unidad_cierre_agricola"].eq("ton").all())
+            self.assertIn("walmart_comparison_mxn", compare.columns)
+            self.assertIn("chedraui_comparison_mxn", compare.columns)
+            self.assertIn("cierre_annual_weighted_pmr_mxn_udm", compare.columns)
+            self.assertAlmostEqual(float(compare.iloc[0]["sniim_daily_mean_mxn"]), 45.0)
+            self.assertAlmostEqual(float(compare.iloc[0]["cierre_annual_weighted_pmr_mxn_udm"]), 13.0)
+            self.assertTrue(compare["cierre_unit_label"].eq("ton").all())
 
             with pd.ExcelFile(output_path) as workbook:
                 self.assertEqual(
                     set(workbook.sheet_names),
                     {
-                        "panel_diario_largo",
-                        "comparativo_diario_ancho",
-                        "estadisticas_diarias_sniim",
-                        "estadisticas_anuales_cierre",
-                        "cobertura",
+                        "panel_daily_long",
+                        "compare_daily_wide",
+                        "sniim_daily_stats",
+                        "cierre_annual_stats",
+                        "coverage",
                     },
                 )
 
@@ -446,12 +445,12 @@ class BuildMasterPriceWorkbookTests(unittest.TestCase):
 
             tables = build_master_workbook(daily_root, cierre_root, output_path)
 
-            annual = tables[MASTER_WORKBOOK_SHEET_NAMES["estadisticas_anuales_cierre"]]
-            self.assertEqual(str(annual.iloc[0]["producto_canonico"]), "tomate rojo")
+            annual = tables["cierre_annual_stats"]
+            self.assertEqual(str(annual.iloc[0]["canonical_product"]), "tomate rojo")
 
-            compare = tables[MASTER_WORKBOOK_SHEET_NAMES["comparativo_diario_ancho"]]
-            self.assertIn("cierre_pmr_anual_ponderado_mxn_udm", compare.columns)
-            self.assertTrue(compare["cierre_pmr_anual_ponderado_mxn_udm"].isna().all())
+            compare = tables["compare_daily_wide"]
+            self.assertIn("cierre_annual_weighted_pmr_mxn_udm", compare.columns)
+            self.assertTrue(compare["cierre_annual_weighted_pmr_mxn_udm"].isna().all())
 
 
 if __name__ == "__main__":
