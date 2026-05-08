@@ -104,6 +104,8 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 ### Walmart
 
 - The scraper reads `__NEXT_DATA__` and ranks candidate products per configured crop.
+- The standalone Walmart entrypoint should use `config/products.xlsx` by default when it exists, so `terminos_busqueda_walmart` stays aligned with the daily runner.
+- When a configured Walmart crop is being scraped, reject results whose product name clearly infers a different crop instead of relabeling them to the configured product.
 - Preserve blocked-page detection. Silent bad HTML is worse than an explicit failure.
 - Ranking quality matters because consulting analyses need the best representative price per crop, not just any search result.
 
@@ -134,6 +136,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - `config/products.xlsx` is operationally important but is currently ignored by git, so do not assume config workbook changes will be versioned automatically.
 - Preserve source provenance columns and exported metadata whenever possible.
 - Prefer additive changes to schemas over breaking renames unless you update all downstream consumers and docs together.
+- All user-facing text must be in Spanish by default. This includes titles, labels, graph names, workbook sheet names when meant for users, column names, summary fields presented to users, and any other visible output intended for business consumption.
 
 ## Testing and validation rules
 
@@ -149,6 +152,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - Favor clear, source-specific functions over large generic abstractions that hide scraper behavior.
 - Do not remove debug capability from fragile sources just to make code look cleaner.
 - Keep user-facing docs and operational guidance aligned with the real commands and file paths in this repo.
+- When adding or renaming any user-facing output, choose Spanish wording unless the user explicitly requests a different language or a source-native field must be preserved for provenance.
 - When behavior is worth documenting, document it immediately instead of leaving hidden tribal knowledge in code only.
 
 ## Documentation maintenance rule

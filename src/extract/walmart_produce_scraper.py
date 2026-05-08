@@ -10,7 +10,12 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-from src.extract.spreadsheet_localization import WALMART_EXPORT_COLUMN_MAP, rename_columns
+from src.extract.spreadsheet_localization import (
+    CONFIG_COLUMN_ALIASES,
+    PRODUCT_SHEET_NAME_ALIASES,
+    WALMART_EXPORT_COLUMN_MAP,
+    rename_columns,
+)
 
 
 BASE_URL = "https://www.walmart.com.mx"
@@ -59,6 +64,10 @@ def normalize_text(text: str) -> str:
         text = text.replace(old, new)
     text = re.sub(r"\s+", " ", text)
     return text
+
+
+def normalize_product_key(value: str) -> str:
+    return normalize_text(value).replace(" ", "_")
 
 
 def build_search_url(query: str, page_size: int = SEARCH_PAGE_SIZE) -> str:
@@ -264,6 +273,11 @@ def item_to_record(
 ) -> Optional[Dict[str, Any]]:
     product_name = item.get("name") or ""
     inferred_crop = canonical_crop(product_name)
+    if configured_product is not None and inferred_crop is not None:
+        configured_key = normalize_product_key(configured_product)
+        inferred_key = normalize_product_key(inferred_crop)
+        if configured_key != inferred_key:
+            return None
     crop = configured_product or inferred_crop
     if crop is None:
         return None
@@ -378,6 +392,54 @@ def collect_search_records(
     return list(deduped_records.values())
 
 
+def _parse_enabled_flag(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if pd.isna(value):
+        return False
+    if isinstance(value, (int, float)):
+        return bool(value)
+    return normalize_text(str(value)) in {"1", "true", "t", "yes", "y", "si", "sí", "x"}
+
+
+def load_search_terms_from_workbook(config_path: Path) -> Dict[str, List[str]]:
+    last_error: Exception | None = None
+    for sheet_name in PRODUCT_SHEET_NAME_ALIASES:
+        try:
+            df = pd.read_excel(config_path, sheet_name=sheet_name, engine="openpyxl")
+            break
+        except ValueError as exc:
+            last_error = exc
+    else:
+        raise ValueError(f"No se encontro una hoja de productos valida en {config_path}") from last_error
+
+    df = df.rename(columns=lambda column: CONFIG_COLUMN_ALIASES.get(str(column), str(column)))
+    required_columns = {"active", "canonical_product", "walmart_enabled", "walmart_search_terms"}
+    missing_columns = [column for column in required_columns if column not in df.columns]
+    if missing_columns:
+        raise ValueError(
+            f"Faltan columnas requeridas en la configuracion de Walmart: {', '.join(sorted(missing_columns))}"
+        )
+
+    search_map: Dict[str, List[str]] = {}
+    for _, row in df.iterrows():
+        if not _parse_enabled_flag(row.get("active")) or not _parse_enabled_flag(row.get("walmart_enabled")):
+            continue
+
+        canonical_product = "" if pd.isna(row.get("canonical_product")) else str(row.get("canonical_product")).strip()
+        if not canonical_product:
+            continue
+
+        raw_terms = "" if pd.isna(row.get("walmart_search_terms")) else str(row.get("walmart_search_terms")).strip()
+        terms = [term.strip() for term in raw_terms.split("|") if term.strip()]
+        if not terms:
+            terms = [canonical_product]
+
+        search_map[canonical_product] = terms
+
+    return search_map
+
+
 def choose_best_records(
     records: List[Dict[str, Any]],
     product_keys: Iterable[str],
@@ -440,6 +502,12 @@ def save_output(records: List[Dict[str, Any]], filepath: str, output_format: str
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Walmart Mexico produce scraper")
     parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path("config/products.xlsx"),
+        help="Workbook de configuracion para usar los terminos de Walmart. Default: config/products.xlsx",
+    )
+    parser.add_argument(
         "--output-format",
         choices=("csv", "xls", "xlsx"),
         default="csv",
@@ -454,8 +522,12 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    records = collect_search_records()
-    best_records = choose_best_record_per_crop(records)
+    search_map = TARGET_SEARCH_TERMS
+    if args.config.exists():
+        search_map = load_search_terms_from_workbook(args.config)
+
+    records = collect_search_records(search_terms=search_map)
+    best_records = choose_best_records(records, search_map.keys(), search_map)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     default_output = f"walmart_produce_{timestamp}.{args.output_format}"

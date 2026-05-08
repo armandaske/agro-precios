@@ -11,6 +11,7 @@ from src.extract.walmart_produce_scraper import (
     extract_next_data,
     extract_search_items,
     item_to_record,
+    load_search_terms_from_workbook,
     save_output,
 )
 
@@ -172,6 +173,24 @@ class WalmartProduceScraperTests(unittest.TestCase):
         self.assertIsNone(record["product_inferred"])
         self.assertEqual(record["price_mxn"], 39.9)
 
+    def test_item_to_record_rejects_conflicting_inferred_product_for_configured_crop(self) -> None:
+        item = {
+            "name": "Jitomate saladet por kilo",
+            "canonicalUrl": "/ip/jitomate-saladet-por-kilo/00000000004087",
+            "salesUnitType": "EACH_WEIGHT",
+            "averageWeight": 0.106,
+            "priceInfo": {
+                "linePrice": "$49.00/kg",
+                "itemPrice": "$56.00/kg",
+                "wasPrice": "$56.00/kg",
+                "savingsAmt": 7,
+            },
+        }
+
+        record = item_to_record(item, "aguacate", configured_product="Aguacate")
+
+        self.assertIsNone(record)
+
     def test_choose_best_records_supports_custom_product_keys(self) -> None:
         records = [
             {
@@ -234,6 +253,40 @@ class WalmartProduceScraperTests(unittest.TestCase):
             self.assertIn("producto_original", exported.columns)
             self.assertIn("producto_canonico", exported.columns)
             self.assertIn("esta_en_promocion", exported.columns)
+
+    def test_load_search_terms_from_workbook_uses_walmart_configured_terms(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workbook_path = Path(temp_dir) / "products.xlsx"
+            df = pd.DataFrame(
+                [
+                    {
+                        "activo": True,
+                        "producto_canonico": "Papa",
+                        "walmart_habilitado": True,
+                        "terminos_busqueda_walmart": "papa blanca|papa alpha",
+                    },
+                    {
+                        "activo": True,
+                        "producto_canonico": "Tomate rojo",
+                        "walmart_habilitado": True,
+                        "terminos_busqueda_walmart": "",
+                    },
+                    {
+                        "activo": False,
+                        "producto_canonico": "Aguacate",
+                        "walmart_habilitado": True,
+                        "terminos_busqueda_walmart": "aguacate",
+                    },
+                ]
+            )
+            with pd.ExcelWriter(workbook_path, engine="openpyxl") as writer:
+                df.to_excel(writer, sheet_name="productos", index=False)
+
+            search_map = load_search_terms_from_workbook(workbook_path)
+
+            self.assertEqual(search_map["Papa"], ["papa blanca", "papa alpha"])
+            self.assertEqual(search_map["Tomate rojo"], ["Tomate rojo"])
+            self.assertNotIn("Aguacate", search_map)
 
 
 if __name__ == "__main__":

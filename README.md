@@ -8,6 +8,7 @@ Hoy el repositorio esta centrado principalmente en la capa de extraccion. Ya hay
 
 - Revisa `AGENTS.md` antes de hacer cambios importantes; ahi vive la guia operativa especifica del repo para agentes Codex.
 - Cada vez que un agente cree o modifique algo que valga la pena documentar, debe actualizar `README.md` y `AGENTS.md` en el mismo cambio para evitar que las instrucciones queden desfasadas.
+- Todo texto orientado al usuario debe quedar en espanol por defecto: titulos, etiquetas, graficas, nombres de columnas, nombres de hojas y salidas visibles para analisis o consumo de negocio.
 
 ## Estado actual del repo
 
@@ -173,6 +174,8 @@ Salida esperada:
 
 ### 4. Walmart produce scraper
 
+Por default, este script ahora intenta leer `config/products.xlsx` y usa las filas activas con `walmart_habilitado = TRUE` para que los terminos de busqueda coincidan con la corrida diaria. Si el archivo no existe, cae al catalogo hardcodeado legado.
+
 Ejemplo:
 
 ```powershell
@@ -197,11 +200,19 @@ Con ruta explicita:
 python -m src.extract.walmart_produce_scraper --output-format xlsx --output data/raw/walmart/walmart_produce_latest.xlsx
 ```
 
+Con un workbook de configuracion explicito:
+
+```powershell
+python -m src.extract.walmart_produce_scraper --config config/products.xlsx --output-format xlsx
+```
+
 Salida esperada:
 
 - Un archivo en formato `csv`, `xls` o `xlsx`
 - Si no pasas `--output`, el script genera un nombre tipo `walmart_produce_YYYYMMDD_HHMMSS.<ext>`
 - El script imprime en consola los registros seleccionados por cultivo
+- Si `config/products.xlsx` existe, usa `terminos_busqueda_walmart` igual que la corrida diaria; por ejemplo, `Papa` puede buscar `papa blanca` en lugar del fallback legado `papa`
+- Cuando el script corre con producto configurado, descarta resultados cuyo nombre infiera claramente otro cultivo; esto evita que un resultado como jitomate quede etiquetado como aguacate solo por venir de la misma busqueda
 
 ### 5. Chedraui produce scraper
 
