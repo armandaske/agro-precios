@@ -17,9 +17,10 @@ Implementado:
 - Extraccion de precios de frutas y hortalizas desde SNIIM via `requests`.
 - Descarga de reportes de Cierre Agricola SIAP via flujo HTTP/xajax.
 - Alternativa con Playwright para Cierre Agricola cuando el flujo HTTP no sea suficiente.
+- Scraper HTTP para Presas Agricolas con consultas historicas por anio, mes y decena.
 - Scraper de precios de productos frescos de Walmart Mexico.
 - Scraper de precios de productos frescos de Chedraui Mexico.
-- Tests unitarios para parsing de SNIIM, Walmart y Chedraui.
+- Tests unitarios para parsing de SNIIM, Presas Agricolas, Walmart y Chedraui.
 
 No implementado aun como flujo formal:
 
@@ -33,12 +34,14 @@ No implementado aun como flujo formal:
 - `src/extract/sniim.py`: extractor SNIIM y export a CSV/XLSX.
 - `src/extract/cierre_agricola_requests.py`: scraper HTTP para Cierre Agricola.
 - `src/extract/scraper_cierre_agricola_playwright.py`: alternativa con navegador.
+- `src/extract/presas_agricolas.py`: scraper HTTP del portal de Presas Agricolas y generador del workbook de consultas.
 - `src/extract/walmart_produce_scraper.py`: scraper de frutas y verduras en Walmart.
 - `src/extract/chedraui_produce_scraper.py`: scraper de frutas y verduras en Chedraui.
 - `scripts/run_daily_extracts.py`: orquestador diario para las 4 fuentes.
 - `scripts/fetch_cierre_batch.py`: descarga en lote exportes normalizados de Cierre Agricola para los productos canonicos configurados.
 - `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui y Cierre Agricola.
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
+- `config/presas_agricolas.xlsx`: workbook editable por el usuario con consultas de presas por anio, mes, decena e `id_conagua`.
 - `notebooks/master_price_eda.ipynb`: notebook base para graficar y explorar el workbook maestro.
 - `tests/`: pruebas unitarias.
 - `data/raw/sniim/`: salidas generadas por el extractor SNIIM.
@@ -213,6 +216,47 @@ Salida esperada:
 - El script imprime en consola los registros seleccionados por cultivo
 - Si `config/products.xlsx` existe, usa `terminos_busqueda_walmart` igual que la corrida diaria; por ejemplo, `Papa` puede buscar `papa blanca` en lugar del fallback legado `papa`
 - Cuando el script corre con producto configurado, descarta resultados cuyo nombre infiera claramente otro cultivo; esto evita que un resultado como jitomate quede etiquetado como aguacate solo por venir de la misma busqueda
+
+### 4.1. Presas Agricolas
+
+Este scraper reproduce el flujo HTTP real del portal sin depender del iframe ni del clic interactivo del mapa:
+
+- `js/funciones.php` devuelve el corte de todas las presas para un `anio + mes + decena`.
+- `js/graf.php` devuelve la serie historica de una presa para un `id_conagua + mes + decena + rango de anios`.
+- `config/presas_agricolas.xlsx` sirve como documento editable de parametros.
+- `config/presas_agricolas.xlsx` ahora incluye una hoja `catalogo_presas` para buscar `id_conagua` por `nombre_oficial` y `estado`.
+
+Crear o regenerar el workbook de configuracion:
+
+```powershell
+python -m src.extract.presas_agricolas --init-config
+```
+
+Ejecutar con la configuracion por default:
+
+```powershell
+python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx
+```
+
+Ejecutar con salida explicita:
+
+```powershell
+python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx --output data/raw/presas_agricolas/presas_historicas.xlsx
+```
+
+Salida esperada:
+
+- Un workbook `.xlsx` en `data/raw/presas_agricolas/` con hojas `presas_periodo`, `series_presa`, `errores` y `metadatos`
+- `config/presas_agricolas.xlsx` trae filas listas para usar desde el primer momento:
+  - `corte_nacional_actual`: snapshot del ultimo periodo publicado por el portal
+  - `presas_tamaulipas_actual`: ejemplo de lote por estado para el mismo corte
+  - `serie_pedro_jose_mendez`: ejemplo historico para la presa `3524`
+- En `consultas`, usa `tipo_consulta = presas_periodo` para el corte nacional, `tipo_consulta = presas_estado` para traer todas las presas de una entidad en esa fecha, y `tipo_consulta = serie_presa` para el historico por presa
+- Puedes dejar `id_conagua` vacio y llenar `nombre_oficial` + `estado`; el script intenta resolver el identificador automaticamente contra `catalogo_presas`
+- Para `serie_presa`, si `anio_inicial` queda vacio, el script usa una ventana automatica de 10 anios
+- Si llenas `id_conagua` en una fila `presas_periodo`, el resultado se filtra a esa sola presa dentro del corte solicitado
+- En `presas_estado`, `estado` es obligatorio y el resultado queda filtrado exactamente a esa entidad
+- Si un `nombre_oficial` coincide con varias presas, agrega `estado` o usa `id_conagua` directo para evitar ambiguedad
 
 ### 5. Chedraui produce scraper
 

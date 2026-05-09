@@ -1,0 +1,243 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+import pandas as pd
+
+from src.extract.presas_agricolas import (
+    CATALOG_SHEET_NAME,
+    QUERY_SHEET_NAME,
+    _filter_snapshot_by_state,
+    _normalize_portal_record,
+    _resolve_id_from_catalog,
+    build_catalog_dataframe,
+    build_default_config_dataframe,
+    load_queries_config,
+)
+
+
+class PresasAgricolasTests(unittest.TestCase):
+    def test_normalize_portal_record_decodes_entities_and_casts_numbers(self) -> None:
+        record = {
+            "CveCONAGUAPresa": "3524",
+            "X": "-99.5547",
+            "Y": "24.236",
+            "nombreOficial": "Pedro Jos&eacute; M&eacute;ndez",
+            "nombreComun": "Pedro Jos&eacute; M&eacute;ndez",
+            "nombreEstado": "Tamaulipas",
+            "nombreMpio": "San Jos&eacute; de Gracia",
+            "nombreUso": "Riego y abrevadero",
+            "DRiego": "R&iacute;o Soto La Marina                                ",
+            "anio": "2026",
+            "cveMes": "4",
+            "cveDecena": "3",
+            "porcAlmacen": "100.8",
+            "Almacenamiento": "31.50",
+            "NAME": "38.36",
+            "NAMO": "31.26",
+            "LinkPresa": "https://presas.conagua.gob.mx/inventario/tgeneralidades.aspx?DSP,3524",
+        }
+
+        normalized = _normalize_portal_record(record)
+
+        self.assertEqual(normalized["nombre_oficial"], "Pedro José Méndez")
+        self.assertEqual(normalized["municipio"], "San José de Gracia")
+        self.assertEqual(normalized["distrito_riego"], "Río Soto La Marina")
+        self.assertEqual(normalized["anio"], 2026)
+        self.assertEqual(normalized["mes"], 4)
+        self.assertEqual(normalized["decena"], 3)
+        self.assertAlmostEqual(float(normalized["porcentaje_almacenamiento"]), 100.8)
+        self.assertAlmostEqual(float(normalized["latitud"]), 24.236)
+        self.assertAlmostEqual(float(normalized["longitud"]), -99.5547)
+
+    def test_build_default_config_dataframe_prefills_snapshot_state_and_series(self) -> None:
+        df = build_default_config_dataframe(default_year=2026, default_month=4, default_day_block=3)
+
+        self.assertEqual(df["query_type"].tolist(), ["presas_periodo", "presas_estado", "serie_presa"])
+        self.assertEqual(df.iloc[0]["year"], 2026)
+        self.assertEqual(df.iloc[1]["state"], "Tamaulipas")
+        self.assertEqual(df.iloc[2]["id_conagua"], "3524")
+        self.assertEqual(df.iloc[2]["start_year"], 2017)
+
+    def test_load_queries_config_applies_default_series_window(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "presas.xlsx"
+            df = pd.DataFrame(
+                [
+                    {
+                        "activo": True,
+                        "nombre_consulta": "historico",
+                        "tipo_consulta": "serie_presa",
+                        "id_conagua": "3524",
+                        "anio": 2026,
+                        "mes": 4,
+                        "decena": 3,
+                        "anio_inicial": "",
+                        "anio_final": 2026,
+                    }
+                ]
+            )
+            with pd.ExcelWriter(path, engine="openpyxl") as writer:
+                df.to_excel(writer, sheet_name=QUERY_SHEET_NAME, index=False)
+
+            queries = load_queries_config(path)
+
+            self.assertEqual(len(queries), 1)
+            self.assertEqual(queries[0].start_year, 2017)
+            self.assertEqual(queries[0].end_year, 2026)
+
+    def test_load_queries_config_supports_name_based_lookup(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "presas.xlsx"
+            df = pd.DataFrame(
+                [
+                    {
+                        "activo": True,
+                        "nombre_consulta": "historico",
+                        "tipo_consulta": "serie_presa",
+                        "id_conagua": "",
+                        "nombre_oficial": "Pedro José Méndez",
+                        "estado": "Tamaulipas",
+                        "anio": 2026,
+                        "mes": 4,
+                        "decena": 3,
+                        "anio_inicial": "",
+                        "anio_final": 2026,
+                    }
+                ]
+            )
+            with pd.ExcelWriter(path, engine="openpyxl") as writer:
+                df.to_excel(writer, sheet_name=QUERY_SHEET_NAME, index=False)
+
+            queries = load_queries_config(path)
+
+            self.assertIsNone(queries[0].id_conagua)
+            self.assertEqual(queries[0].dam_name, "Pedro José Méndez")
+            self.assertEqual(queries[0].state, "Tamaulipas")
+
+    def test_load_queries_config_requires_state_for_presas_estado(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "presas.xlsx"
+            df = pd.DataFrame(
+                [
+                    {
+                        "activo": True,
+                        "nombre_consulta": "lote_estado",
+                        "tipo_consulta": "presas_estado",
+                        "anio": 2026,
+                        "mes": 4,
+                        "decena": 3,
+                        "estado": "",
+                    }
+                ]
+            )
+            with pd.ExcelWriter(path, engine="openpyxl") as writer:
+                df.to_excel(writer, sheet_name=QUERY_SHEET_NAME, index=False)
+
+            with self.assertRaisesRegex(ValueError, "estado es obligatorio para presas_estado"):
+                load_queries_config(path)
+
+    def test_resolve_id_from_catalog_matches_name_and_state(self) -> None:
+        catalog_df = pd.DataFrame(
+            [
+                {
+                    "id_conagua": "3524",
+                    "nombre_oficial": "Pedro José Méndez",
+                    "nombre_comun": "Pedro José Méndez",
+                    "estado": "Tamaulipas",
+                },
+                {
+                    "id_conagua": "9999",
+                    "nombre_oficial": "Pedro José Méndez",
+                    "nombre_comun": "Pedro José Méndez",
+                    "estado": "Nuevo León",
+                },
+            ]
+        )
+        query = load_queries_config_from_rows(
+            [
+                {
+                    "activo": True,
+                    "nombre_consulta": "historico",
+                    "tipo_consulta": "serie_presa",
+                    "id_conagua": "",
+                    "nombre_oficial": "Pedro José Méndez",
+                    "estado": "Tamaulipas",
+                    "anio": 2026,
+                    "mes": 4,
+                    "decena": 3,
+                    "anio_inicial": 2017,
+                    "anio_final": 2026,
+                }
+            ]
+        )[0]
+
+        resolved = _resolve_id_from_catalog(query, catalog_df)
+
+        self.assertEqual(resolved, "3524")
+
+    def test_build_catalog_dataframe_deduplicates_ids(self) -> None:
+        snapshot_df = pd.DataFrame(
+            [
+                {
+                    "id_conagua": "3524",
+                    "nombre_oficial": "Pedro José Méndez",
+                    "estado": "Tamaulipas",
+                    "anio": 2026,
+                    "mes": 4,
+                    "decena": 3,
+                },
+                {
+                    "id_conagua": "3524",
+                    "nombre_oficial": "Pedro José Méndez",
+                    "estado": "Tamaulipas",
+                    "anio": 2026,
+                    "mes": 4,
+                    "decena": 3,
+                },
+                {
+                    "id_conagua": "1111",
+                    "nombre_oficial": "Otra Presa",
+                    "estado": "Sonora",
+                    "anio": 2026,
+                    "mes": 4,
+                    "decena": 3,
+                },
+            ]
+        )
+
+        catalog = build_catalog_dataframe(snapshot_df)
+
+        self.assertEqual(len(catalog), 2)
+        self.assertIn("id_conagua", catalog.columns)
+
+    def test_filter_snapshot_by_state_matches_accent_insensitive(self) -> None:
+        snapshot_df = pd.DataFrame(
+            [
+                {"id_conagua": "1", "estado": "Nuevo León"},
+                {"id_conagua": "2", "estado": "Tamaulipas"},
+            ]
+        )
+
+        filtered = _filter_snapshot_by_state(snapshot_df, "Nuevo Leon")
+
+        self.assertEqual(filtered["id_conagua"].tolist(), ["1"])
+
+
+def load_queries_config_from_rows(rows: list[dict[str, object]]):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        path = Path(temp_dir) / "presas.xlsx"
+        with pd.ExcelWriter(path, engine="openpyxl") as writer:
+            pd.DataFrame(rows).to_excel(writer, sheet_name=QUERY_SHEET_NAME, index=False)
+            pd.DataFrame(
+                [{"id_conagua": "3524", "nombre_oficial": "Pedro José Méndez", "estado": "Tamaulipas"}]
+            ).to_excel(
+                writer,
+                sheet_name=CATALOG_SHEET_NAME,
+                index=False,
+            )
+        return load_queries_config(path)
+
+
+if __name__ == "__main__":
+    unittest.main()

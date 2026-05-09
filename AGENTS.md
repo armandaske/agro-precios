@@ -17,10 +17,11 @@ The current codebase is extraction-first:
 - Main implemented value: source-specific scrapers plus a daily orchestrator.
 - Main sources today:
   - `SNIIM` for frutas y hortalizas market prices.
-  - `SIAP Cierre Agricola` via legacy HTTP/xajax flow.
-  - `SIAP Cierre Agricola` Playwright fallback.
-  - `Walmart Mexico` fresh produce search scraping.
-  - `Chedraui Mexico` fresh produce search scraping.
+- `SIAP Cierre Agricola` via legacy HTTP/xajax flow.
+- `SIAP Cierre Agricola` Playwright fallback.
+- `Presas Agricolas` via direct HTTP endpoints for corte por decena and series historicas por presa.
+- `Walmart Mexico` fresh produce search scraping.
+- `Chedraui Mexico` fresh produce search scraping.
 - Existing tests focus on parser behavior and daily-run orchestration.
 - `scikit-learn` and `xgboost` are installed, but there is no formal modeling or forecasting pipeline yet.
 
@@ -41,6 +42,7 @@ When you work in this repo, optimize for these outcomes:
 - `src/extract/sniim.py`: SNIIM extractor and export helpers.
 - `src/extract/cierre_agricola_requests.py`: primary SIAP Cierre Agricola HTTP/xajax implementation.
 - `src/extract/scraper_cierre_agricola_playwright.py`: browser fallback for SIAP when HTTP flow breaks.
+- `src/extract/presas_agricolas.py`: Presas Agricolas scraper plus workbook bootstrap for parameterized queries.
 - `src/extract/walmart_produce_scraper.py`: Walmart produce scraper and record ranking logic.
 - `src/extract/chedraui_produce_scraper.py`: Chedraui produce scraper and search-result normalization.
 - `src/extract/spreadsheet_localization.py`: column aliases, workbook sheet names, and Spanish export naming.
@@ -49,6 +51,8 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Cierre exports.
 - `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
 - `config/products.xlsx`: operational config workbook for product mappings and enabled sources.
+- `config/presas_agricolas.xlsx`: operational config workbook for dam queries by year, month, day-block, and `id_conagua`.
+- `config/presas_agricolas.xlsx` also carries a `catalogo_presas` sheet so operators can resolve `id_conagua` from `nombre_oficial` and `estado`.
 - `notebooks/master_price_eda.ipynb`: starter notebook for charting the comparative workbook.
 - `tests/`: unit tests and fixtures.
 - `data/`: generated raw data and daily runs.
@@ -110,6 +114,16 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - Preserve blocked-page detection. Silent bad HTML is worse than an explicit failure.
 - Ranking quality matters because consulting analyses need the best representative price per crop, not just any search result.
 
+### Presas Agricolas
+
+- `src/extract/presas_agricolas.py` should keep using the portal's direct JSON endpoints instead of browser automation as long as `js/funciones.php`, `js/graf.php`, `js/ajax/getInicio.php`, and `js/ajax/getAnios.php` remain stable.
+- Treat `anio + mes + decena` as the source-of-truth query contract for snapshots, and `id_conagua + mes + decena + rango de anios` as the source-of-truth contract for historical series.
+- Support the explicit `presas_estado` batch mode by filtering snapshots on `estado` after retrieval, and treat that filter as part of the auditable query metadata.
+- Preserve both the requested query metadata and the returned dam metadata in exports so later analysis can audit exactly which cut was retrieved.
+- Keep the workbook bootstrap flow intact: `python -m src.extract.presas_agricolas --init-config` should generate a ready-to-run `config/presas_agricolas.xlsx`.
+- Keep name-based lookup stable: if a query provides `nombre_oficial` and optional `estado`, the scraper should resolve `id_conagua` from `catalogo_presas` before calling the portal.
+- Default standalone outputs for this source should stay under `data/raw/presas_agricolas/` unless the operator passes an explicit `--output`.
+
 ### Chedraui
 
 - The scraper merges multiple search endpoints and deduplicates by normalized product identity.
@@ -139,7 +153,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - `config/products.xlsx` is operationally important but is currently ignored by git, so do not assume config workbook changes will be versioned automatically.
 - Preserve source provenance columns and exported metadata whenever possible.
 - Prefer additive changes to schemas over breaking renames unless you update all downstream consumers and docs together.
-- All user-facing text must be in Spanish by default. This includes titles, labels, graph names, workbook sheet names when meant for users, column names, summary fields presented to users, and any other visible output intended for business consumption.
+- All user-facing text must be in Spanish by default. This includes titles, labels, graph names, workbook sheet names when meant for users, column names, summary fields presented to users, and any other visible output intended for business consumption. However, respond in the chat in English for clarity and consistency with the codebase, and only use Spanish in outputs when it is clearly intended for end users or when preserving source-native field names that are in Spanish.
 
 ## Testing and validation rules
 
