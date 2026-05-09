@@ -7,9 +7,11 @@ from unittest.mock import patch
 import pandas as pd
 
 from src.extract.chedraui_produce_scraper import (
-    collect_search_records,
+    DEFAULT_OUTPUT_DIR,
+    build_default_output_path,
     choose_best_record_per_crop,
     canonical_crop,
+    collect_search_records,
     extract_search_items,
     item_to_record,
     save_output,
@@ -274,6 +276,11 @@ class ChedrauiProduceScraperTests(unittest.TestCase):
             self.assertIn("producto_original", exported.columns)
             self.assertIn("producto_canonico", exported.columns)
             self.assertIn("esta_en_promocion", exported.columns)
+
+    def test_build_default_output_path_targets_data_raw_chedraui(self) -> None:
+        output_path = build_default_output_path("csv", "20260509_101112")
+
+        self.assertEqual(output_path, DEFAULT_OUTPUT_DIR / "chedraui_produce_20260509_101112.csv")
 
 
 if __name__ == "__main__":

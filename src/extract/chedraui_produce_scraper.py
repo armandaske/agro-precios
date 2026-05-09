@@ -19,6 +19,7 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0",
     "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
 }
+DEFAULT_OUTPUT_DIR = Path("data/raw/chedraui")
 
 TARGET_SEARCH_TERMS = {
     "aguacate": ["aguacate"],
@@ -558,6 +559,10 @@ def _write_html_xls(df: pd.DataFrame, output_path: Path) -> None:
     output_path.write_text(html, encoding="utf-8")
 
 
+def build_default_output_path(output_format: str, timestamp: str) -> Path:
+    return DEFAULT_OUTPUT_DIR / f"chedraui_produce_{timestamp}.{output_format}"
+
+
 def save_output(records: List[Dict[str, Any]], filepath: str, output_format: str) -> Path:
     if not records:
         print("No records to save.")
@@ -566,6 +571,7 @@ def save_output(records: List[Dict[str, Any]], filepath: str, output_format: str
     output_path = Path(filepath)
     if output_path.suffix.lower() != f".{output_format}":
         output_path = output_path.with_suffix(f".{output_format}")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     df = _records_to_dataframe(records)
     localized_df = rename_columns(df, CHEDRAUI_EXPORT_COLUMN_MAP)
@@ -584,7 +590,10 @@ def save_output(records: List[Dict[str, Any]], filepath: str, output_format: str
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Chedraui Mexico produce scraper")
     parser.add_argument("--output-format", choices=("csv", "xls", "xlsx"), default="csv")
-    parser.add_argument("--output", help="Output file path. If omitted, a timestamped filename is generated.")
+    parser.add_argument(
+        "--output",
+        help="Output file path. If omitted, the file is saved under data/raw/chedraui/ with a timestamped filename.",
+    )
     return parser.parse_args()
 
 
@@ -594,8 +603,8 @@ def main() -> None:
     best_records = choose_best_record_per_crop(records)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    default_output = f"chedraui_produce_{timestamp}.{args.output_format}"
-    output_path = save_output(best_records, args.output or default_output, args.output_format)
+    default_output = build_default_output_path(args.output_format, timestamp)
+    output_path = save_output(best_records, str(args.output or default_output), args.output_format)
 
     print(f"Saved {len(best_records)} records to {output_path}\\n")
     for record in best_records:

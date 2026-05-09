@@ -105,6 +105,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 
 - The scraper reads `__NEXT_DATA__` and ranks candidate products per configured crop.
 - The standalone Walmart entrypoint should use `config/products.xlsx` by default when it exists, so `terminos_busqueda_walmart` stays aligned with the daily runner.
+- Standalone Walmart outputs should default to `data/raw/walmart/`; only write elsewhere when the operator passes an explicit `--output`.
 - When a configured Walmart crop is being scraped, reject results whose product name clearly infers a different crop instead of relabeling them to the configured product.
 - Preserve blocked-page detection. Silent bad HTML is worse than an explicit failure.
 - Ranking quality matters because consulting analyses need the best representative price per crop, not just any search result.
@@ -112,6 +113,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 ### Chedraui
 
 - The scraper merges multiple search endpoints and deduplicates by normalized product identity.
+- Standalone Chedraui outputs should default to `data/raw/chedraui/`; only write elsewhere when the operator passes an explicit `--output`.
 - Keep query-term filtering strict enough to avoid unrelated produce contaminating a crop result.
 - Treat current-price and old-price extraction carefully; promotion logic affects downstream analysis quality.
 
@@ -133,6 +135,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 
 - Treat generated outputs as disposable unless the user explicitly wants them committed.
 - `.gitignore` already excludes `data/daily_runs/`, logs, and spreadsheet outputs such as `*.xlsx`, `*.xls`, and `*.csv`.
+- New standalone scrapers should follow the same source-specific raw output layout: default under `data/raw/<source_slug>/` with timestamped filenames, while still allowing an explicit override flag for custom destinations.
 - `config/products.xlsx` is operationally important but is currently ignored by git, so do not assume config workbook changes will be versioned automatically.
 - Preserve source provenance columns and exported metadata whenever possible.
 - Prefer additive changes to schemas over breaking renames unless you update all downstream consumers and docs together.

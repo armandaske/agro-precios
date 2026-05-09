@@ -6,6 +6,8 @@ from pathlib import Path
 import pandas as pd
 
 from src.extract.walmart_produce_scraper import (
+    DEFAULT_OUTPUT_DIR,
+    build_default_output_path,
     choose_best_record_per_crop,
     choose_best_records,
     extract_next_data,
@@ -287,6 +289,11 @@ class WalmartProduceScraperTests(unittest.TestCase):
             self.assertEqual(search_map["Papa"], ["papa blanca", "papa alpha"])
             self.assertEqual(search_map["Tomate rojo"], ["Tomate rojo"])
             self.assertNotIn("Aguacate", search_map)
+
+    def test_build_default_output_path_targets_data_raw_walmart(self) -> None:
+        output_path = build_default_output_path("xlsx", "20260509_101112")
+
+        self.assertEqual(output_path, DEFAULT_OUTPUT_DIR / "walmart_produce_20260509_101112.xlsx")
 
 
 if __name__ == "__main__":

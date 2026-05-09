@@ -209,7 +209,7 @@ python -m src.extract.walmart_produce_scraper --config config/products.xlsx --ou
 Salida esperada:
 
 - Un archivo en formato `csv`, `xls` o `xlsx`
-- Si no pasas `--output`, el script genera un nombre tipo `walmart_produce_YYYYMMDD_HHMMSS.<ext>`
+- Si no pasas `--output`, el script guarda en `data/raw/walmart/` con un nombre tipo `walmart_produce_YYYYMMDD_HHMMSS.<ext>`
 - El script imprime en consola los registros seleccionados por cultivo
 - Si `config/products.xlsx` existe, usa `terminos_busqueda_walmart` igual que la corrida diaria; por ejemplo, `Papa` puede buscar `papa blanca` en lugar del fallback legado `papa`
 - Cuando el script corre con producto configurado, descarta resultados cuyo nombre infiera claramente otro cultivo; esto evita que un resultado como jitomate quede etiquetado como aguacate solo por venir de la misma busqueda
@@ -243,7 +243,7 @@ python -m src.extract.chedraui_produce_scraper --output-format xlsx --output dat
 Salida esperada:
 
 - Un archivo en formato `csv`, `xls` o `xlsx`
-- Si no pasas `--output`, el script genera un nombre tipo `chedraui_produce_YYYYMMDD_HHMMSS.<ext>`
+- Si no pasas `--output`, el script guarda en `data/raw/chedraui/` con un nombre tipo `chedraui_produce_YYYYMMDD_HHMMSS.<ext>`
 - El script imprime en consola los registros seleccionados por cultivo
 
 ## Extraccion diaria
