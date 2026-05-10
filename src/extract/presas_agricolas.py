@@ -20,9 +20,6 @@ from typing import Any
 
 import pandas as pd
 import requests
-from openpyxl import load_workbook
-from openpyxl.formatting.rule import FormulaRule
-from openpyxl.styles import Alignment, Font, PatternFill
 
 BASE_URL = "https://presasagricolas.agricultura.gob.mx/"
 DEFAULT_CONFIG_PATH = Path("config/presas_agricolas.xlsx")
@@ -104,10 +101,6 @@ CATALOG_EXPORT_COLUMN_MAP = {
     "last_seen_day_block": "decena_ultimo_avistamiento",
 }
 
-GRAY_OUT_FILL = PatternFill(fill_type="solid", fgColor="D9D9D9")
-HEADER_FILL = PatternFill(fill_type="solid", fgColor="DDEBF7")
-HEADER_FONT = Font(bold=True)
-USED_RANGE_FILL = PatternFill(fill_type="solid", fgColor="FFF2CC")
 
 SNAPSHOT_COLUMN_MAP = {
     "config_row_number": "numero_fila_config",
@@ -561,115 +554,6 @@ def _rename_columns(df: pd.DataFrame, column_map: dict[str, str]) -> pd.DataFram
     return renamed
 
 
-def _style_header_row(worksheet) -> None:
-    for cell in worksheet[1]:
-        cell.fill = HEADER_FILL
-        cell.font = HEADER_FONT
-        cell.alignment = Alignment(horizontal="center", vertical="center")
-
-
-def _set_column_widths(worksheet, widths: dict[str, float]) -> None:
-    for column_letter, width in widths.items():
-        worksheet.column_dimensions[column_letter].width = width
-
-
-def _apply_query_sheet_conditional_formatting(worksheet) -> None:
-    # Input guidance fill for the editable area.
-    worksheet.conditional_formatting.add(
-        "A2:K1000",
-        FormulaRule(formula=['$C2<>""'], fill=USED_RANGE_FILL, stopIfTrue=False),
-    )
-
-    # Never used for `presas_estado`.
-    for column in ("D", "H", "I", "J"):
-        worksheet.conditional_formatting.add(
-            f"{column}2:{column}1000",
-            FormulaRule(formula=['$C2="presas_estado"'], fill=GRAY_OUT_FILL, stopIfTrue=True),
-        )
-
-    # Never used for the aggregate `presas_periodo` default shape.
-    for column in ("H", "I"):
-        worksheet.conditional_formatting.add(
-            f"{column}2:{column}1000",
-            FormulaRule(formula=['$C2="presas_periodo"'], fill=GRAY_OUT_FILL, stopIfTrue=True),
-        )
-
-    # State is not used for a direct id-based series query.
-    worksheet.conditional_formatting.add(
-        "K2:K1000",
-        FormulaRule(formula=['AND($C2="presas_periodo",$D2<>"")'], fill=GRAY_OUT_FILL, stopIfTrue=True),
-    )
-    worksheet.conditional_formatting.add(
-        "K2:K1000",
-        FormulaRule(formula=['AND($C2="serie_presa",$D2<>"")'], fill=GRAY_OUT_FILL, stopIfTrue=True),
-    )
-
-
-def _apply_config_workbook_formatting(config_path: Path) -> None:
-    workbook = load_workbook(config_path)
-
-    if QUERY_SHEET_NAME in workbook.sheetnames:
-        sheet = workbook[QUERY_SHEET_NAME]
-        sheet.freeze_panes = "A2"
-        sheet.auto_filter.ref = "A1:K1000"
-        _style_header_row(sheet)
-        _set_column_widths(
-            sheet,
-            {
-                "A": 10,
-                "B": 28,
-                "C": 18,
-                "D": 13,
-                "E": 10,
-                "F": 8,
-                "G": 9,
-                "H": 12,
-                "I": 10,
-                "J": 24,
-                "K": 16,
-            },
-        )
-        _apply_query_sheet_conditional_formatting(sheet)
-
-    if INSTRUCTIONS_SHEET_NAME in workbook.sheetnames:
-        sheet = workbook[INSTRUCTIONS_SHEET_NAME]
-        sheet.freeze_panes = "A2"
-        _style_header_row(sheet)
-        _set_column_widths(sheet, {"A": 24, "B": 120})
-        for row in sheet.iter_rows(min_row=2, max_col=2):
-            for cell in row:
-                cell.alignment = Alignment(wrap_text=True, vertical="top")
-
-    if CATALOG_SHEET_NAME in workbook.sheetnames:
-        sheet = workbook[CATALOG_SHEET_NAME]
-        sheet.freeze_panes = "A2"
-        _style_header_row(sheet)
-        _set_column_widths(
-            sheet,
-            {
-                "A": 12,
-                "B": 28,
-                "C": 24,
-                "D": 18,
-                "E": 22,
-                "F": 28,
-                "G": 24,
-                "H": 11,
-                "I": 11,
-                "J": 50,
-                "K": 14,
-                "L": 18,
-                "M": 18,
-                "N": 18,
-                "O": 18,
-                "P": 18,
-                "Q": 18,
-            },
-        )
-
-    workbook.save(config_path)
-
-
 def build_default_config_dataframe(
     *,
     default_year: int,
@@ -1009,7 +893,6 @@ def create_default_config(
             index=False,
         )
 
-    _apply_config_workbook_formatting(config_path)
     return config_path
 
 
