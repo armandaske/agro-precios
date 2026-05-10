@@ -8,6 +8,7 @@ from src.extract.presas_agricolas import (
     CATALOG_SHEET_NAME,
     QUERY_SHEET_NAME,
     _filter_snapshot_by_state,
+    _iter_catalog_periods,
     _normalize_portal_record,
     _resolve_id_from_catalog,
     build_catalog_dataframe,
@@ -210,6 +211,39 @@ class PresasAgricolasTests(unittest.TestCase):
 
         self.assertEqual(len(catalog), 2)
         self.assertIn("id_conagua", catalog.columns)
+        self.assertIn("periods_seen_count", catalog.columns)
+
+    def test_build_catalog_dataframe_tracks_first_and_last_seen_periods(self) -> None:
+        snapshot_df = pd.DataFrame(
+            [
+                {
+                    "id_conagua": "3524",
+                    "nombre_oficial": "Pedro José Méndez",
+                    "estado": "Tamaulipas",
+                    "anio": 2024,
+                    "mes": 1,
+                    "decena": 1,
+                },
+                {
+                    "id_conagua": "3524",
+                    "nombre_oficial": "Pedro José Méndez",
+                    "estado": "Tamaulipas",
+                    "anio": 2026,
+                    "mes": 4,
+                    "decena": 3,
+                },
+            ]
+        )
+
+        catalog = build_catalog_dataframe(snapshot_df)
+
+        self.assertEqual(int(catalog.iloc[0]["periods_seen_count"]), 2)
+        self.assertEqual(int(catalog.iloc[0]["first_seen_year"]), 2024)
+        self.assertEqual(int(catalog.iloc[0]["first_seen_month"]), 1)
+        self.assertEqual(int(catalog.iloc[0]["first_seen_day_block"]), 1)
+        self.assertEqual(int(catalog.iloc[0]["last_seen_year"]), 2026)
+        self.assertEqual(int(catalog.iloc[0]["last_seen_month"]), 4)
+        self.assertEqual(int(catalog.iloc[0]["last_seen_day_block"]), 3)
 
     def test_filter_snapshot_by_state_matches_accent_insensitive(self) -> None:
         snapshot_df = pd.DataFrame(
@@ -222,6 +256,18 @@ class PresasAgricolasTests(unittest.TestCase):
         filtered = _filter_snapshot_by_state(snapshot_df, "Nuevo Leon")
 
         self.assertEqual(filtered["id_conagua"].tolist(), ["1"])
+
+    def test_iter_catalog_periods_caps_current_year_to_published_period(self) -> None:
+        periods = _iter_catalog_periods(
+            years=[2026, 2025],
+            scope="all-available",
+            default_period={"year": 2026, "month": 4, "day_block": 3},
+        )
+
+        self.assertNotIn((2026, 5, 1), periods)
+        self.assertIn((2026, 4, 3), periods)
+        self.assertIn((2026, 1, 1), periods)
+        self.assertIn((2025, 12, 3), periods)
 
 
 def load_queries_config_from_rows(rows: list[dict[str, object]]):

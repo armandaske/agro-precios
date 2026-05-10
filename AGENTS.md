@@ -53,6 +53,7 @@ When you work in this repo, optimize for these outcomes:
 - `config/products.xlsx`: operational config workbook for product mappings and enabled sources.
 - `config/presas_agricolas.xlsx`: operational config workbook for dam queries by year, month, day-block, and `id_conagua`.
 - `config/presas_agricolas.xlsx` also carries a `catalogo_presas` sheet so operators can resolve `id_conagua` from `nombre_oficial` and `estado`.
+- The Presas workbook bootstrap supports `catalog_scope`: `latest` for a fast single-cut catalog and `all-available` for a slower union across published periods.
 - `notebooks/master_price_eda.ipynb`: starter notebook for charting the comparative workbook.
 - `tests/`: unit tests and fixtures.
 - `data/`: generated raw data and daily runs.
@@ -122,6 +123,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - Preserve both the requested query metadata and the returned dam metadata in exports so later analysis can audit exactly which cut was retrieved.
 - Keep the workbook bootstrap flow intact: `python -m src.extract.presas_agricolas --init-config` should generate a ready-to-run `config/presas_agricolas.xlsx`.
 - Keep name-based lookup stable: if a query provides `nombre_oficial` and optional `estado`, the scraper should resolve `id_conagua` from `catalogo_presas` before calling the portal.
+- For stronger catalog coverage, prefer `--catalog-scope all-available`; preserve catalog provenance fields such as periods observed and first/last seen period.
 - Default standalone outputs for this source should stay under `data/raw/presas_agricolas/` unless the operator passes an explicit `--output`.
 
 ### Chedraui

@@ -20,6 +20,9 @@ from typing import Any
 
 import pandas as pd
 import requests
+from openpyxl import load_workbook
+from openpyxl.formatting.rule import FormulaRule
+from openpyxl.styles import Alignment, Font, PatternFill
 
 BASE_URL = "https://presasagricolas.agricultura.gob.mx/"
 DEFAULT_CONFIG_PATH = Path("config/presas_agricolas.xlsx")
@@ -92,7 +95,19 @@ CATALOG_EXPORT_COLUMN_MAP = {
     "anio": "anio_catalogo",
     "mes": "mes_catalogo",
     "decena": "decena_catalogo",
+    "periods_seen_count": "periodos_observados",
+    "first_seen_year": "anio_primer_avistamiento",
+    "first_seen_month": "mes_primer_avistamiento",
+    "first_seen_day_block": "decena_primer_avistamiento",
+    "last_seen_year": "anio_ultimo_avistamiento",
+    "last_seen_month": "mes_ultimo_avistamiento",
+    "last_seen_day_block": "decena_ultimo_avistamiento",
 }
+
+GRAY_OUT_FILL = PatternFill(fill_type="solid", fgColor="D9D9D9")
+HEADER_FILL = PatternFill(fill_type="solid", fgColor="DDEBF7")
+HEADER_FONT = Font(bold=True)
+USED_RANGE_FILL = PatternFill(fill_type="solid", fgColor="FFF2CC")
 
 SNAPSHOT_COLUMN_MAP = {
     "config_row_number": "numero_fila_config",
@@ -546,6 +561,115 @@ def _rename_columns(df: pd.DataFrame, column_map: dict[str, str]) -> pd.DataFram
     return renamed
 
 
+def _style_header_row(worksheet) -> None:
+    for cell in worksheet[1]:
+        cell.fill = HEADER_FILL
+        cell.font = HEADER_FONT
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+
+def _set_column_widths(worksheet, widths: dict[str, float]) -> None:
+    for column_letter, width in widths.items():
+        worksheet.column_dimensions[column_letter].width = width
+
+
+def _apply_query_sheet_conditional_formatting(worksheet) -> None:
+    # Input guidance fill for the editable area.
+    worksheet.conditional_formatting.add(
+        "A2:K1000",
+        FormulaRule(formula=['$C2<>""'], fill=USED_RANGE_FILL, stopIfTrue=False),
+    )
+
+    # Never used for `presas_estado`.
+    for column in ("D", "H", "I", "J"):
+        worksheet.conditional_formatting.add(
+            f"{column}2:{column}1000",
+            FormulaRule(formula=['$C2="presas_estado"'], fill=GRAY_OUT_FILL, stopIfTrue=True),
+        )
+
+    # Never used for the aggregate `presas_periodo` default shape.
+    for column in ("H", "I"):
+        worksheet.conditional_formatting.add(
+            f"{column}2:{column}1000",
+            FormulaRule(formula=['$C2="presas_periodo"'], fill=GRAY_OUT_FILL, stopIfTrue=True),
+        )
+
+    # State is not used for a direct id-based series query.
+    worksheet.conditional_formatting.add(
+        "K2:K1000",
+        FormulaRule(formula=['AND($C2="presas_periodo",$D2<>"")'], fill=GRAY_OUT_FILL, stopIfTrue=True),
+    )
+    worksheet.conditional_formatting.add(
+        "K2:K1000",
+        FormulaRule(formula=['AND($C2="serie_presa",$D2<>"")'], fill=GRAY_OUT_FILL, stopIfTrue=True),
+    )
+
+
+def _apply_config_workbook_formatting(config_path: Path) -> None:
+    workbook = load_workbook(config_path)
+
+    if QUERY_SHEET_NAME in workbook.sheetnames:
+        sheet = workbook[QUERY_SHEET_NAME]
+        sheet.freeze_panes = "A2"
+        sheet.auto_filter.ref = "A1:K1000"
+        _style_header_row(sheet)
+        _set_column_widths(
+            sheet,
+            {
+                "A": 10,
+                "B": 28,
+                "C": 18,
+                "D": 13,
+                "E": 10,
+                "F": 8,
+                "G": 9,
+                "H": 12,
+                "I": 10,
+                "J": 24,
+                "K": 16,
+            },
+        )
+        _apply_query_sheet_conditional_formatting(sheet)
+
+    if INSTRUCTIONS_SHEET_NAME in workbook.sheetnames:
+        sheet = workbook[INSTRUCTIONS_SHEET_NAME]
+        sheet.freeze_panes = "A2"
+        _style_header_row(sheet)
+        _set_column_widths(sheet, {"A": 24, "B": 120})
+        for row in sheet.iter_rows(min_row=2, max_col=2):
+            for cell in row:
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
+
+    if CATALOG_SHEET_NAME in workbook.sheetnames:
+        sheet = workbook[CATALOG_SHEET_NAME]
+        sheet.freeze_panes = "A2"
+        _style_header_row(sheet)
+        _set_column_widths(
+            sheet,
+            {
+                "A": 12,
+                "B": 28,
+                "C": 24,
+                "D": 18,
+                "E": 22,
+                "F": 28,
+                "G": 24,
+                "H": 11,
+                "I": 11,
+                "J": 50,
+                "K": 14,
+                "L": 18,
+                "M": 18,
+                "N": 18,
+                "O": 18,
+                "P": 18,
+                "Q": 18,
+            },
+        )
+
+    workbook.save(config_path)
+
+
 def build_default_config_dataframe(
     *,
     default_year: int,
@@ -633,6 +757,13 @@ def build_instructions_dataframe() -> pd.DataFrame:
     )
 
 
+def _period_sort_value(year: Any, month: Any, day_block: Any) -> int:
+    year_i = _parse_optional_int(year) or 0
+    month_i = _parse_optional_int(month) or 0
+    day_i = _parse_optional_int(day_block) or 0
+    return year_i * 1000 + month_i * 10 + day_i
+
+
 def build_catalog_dataframe(snapshot_df: pd.DataFrame) -> pd.DataFrame:
     catalog_columns = [
         "id_conagua",
@@ -651,9 +782,138 @@ def build_catalog_dataframe(snapshot_df: pd.DataFrame) -> pd.DataFrame:
     ]
     available = [column for column in catalog_columns if column in snapshot_df.columns]
     catalog_df = snapshot_df[available].copy()
-    catalog_df = catalog_df.sort_values(["estado", "nombre_oficial", "id_conagua"], na_position="last")
-    catalog_df = catalog_df.drop_duplicates(subset=["id_conagua"]).reset_index(drop=True)
-    return catalog_df
+    if catalog_df.empty:
+        return catalog_df
+
+    catalog_df["_period_sort"] = catalog_df.apply(
+        lambda row: _period_sort_value(row.get("anio"), row.get("mes"), row.get("decena")),
+        axis=1,
+    )
+    catalog_df = catalog_df.sort_values(["id_conagua", "_period_sort"], ascending=[True, False], na_position="last")
+
+    latest_df = catalog_df.drop_duplicates(subset=["id_conagua"], keep="first").drop(columns="_period_sort")
+    earliest_df = (
+        catalog_df.sort_values(["id_conagua", "_period_sort"], ascending=[True, True], na_position="last")
+        .drop_duplicates(subset=["id_conagua"], keep="first")
+        .rename(
+            columns={
+                "anio": "first_seen_year",
+                "mes": "first_seen_month",
+                "decena": "first_seen_day_block",
+            }
+        )[["id_conagua", "first_seen_year", "first_seen_month", "first_seen_day_block"]]
+    )
+    latest_period_df = latest_df.rename(
+        columns={
+            "anio": "last_seen_year",
+            "mes": "last_seen_month",
+            "decena": "last_seen_day_block",
+        }
+    )[["id_conagua", "last_seen_year", "last_seen_month", "last_seen_day_block"]]
+    counts_df = (
+        catalog_df.groupby("id_conagua", dropna=False)
+        .size()
+        .reset_index(name="periods_seen_count")
+    )
+    summary_df = counts_df.merge(earliest_df, on="id_conagua", how="left").merge(
+        latest_period_df,
+        on="id_conagua",
+        how="left",
+    )
+
+    merged_df = latest_df.merge(summary_df, on="id_conagua", how="left")
+    merged_df = merged_df.sort_values(["estado", "nombre_oficial", "id_conagua"], na_position="last").reset_index(drop=True)
+    return merged_df
+
+
+def _iter_catalog_periods(
+    *,
+    years: list[int],
+    scope: str,
+    default_period: dict[str, int],
+) -> list[tuple[int, int, int]]:
+    if scope == "latest":
+        return []
+    if scope != "all-available":
+        raise ValueError(f"catalog_scope invalido: {scope}")
+
+    periods: list[tuple[int, int, int]] = []
+    max_year = default_period["year"]
+    max_month = default_period["month"]
+    max_day_block = default_period["day_block"]
+
+    for year in sorted(set(years), reverse=True):
+        month_start = 12
+        month_end = 1
+        if year == max_year:
+            month_start = max_month
+        for month in range(month_start, month_end - 1, -1):
+            day_blocks = (3, 2, 1)
+            if year == max_year and month == max_month:
+                day_blocks = tuple(block for block in (3, 2, 1) if block <= max_day_block)
+            for day_block in day_blocks:
+                periods.append((year, month, day_block))
+    return periods
+
+
+def build_catalog_snapshot_union(
+    *,
+    session: requests.Session,
+    scope: str,
+    default_period: dict[str, int],
+    available_years: list[int],
+) -> pd.DataFrame:
+    latest_snapshot = fetch_snapshot_dataframe(
+        year=default_period["year"],
+        month=default_period["month"],
+        day_block=default_period["day_block"],
+        session=session,
+    )
+    if scope == "latest":
+        return latest_snapshot
+
+    frames: list[pd.DataFrame] = [latest_snapshot]
+    seen_periods = {
+        (default_period["year"], default_period["month"], default_period["day_block"])
+    }
+    periods = _iter_catalog_periods(
+        years=available_years,
+        scope=scope,
+        default_period=default_period,
+    )
+    total = len(periods)
+    for idx, (year, month, day_block) in enumerate(periods, start=1):
+        if (year, month, day_block) in seen_periods:
+            continue
+        try:
+            snapshot_df = fetch_snapshot_dataframe(
+                year=year,
+                month=month,
+                day_block=day_block,
+                session=session,
+            )
+        except Exception as exc:
+            LOGGER.warning(
+                "No se pudo agregar el periodo %s-%02d decena %s al catalogo: %s",
+                year,
+                month,
+                day_block,
+                exc,
+            )
+            continue
+
+        if not snapshot_df.empty:
+            frames.append(snapshot_df)
+        seen_periods.add((year, month, day_block))
+        if idx % 100 == 0 or idx == total:
+            LOGGER.info(
+                "Construyendo catalogo maestro: %s/%s periodos revisados, %s snapshots acumulados",
+                idx,
+                total,
+                len(frames),
+            )
+
+    return pd.concat(frames, ignore_index=True) if frames else latest_snapshot
 
 
 def _resolve_id_from_catalog(query: PresaQuery, catalog_df: pd.DataFrame) -> str:
@@ -705,18 +965,20 @@ def create_default_config(
     config_path: Path = DEFAULT_CONFIG_PATH,
     *,
     overwrite: bool = False,
+    catalog_scope: str = "latest",
 ) -> Path:
     if config_path.exists() and not overwrite:
         return config_path
 
     session = _session()
     try:
+        available_years = fetch_available_years(session)
         default_period = fetch_default_period(session)
-        catalog_snapshot = fetch_snapshot_dataframe(
-            year=default_period["year"],
-            month=default_period["month"],
-            day_block=default_period["day_block"],
+        catalog_snapshot = build_catalog_snapshot_union(
             session=session,
+            scope=catalog_scope,
+            default_period=default_period,
+            available_years=available_years,
         )
     finally:
         session.close()
@@ -747,6 +1009,7 @@ def create_default_config(
             index=False,
         )
 
+    _apply_config_workbook_formatting(config_path)
     return config_path
 
 
@@ -934,6 +1197,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Permite sobrescribir el workbook de configuracion al usar --init-config.",
     )
+    parser.add_argument(
+        "--catalog-scope",
+        choices=("latest", "all-available"),
+        default="latest",
+        help="Al crear el workbook, usa solo el ultimo corte o intenta un catalogo maestro uniendo todos los periodos disponibles.",
+    )
     return parser.parse_args()
 
 
@@ -942,7 +1211,11 @@ def main() -> None:
     configure_logging()
 
     if args.init_config:
-        path = create_default_config(args.config, overwrite=args.overwrite_config)
+        path = create_default_config(
+            args.config,
+            overwrite=args.overwrite_config,
+            catalog_scope=args.catalog_scope,
+        )
         LOGGER.info("Workbook de configuracion listo en %s", path)
         return
 

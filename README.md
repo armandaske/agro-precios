@@ -225,11 +225,19 @@ Este scraper reproduce el flujo HTTP real del portal sin depender del iframe ni 
 - `js/graf.php` devuelve la serie historica de una presa para un `id_conagua + mes + decena + rango de anios`.
 - `config/presas_agricolas.xlsx` sirve como documento editable de parametros.
 - `config/presas_agricolas.xlsx` ahora incluye una hoja `catalogo_presas` para buscar `id_conagua` por `nombre_oficial` y `estado`.
+- `--catalog-scope latest` arma el catalogo solo con el ultimo corte publicado.
+- `--catalog-scope all-available` intenta unir todos los periodos historicos publicados y agrega metadatos como `periodos_observados`, `anio_primer_avistamiento` y `anio_ultimo_avistamiento`.
 
 Crear o regenerar el workbook de configuracion:
 
 ```powershell
 python -m src.extract.presas_agricolas --init-config
+```
+
+Generar un catalogo maestro mas fuerte, uniendo todos los periodos publicados disponibles:
+
+```powershell
+python -m src.extract.presas_agricolas --init-config --overwrite-config --catalog-scope all-available
 ```
 
 Ejecutar con la configuracion por default:
