@@ -49,6 +49,8 @@ class DailyExtractsTests(unittest.TestCase):
             self.assertEqual(config.sniim_destino_id, -1)
             self.assertEqual(config.sniim_precios_por_id, 2)
             self.assertEqual(config.cierre_crop_name, "Tomate rojo (jitomate)")
+            self.assertFalse(config.avance_enabled)
+            self.assertEqual(config.avance_crop_name, "")
 
     def test_load_products_config_requires_expected_columns(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -89,6 +91,8 @@ class DailyExtractsTests(unittest.TestCase):
             self.assertEqual(len(configs), 1)
             self.assertFalse(configs[0].chedraui_enabled)
             self.assertEqual(configs[0].chedraui_search_terms, ["aguacate"])
+            self.assertFalse(configs[0].avance_enabled)
+            self.assertEqual(configs[0].avance_crop_name, "")
 
     @patch("scripts.run_daily_extracts.fetch_report_dataframe")
     @patch("scripts.run_daily_extracts.fetch_sniim_fruits_vegetables")

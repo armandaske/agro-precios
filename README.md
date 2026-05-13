@@ -16,6 +16,7 @@ Implementado:
 
 - Extraccion de precios de frutas y hortalizas desde SNIIM via `requests`.
 - Descarga de reportes de Cierre Agricola SIAP via flujo HTTP/xajax.
+- Descarga de reportes de Avance Agricola SIAP via flujo HTTP/xajax.
 - Alternativa con Playwright para Cierre Agricola cuando el flujo HTTP no sea suficiente.
 - Scraper HTTP para Presas Agricolas con consultas historicas por anio, mes y decena.
 - Scraper de precios de productos frescos de Walmart Mexico.
@@ -33,12 +34,14 @@ No implementado aun como flujo formal:
 
 - `src/extract/sniim.py`: extractor SNIIM y export a CSV/XLSX.
 - `src/extract/cierre_agricola_requests.py`: scraper HTTP para Cierre Agricola.
+- `src/extract/avance_agricola_requests.py`: scraper HTTP para Avance Agricola.
 - `src/extract/scraper_cierre_agricola_playwright.py`: alternativa con navegador.
 - `src/extract/presas_agricolas.py`: scraper HTTP del portal de Presas Agricolas y generador del workbook de consultas.
 - `src/extract/walmart_produce_scraper.py`: scraper de frutas y verduras en Walmart.
 - `src/extract/chedraui_produce_scraper.py`: scraper de frutas y verduras en Chedraui.
 - `scripts/run_daily_extracts.py`: orquestador diario para las 4 fuentes.
 - `scripts/fetch_cierre_batch.py`: descarga en lote exportes normalizados de Cierre Agricola para los productos canonicos configurados.
+- `scripts/fetch_avance_batch.py`: descarga en lote exportes normalizados de Avance Agricola para los productos canonicos configurados.
 - `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui y Cierre Agricola.
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
 - `config/presas_agricolas.xlsx`: workbook editable por el usuario con consultas de presas por anio, mes, decena e `id_conagua`.
@@ -162,6 +165,61 @@ Despues de generar ese lote, reconstruye el workbook maestro con:
 ```powershell
 python -m scripts.build_master_price_workbook --daily-root data/daily_runs --cierre-root data/raw/cierre_agricola_batch --output data/analysis/master_price_workbook.xlsx
 ```
+
+### 2.2. Avance Agricola SIAP por HTTP
+
+Este flujo replica la variante `Por ubicacion geografica -> Por Entidad Federativa` y deja fijos estos filtros:
+
+- `Ciclo = Ciclicos - Perennes`
+- `Modalidad = Riego + Temporal`
+- `Entidad federativa = Nacional`
+- `Tipo de agricultura = Todo`
+- `Tipo de produccion = Todo`
+- `Tipo de mercado = Todo`
+
+Solo necesitas pasar `year`, `month` y `crop`.
+
+Ejemplo:
+
+```powershell
+python -m src.extract.avance_agricola_requests --year 2026 --month Febrero --crop Aguacate --output-format xlsx
+```
+
+Ejemplo con valor numerico del mes:
+
+```powershell
+python -m src.extract.avance_agricola_requests --year 2026 --month 2 --crop Aguacate --output-format csv
+```
+
+Con salida explicita y debug:
+
+```powershell
+python -m src.extract.avance_agricola_requests --year 2026 --month Febrero --crop Aguacate --output data/raw/avance_agricola/aguacate_2026_febrero --output-format xlsx --debug --debug-dir debug_avance_agricola
+```
+
+Salida esperada:
+
+- Si no pasas `--output`, el script guarda en `data/raw/avance_agricola/`
+- `--output-format xls` genera un `.xls`
+- `--output-format csv` genera un `.csv`
+- `--output-format xlsx` genera un `.xlsx`
+- La salida normalizada conserva `cultivo_avance_agricola_original`, `unidad_avance_agricola`, `anio_consulta`, `mes_consulta`, `mes_consulta_nombre` y `situacion_corte`
+- Igual que Cierre, el portal suele devolver una tabla HTML compatible con Excel en lugar de un binario XLS nativo
+- Ejecuta Avance con `python -m src.extract.avance_agricola_requests` desde la raiz del repo
+
+### 2.3. Avance Agricola por lote desde `products.xlsx`
+
+Si quieres bajar un mismo mes para todos los productos configurados con `avance_agricola_habilitado = TRUE`, usa el batch runner:
+
+```powershell
+python -m scripts.fetch_avance_batch --config config/products.xlsx --year 2026 --month Febrero --output-root data/raw/avance_agricola_batch --output-format xlsx
+```
+
+Salida esperada:
+
+- Un archivo por `producto_canonico` dentro de `data/raw/avance_agricola_batch/`
+- Un resumen en `data/raw/avance_agricola_batch/batch_summary.json`
+- Solo se procesan filas activas con `cultivo_avance_agricola` lleno
 
 ### 3. Cierre Agricola SIAP con Playwright
 
@@ -332,6 +390,8 @@ Columnas opcionales (para habilitar Chedraui):
 
 - `chedraui_habilitado`
 - `terminos_busqueda_chedraui`
+- `avance_agricola_habilitado`
+- `cultivo_avance_agricola`
 
 Reglas importantes:
 

@@ -55,6 +55,8 @@ REQUIRED_COLUMNS = [
 OPTIONAL_COLUMNS = [
     "chedraui_enabled",
     "chedraui_search_terms",
+    "avance_enabled",
+    "avance_crop_name",
 ]
 FAILURE_COLUMNS = [
     "row_number",
@@ -94,6 +96,8 @@ class ProductConfig:
     sniim_precios_por_id: int
     cierre_enabled: bool
     cierre_crop_name: str
+    avance_enabled: bool
+    avance_crop_name: str
 
 
 def configure_logging() -> None:
@@ -168,6 +172,10 @@ def load_products_config(config_path: Path) -> list[ProductConfig]:
         df["chedraui_enabled"] = False
     if "chedraui_search_terms" not in df.columns:
         df["chedraui_search_terms"] = ""
+    if "avance_enabled" not in df.columns:
+        df["avance_enabled"] = False
+    if "avance_crop_name" not in df.columns:
+        df["avance_crop_name"] = ""
 
     missing_columns = [column for column in REQUIRED_COLUMNS if column not in df.columns]
     if missing_columns:
@@ -196,6 +204,8 @@ def load_products_config(config_path: Path) -> list[ProductConfig]:
                 sniim_precios_por_id=_value_or_default(_parse_optional_int(row["sniim_precios_por_id"], 2), 2),
                 cierre_enabled=_parse_bool(row["cierre_enabled"]),
                 cierre_crop_name=_clean_string(row["cierre_crop_name"]),
+                avance_enabled=_parse_bool(row["avance_enabled"]),
+                avance_crop_name=_clean_string(row["avance_crop_name"]),
             )
         )
 

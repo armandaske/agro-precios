@@ -18,6 +18,7 @@ The current codebase is extraction-first:
 - Main sources today:
   - `SNIIM` for frutas y hortalizas market prices.
 - `SIAP Cierre Agricola` via legacy HTTP/xajax flow.
+- `SIAP Avance Agricola` via legacy HTTP/xajax flow.
 - `SIAP Cierre Agricola` Playwright fallback.
 - `Presas Agricolas` via direct HTTP endpoints for corte por decena and series historicas por presa.
 - `Walmart Mexico` fresh produce search scraping.
@@ -41,6 +42,7 @@ When you work in this repo, optimize for these outcomes:
 
 - `src/extract/sniim.py`: SNIIM extractor and export helpers.
 - `src/extract/cierre_agricola_requests.py`: primary SIAP Cierre Agricola HTTP/xajax implementation.
+- `src/extract/avance_agricola_requests.py`: primary SIAP Avance Agricola HTTP/xajax implementation.
 - `src/extract/scraper_cierre_agricola_playwright.py`: browser fallback for SIAP when HTTP flow breaks.
 - `src/extract/presas_agricolas.py`: Presas Agricolas scraper plus workbook bootstrap for parameterized queries.
 - `src/extract/walmart_produce_scraper.py`: Walmart produce scraper and record ranking logic.
@@ -48,6 +50,7 @@ When you work in this repo, optimize for these outcomes:
 - `src/extract/spreadsheet_localization.py`: column aliases, workbook sheet names, and Spanish export naming.
 - `scripts/run_daily_extracts.py`: main daily orchestrator across enabled sources.
 - `scripts/fetch_cierre_batch.py`: batch runner that fetches normalized annual Cierre Agricola exports for the configured canonical products.
+- `scripts/fetch_avance_batch.py`: batch runner that fetches normalized monthly Avance Agricola exports for the configured canonical products.
 - `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Cierre exports.
 - `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
 - `config/products.xlsx`: operational config workbook for product mappings and enabled sources.
@@ -105,6 +108,16 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - Treat `debug_cierre_agricola/funciones_cierre.js` as a reverse-engineering aid for the original SIAP browser flow, not as runtime code used by the scraper.
 - Preserve `cierre_crop_label_raw` and `cierre_unit_label` in normalized outputs so annual PMR can be reused later without losing the source unit context.
 - Be careful with session-dependent behavior. The downloader depends on the xajax flow creating the report state before calling `reporte.php`.
+
+### SIAP Avance Agricola
+
+- Prefer `src/extract/avance_agricola_requests.py` for this source; it reuses the same HTTP/xajax family as Cierre but has a different query contract.
+- Run the HTTP extractor from the repo root as `python -m src.extract.avance_agricola_requests ...` so the package path stays consistent with the current layout.
+- The intended fixed path for this repo is `Por ubicacion geografica -> Por Entidad Federativa` with `Ciclicos - Perennes`, `Riego + Temporal`, `Nacional`, and `Todo` in the remaining combo filters; only expose year, month, and crop unless the product requirement changes.
+- `llenaCultivo` depends on `anio + entidad + mes + ciclo + distrito + municipio`, and `reporte` appends `mesagric` at the end; preserve that exact order if the portal changes.
+- Use `python -m scripts.fetch_avance_batch ...` when you need a month-by-product batch from `config/products.xlsx`.
+- Preserve `avance_crop_label_raw`, `avance_unit_label`, `query_month`, `query_month_label`, and `report_cutoff_label` in normalized outputs so monthly cuts remain auditable.
+- Default standalone outputs for this source should stay under `data/raw/avance_agricola/` unless the operator passes an explicit `--output`.
 
 ### Walmart
 

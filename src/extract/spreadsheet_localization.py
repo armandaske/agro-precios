@@ -35,6 +35,10 @@ CONFIG_COLUMN_ALIASES = {
     "cierre_enabled": "cierre_enabled",
     "cultivo_cierre_agricola": "cierre_crop_name",
     "cierre_crop_name": "cierre_crop_name",
+    "avance_agricola_habilitado": "avance_enabled",
+    "avance_enabled": "avance_enabled",
+    "cultivo_avance_agricola": "avance_crop_name",
+    "avance_crop_name": "avance_crop_name",
 }
 
 CONFIG_EXPORT_COLUMN_MAP = {
@@ -51,6 +55,8 @@ CONFIG_EXPORT_COLUMN_MAP = {
     "sniim_precios_por_id": "sniim_id_precios_por",
     "cierre_enabled": "cierre_agricola_habilitado",
     "cierre_crop_name": "cultivo_cierre_agricola",
+    "avance_enabled": "avance_agricola_habilitado",
+    "avance_crop_name": "cultivo_avance_agricola",
 }
 
 INSTRUCTIONS_EXPORT_COLUMN_MAP = {
@@ -136,6 +142,24 @@ CIERRE_EXPORT_COLUMN_MAP = {
     "cierre_unit_label": "unidad_cierre_agricola",
     "cierre_crop_name": "cultivo_cierre_agricola",
     "query_year": "anio_consulta",
+    "source_name": "nombre_fuente",
+}
+
+AVANCE_EXPORT_COLUMN_MAP = {
+    "numero": "numero",
+    "entidad": "entidad",
+    "superficie_sembrada_ha": "superficie_sembrada_ha",
+    "superficie_cosechada_ha": "superficie_cosechada_ha",
+    "superficie_siniestrada_ha": "superficie_siniestrada_ha",
+    "produccion": "produccion",
+    "rendimiento_udm_ha": "rendimiento_udm_ha",
+    "avance_crop_label_raw": "cultivo_avance_agricola_original",
+    "avance_unit_label": "unidad_avance_agricola",
+    "avance_crop_name": "cultivo_avance_agricola",
+    "query_year": "anio_consulta",
+    "query_month": "mes_consulta",
+    "query_month_label": "mes_consulta_nombre",
+    "report_cutoff_label": "situacion_corte",
     "source_name": "nombre_fuente",
 }
 
