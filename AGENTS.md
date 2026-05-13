@@ -103,6 +103,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - Prefer `src/extract/cierre_agricola_requests.py` first. It is faster and better for automation than browser-only scraping.
 - Run the HTTP extractor from the repo root as `python -m src.extract.cierre_agricola_requests ...` so the package path stays consistent with the current layout.
 - Use `python -m scripts.fetch_cierre_batch ...` when you need a year-by-product batch of normalized Cierre exports to feed the comparative workbook.
+- The Cierre batch runner should create one timestamped run folder per invocation under `data/raw/cierre_agricola_batch/` so repeated exports stay grouped.
 - Use Playwright only as a fallback when the HTTP/xajax flow changes or the portal behavior can no longer be reproduced reliably with requests.
 - When debugging this source, keep `--debug` and `--debug-dir` workflows intact. The XML/HTML snapshots are valuable when the portal changes.
 - Treat `debug_cierre_agricola/funciones_cierre.js` as a reverse-engineering aid for the original SIAP browser flow, not as runtime code used by the scraper.
@@ -116,6 +117,7 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 - The intended fixed path for this repo is `Por ubicacion geografica -> Por Entidad Federativa` with `Ciclicos - Perennes`, `Riego + Temporal`, `Nacional`, and `Todo` in the remaining combo filters; only expose year, month, and crop unless the product requirement changes.
 - `llenaCultivo` depends on `anio + entidad + mes + ciclo + distrito + municipio`, and `reporte` appends `mesagric` at the end; preserve that exact order if the portal changes.
 - Use `python -m scripts.fetch_avance_batch ...` when you need a month-by-product batch from `config/products.xlsx`.
+- The Avance batch runner should create one timestamped run folder per invocation under `data/raw/avance_agricola_batch/` so repeated exports stay grouped.
 - Preserve `avance_crop_label_raw`, `avance_unit_label`, `query_month`, `query_month_label`, and `report_cutoff_label` in normalized outputs so monthly cuts remain auditable.
 - Default standalone outputs for this source should stay under `data/raw/avance_agricola/` unless the operator passes an explicit `--output`.
 

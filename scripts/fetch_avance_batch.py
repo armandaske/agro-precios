@@ -6,6 +6,7 @@ import logging
 import sys
 import unicodedata
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,11 @@ def _normalize_key(value: str) -> str:
 
 def _slugify(value: str) -> str:
     return _normalize_key(value).replace(" ", "_")
+
+
+def _build_run_dir(output_root: Path, year: int, month: str) -> Path:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return output_root / f"run_{timestamp}_{year}_{_slugify(month)}"
 
 
 def _parse_bool(value: Any) -> bool:
@@ -96,11 +102,13 @@ def fetch_avance_batch(
     output_format: str,
 ) -> dict[str, Any]:
     output_root.mkdir(parents=True, exist_ok=True)
+    run_dir = _build_run_dir(output_root, year, month)
+    run_dir.mkdir(parents=True, exist_ok=True)
     items = load_batch_items(config_path)
     summary_rows: list[dict[str, Any]] = []
 
     for item in items:
-        output_path = output_root / f"{_slugify(item.canonical_product)}_{year}_{_slugify(month)}"
+        output_path = run_dir / f"{_slugify(item.canonical_product)}_{year}_{_slugify(month)}"
         record = {
             "canonical_product": item.canonical_product,
             "avance_crop_name": item.avance_crop_name,
@@ -143,6 +151,7 @@ def fetch_avance_batch(
     summary = {
         "config_path": str(config_path),
         "output_root": str(output_root),
+        "run_dir": str(run_dir),
         "year": year,
         "month": month,
         "requested_products": len(items),
@@ -151,7 +160,7 @@ def fetch_avance_batch(
         "failed_jobs": sum(1 for row in summary_rows if row["status"] == "failed"),
         "jobs": summary_rows,
     }
-    summary_path = output_root / DEFAULT_SUMMARY_NAME
+    summary_path = run_dir / DEFAULT_SUMMARY_NAME
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     summary["summary_path"] = str(summary_path)
     return summary

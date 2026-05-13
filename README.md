@@ -157,7 +157,8 @@ python -m scripts.fetch_cierre_batch --config config/products.xlsx --output-root
 Salida esperada:
 
 - Un archivo por `producto_canonico` y por año dentro de `data/raw/cierre_agricola_batch/`
-- Un resumen en `data/raw/cierre_agricola_batch/batch_summary.json`
+- Cada corrida crea una subcarpeta `run_YYYYMMDD_HHMMSS_years_<years>/`
+- El resumen queda dentro de esa subcarpeta como `batch_summary.json`
 - Si `cultivo_cierre_agricola` viene vacio en la configuracion, el script usa un fallback interno para los 10 productos canonicos actuales
 
 Despues de generar ese lote, reconstruye el workbook maestro con:
@@ -218,7 +219,8 @@ python -m scripts.fetch_avance_batch --config config/products.xlsx --year 2026 -
 Salida esperada:
 
 - Un archivo por `producto_canonico` dentro de `data/raw/avance_agricola_batch/`
-- Un resumen en `data/raw/avance_agricola_batch/batch_summary.json`
+- Cada corrida crea una subcarpeta `run_YYYYMMDD_HHMMSS_<anio>_<mes>/`
+- El resumen queda dentro de esa subcarpeta como `batch_summary.json`
 - Solo se procesan filas activas con `cultivo_avance_agricola` lleno
 
 ### 3. Cierre Agricola SIAP con Playwright
