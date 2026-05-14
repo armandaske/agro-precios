@@ -469,7 +469,7 @@ Reglas del workbook maestro:
 - El constructor normaliza `canonical_product` a una llave ASCII en minusculas con guiones bajos antes de unir fuentes; por ejemplo, `Aguacate` y `aguacate` se consolidan como `aguacate`
 - Avance Agricola agrega contexto mensual por producto y lo replica sobre las filas diarias del mismo mes para poder analizar precios contra produccion, superficie cosechada, siniestralidad y rendimiento
 - Cierre Agricola calcula PMR anual ponderado por produccion y queda como referencia anual secundaria cuando se pasa `--cierre-root`
-- El notebook `notebooks/master_price_eda.ipynb` usa un eje de fechas mensual en las graficas agregadas y no comparte ese eje con la grafica diaria; asi se evitan conflictos de unidades en Matplotlib
+- El notebook `notebooks/master_price_eda.ipynb` usa un eje de fechas mensual en las graficas agregadas y no comparte ese eje con la grafica diaria; asi se evitan conflictos de unidades en Matplotlib. En la grafica diaria con contexto de Avance, cada valor mensual se dibuja solo dentro de su propio mes en vez de arrastrarse hasta el siguiente dato disponible
 - El notebook `notebooks/master_price_eda.ipynb` ahora lee `compare_daily_wide`, `avance_monthly_stats`, `avance_entity_monthly`, `coverage` y opcionalmente `cierre_annual_stats`, con comentarios y figuras en español
 
 ## Windows Task Scheduler
