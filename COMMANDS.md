@@ -32,6 +32,40 @@ python -m unittest tests.test_sniim
 python -m unittest tests.test_walmart_produce_scraper
 ```
 
+## Presas Agricolas
+
+Crear el workbook de configuracion:
+
+```powershell
+python -m src.extract.presas_agricolas --init-config
+```
+
+Regenerar el workbook con un catalogo mas completo:
+
+```powershell
+python -m src.extract.presas_agricolas --init-config --overwrite-config --catalog-scope all-available
+```
+
+Ejecutar con la configuracion por default:
+
+```powershell
+python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx
+```
+
+Con workbook de salida explicito:
+
+```powershell
+python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx --output data/raw/presas_agricolas/presas_historicas.xlsx
+```
+
+Parametros utiles:
+
+- `--config`: workbook de configuracion, default `config/presas_agricolas.xlsx`
+- `--output`: opcional; si se omite, guarda bajo `data/raw/presas_agricolas/`
+- `--init-config`: crea el workbook de configuracion y termina
+- `--overwrite-config`: permite sobrescribir al usar `--init-config`
+- `--catalog-scope`: `latest` o `all-available`
+
 ## SNIIM
 
 Ejecucion estandar:
@@ -107,40 +141,6 @@ Parametros utiles:
 - `--month`: obligatorio
 - `--output-root`: carpeta raiz de salida
 - `--output-format`: `xls`, `csv` o `xlsx`
-
-## Presas Agricolas
-
-Crear el workbook de configuracion:
-
-```powershell
-python -m src.extract.presas_agricolas --init-config
-```
-
-Regenerar el workbook con un catalogo mas completo:
-
-```powershell
-python -m src.extract.presas_agricolas --init-config --overwrite-config --catalog-scope all-available
-```
-
-Ejecutar con la configuracion por default:
-
-```powershell
-python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx
-```
-
-Con workbook de salida explicito:
-
-```powershell
-python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx --output data/raw/presas_agricolas/presas_historicas.xlsx
-```
-
-Parametros utiles:
-
-- `--config`: workbook de configuracion, default `config/presas_agricolas.xlsx`
-- `--output`: opcional; si se omite, guarda bajo `data/raw/presas_agricolas/`
-- `--init-config`: crea el workbook de configuracion y termina
-- `--overwrite-config`: permite sobrescribir al usar `--init-config`
-- `--catalog-scope`: `latest` o `all-available`
 
 ## Walmart
 
