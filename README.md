@@ -8,6 +8,7 @@ Hoy el repositorio esta centrado principalmente en la capa de extraccion. Ya hay
 
 - Revisa `AGENTS.md` antes de hacer cambios importantes; ahi vive la guia operativa especifica del repo para agentes Codex.
 - Cada vez que un agente cree o modifique algo que valga la pena documentar, debe actualizar `README.md` y `AGENTS.md` en el mismo cambio para evitar que las instrucciones queden desfasadas.
+- Usa [COMMANDS.md](COMMANDS.md) como referencia rapida de comandos para los extractores, batch runners, workbook maestro y scheduler.
 - Todo texto orientado al usuario debe quedar en espanol por defecto: titulos, etiquetas, graficas, nombres de columnas, nombres de hojas y salidas visibles para analisis o consumo de negocio.
 
 ## Estado actual del repo
@@ -42,7 +43,7 @@ No implementado aun como flujo formal:
 - `scripts/run_daily_extracts.py`: orquestador diario para las 4 fuentes.
 - `scripts/fetch_cierre_batch.py`: descarga en lote exportes normalizados de Cierre Agricola para los productos canonicos configurados.
 - `scripts/fetch_avance_batch.py`: descarga en lote exportes normalizados de Avance Agricola para los productos canonicos configurados.
-- `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui y Cierre Agricola.
+- `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui, Avance Agricola y Cierre Agricola secundario.
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
 - `config/presas_agricolas.xlsx`: workbook editable por el usuario con consultas de presas por anio, mes, decena e `id_conagua`.
 - `notebooks/master_price_eda.ipynb`: notebook base para graficar y explorar el workbook maestro.
@@ -164,7 +165,7 @@ Salida esperada:
 Despues de generar ese lote, reconstruye el workbook maestro con:
 
 ```powershell
-python -m scripts.build_master_price_workbook --daily-root data/daily_runs --cierre-root data/raw/cierre_agricola_batch --output data/analysis/master_price_workbook.xlsx
+python -m scripts.build_master_price_workbook --daily-root data/daily_runs --avance-root data/raw/avance_agricola_batch --cierre-root data/raw/cierre_agricola_batch --output data/analysis/master_price_workbook.xlsx
 ```
 
 ### 2.2. Avance Agricola SIAP por HTTP
@@ -442,12 +443,12 @@ Cada workbook consolidado genera:
 
 ## Workbook maestro comparativo
 
-Despues de tener `data/daily_runs` y un directorio de exportes normalizados de Cierre Agricola, puedes construir un workbook maestro para comparacion diaria y EDA.
+Despues de tener `data/daily_runs` y un directorio de exportes normalizados de Avance Agricola, puedes construir un workbook maestro para comparacion diaria y EDA. Cierre Agricola queda como insumo secundario opcional.
 
 Comando:
 
 ```powershell
-python -m scripts.build_master_price_workbook --daily-root data/daily_runs --cierre-root data/raw/cierre_agricola --output data/analysis/master_price_workbook.xlsx
+python -m scripts.build_master_price_workbook --daily-root data/daily_runs --avance-root data/raw/avance_agricola_batch --cierre-root data/raw/cierre_agricola_batch --output data/analysis/master_price_workbook.xlsx
 ```
 
 Salida esperada:
@@ -456,6 +457,8 @@ Salida esperada:
 - Sheet `panel_daily_long`
 - Sheet `compare_daily_wide`
 - Sheet `sniim_daily_stats`
+- Sheet `avance_monthly_stats`
+- Sheet `avance_entity_monthly`
 - Sheet `cierre_annual_stats`
 - Sheet `coverage`
 
@@ -463,8 +466,11 @@ Reglas del workbook maestro:
 
 - SNIIM agrega `precio_frecuente` por `fecha_corrida + producto_canonico` con media, mediana, minimo, maximo y conteo
 - Walmart y Chedraui usan `precio_estimado_por_kg_mxn` cuando existe; si no, caen a `precio_mxn`
-- Cierre Agricola calcula PMR anual ponderado por produccion y lo repite sobre cada fecha diaria del mismo anio y producto
-- El notebook `notebooks/master_price_eda.ipynb` ya viene listo para leer `compare_daily_wide` y graficar comparaciones, spreads y cobertura
+- El constructor normaliza `canonical_product` a una llave ASCII en minusculas con guiones bajos antes de unir fuentes; por ejemplo, `Aguacate` y `aguacate` se consolidan como `aguacate`
+- Avance Agricola agrega contexto mensual por producto y lo replica sobre las filas diarias del mismo mes para poder analizar precios contra produccion, superficie cosechada, siniestralidad y rendimiento
+- Cierre Agricola calcula PMR anual ponderado por produccion y queda como referencia anual secundaria cuando se pasa `--cierre-root`
+- El notebook `notebooks/master_price_eda.ipynb` usa un eje de fechas mensual en las graficas agregadas para convivir con series diarias sin errores de unidades en Matplotlib
+- El notebook `notebooks/master_price_eda.ipynb` ahora lee `compare_daily_wide`, `avance_monthly_stats`, `avance_entity_monthly`, `coverage` y opcionalmente `cierre_annual_stats`, con comentarios y figuras en español
 
 ## Windows Task Scheduler
 

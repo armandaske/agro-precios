@@ -1,0 +1,103 @@
+{
+  "config_path": "config\\products.xlsx",
+  "output_root": "data\\raw\\avance_agricola_batch",
+  "run_dir": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero",
+  "year": 2026,
+  "month": "Febrero",
+  "requested_products": 10,
+  "requested_jobs": 10,
+  "succeeded_jobs": 10,
+  "failed_jobs": 0,
+  "jobs": [
+    {
+      "canonical_product": "Aguacate",
+      "avance_crop_name": "Aguacate",
+      "year": 2026,
+      "month": "Febrero",
+      "output_path": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero\\aguacate_2026_febrero.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Tomate rojo",
+      "avance_crop_name": "Tomate rojo",
+      "year": 2026,
+      "month": "Febrero",
+      "output_path": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero\\tomate_rojo_2026_febrero.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Elote",
+      "avance_crop_name": "Elote",
+      "year": 2026,
+      "month": "Febrero",
+      "output_path": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero\\elote_2026_febrero.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Zanahoria",
+      "avance_crop_name": "Zanahoria",
+      "year": 2026,
+      "month": "Febrero",
+      "output_path": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero\\zanahoria_2026_febrero.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Cebolla",
+      "avance_crop_name": "Cebolla",
+      "year": 2026,
+      "month": "Febrero",
+      "output_path": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero\\cebolla_2026_febrero.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Chile verde",
+      "avance_crop_name": "Chile verde",
+      "year": 2026,
+      "month": "Febrero",
+      "output_path": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero\\chile_verde_2026_febrero.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Limón",
+      "avance_crop_name": "Limón",
+      "year": 2026,
+      "month": "Febrero",
+      "output_path": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero\\limon_2026_febrero.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Plátano",
+      "avance_crop_name": "Plátano",
+      "year": 2026,
+      "month": "Febrero",
+      "output_path": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero\\platano_2026_febrero.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Mango",
+      "avance_crop_name": "Mango",
+      "year": 2026,
+      "month": "Febrero",
+      "output_path": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero\\mango_2026_febrero.xlsx",
+      "status": "success",
+      "error": ""
+    },
+    {
+      "canonical_product": "Papa",
+      "avance_crop_name": "Papa",
+      "year": 2026,
+      "month": "Febrero",
+      "output_path": "data\\raw\\avance_agricola_batch\\run_20260513_222516_2026_febrero\\papa_2026_febrero.xlsx",
+      "status": "success",
+      "error": ""
+    }
+  ]
+}

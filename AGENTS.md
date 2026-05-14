@@ -51,8 +51,9 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/run_daily_extracts.py`: main daily orchestrator across enabled sources.
 - `scripts/fetch_cierre_batch.py`: batch runner that fetches normalized annual Cierre Agricola exports for the configured canonical products.
 - `scripts/fetch_avance_batch.py`: batch runner that fetches normalized monthly Avance Agricola exports for the configured canonical products.
-- `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Cierre exports.
+- `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Avance exports and optional normalized Cierre exports.
 - `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
+- `COMMANDS.md`: quick command reference for the main extractors, batch runners, workbook builder, tests, and Windows scheduler workflow.
 - `config/products.xlsx`: operational config workbook for product mappings and enabled sources.
 - `config/presas_agricolas.xlsx`: operational config workbook for dam queries by year, month, day-block, and `id_conagua`.
 - `config/presas_agricolas.xlsx` also carries a `catalogo_presas` sheet so operators can resolve `id_conagua` from `nombre_oficial` and `estado`.
@@ -85,6 +86,12 @@ Run the daily orchestrator:
 
 ```powershell
 python scripts/run_daily_extracts.py --config config/products.xlsx --output-root data/daily_runs
+```
+
+Quick command lookup:
+
+```powershell
+Get-Content COMMANDS.md
 ```
 
 ## Source-specific guidance
@@ -158,9 +165,12 @@ python scripts/run_daily_extracts.py --config config/products.xlsx --output-root
 ### Comparative workbook
 
 - `scripts/build_master_price_workbook.py` should treat `data/daily_runs/YYYY-MM-DD` as the source of truth for daily comparison inputs.
-- A practical refresh workflow is: batch-fetch annual Cierre exports first, then rebuild the master workbook against that `--cierre-root`.
+- A practical refresh workflow is: run the daily scrapers, batch-fetch monthly Avance exports, then rebuild the master workbook against `--avance-root`; pass `--cierre-root` only when annual Cierre context is still useful.
 - Keep the comparative output decision-complete for Excel analysis: one long panel sheet, one wide comparison sheet, and explicit supporting stats/coverage sheets.
+- Avance Agricola is the primary agricultural-context layer for the comparative workbook and notebook; it should be aggregated by product-month and joined onto daily price rows by normalized `canonical_product + year + month`, where `canonical_product` is stored as a lowercase ASCII slug such as `aguacate`.
 - Do not hide unit ambiguity for Cierre Agricola. Preserve and surface the annual PMR unit rather than pretending it is directly kg-comparable when it is not.
+- For the EDA notebook, all markdown, comments, figure titles, axis labels, legends, and other user-facing annotations must stay in Spanish.
+- When mixing daily datetime series with monthly aggregates in the EDA notebook, keep the x-axis on real datetimes rather than string categories to avoid Matplotlib unit conflicts.
 
 ## Data and output rules
 

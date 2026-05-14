@@ -6,6 +6,7 @@ import re
 import sys
 import unicodedata
 from collections.abc import Iterable
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -26,6 +27,7 @@ FAILURE_SHEET_ALIASES = ("errores", "failures")
 SNIIM_PANEL_UNIT_LABEL = "kg_calculado"
 CIERRE_PANEL_PRICE_BASIS = "pmr_mxn_udm_weighted_by_produccion"
 SNIIM_PANEL_PRICE_BASIS = "precio_frecuente_mean"
+AVANCE_PANEL_PRICE_BASIS = "contexto_mensual_avance_agricola"
 
 WALMART_READ_COLUMN_MAP = {
     "scraped_at_utc": "scraped_at_utc",
@@ -150,6 +152,37 @@ CIERRE_READ_COLUMN_MAP = {
     "producto_canonico": "canonical_product",
 }
 
+AVANCE_READ_COLUMN_MAP = {
+    "numero": "numero",
+    "entidad": "entidad",
+    "entidad_entidad": "entidad",
+    "superficie_sembrada_ha": "superficie_sembrada_ha",
+    "superficie_cosechada_ha": "superficie_cosechada_ha",
+    "superficie_siniestrada_ha": "superficie_siniestrada_ha",
+    "produccion": "produccion",
+    "produccion_produccion": "produccion",
+    "rendimiento_udm_ha": "rendimiento_udm_ha",
+    "rendimiento_udm_ha_rendimiento_udm_ha": "rendimiento_udm_ha",
+    "avance_crop_label_raw": "avance_crop_label_raw",
+    "cultivo_avance_agricola_original": "avance_crop_label_raw",
+    "avance_unit_label": "avance_unit_label",
+    "unidad_avance_agricola": "avance_unit_label",
+    "avance_crop_name": "avance_crop_name",
+    "cultivo_avance_agricola": "avance_crop_name",
+    "query_year": "query_year",
+    "anio_consulta": "query_year",
+    "query_month": "query_month",
+    "mes_consulta": "query_month",
+    "query_month_label": "query_month_label",
+    "mes_consulta_nombre": "query_month_label",
+    "report_cutoff_label": "report_cutoff_label",
+    "situacion_corte": "report_cutoff_label",
+    "source_name": "source_name",
+    "nombre_fuente": "source_name",
+    "canonical_product": "canonical_product",
+    "producto_canonico": "canonical_product",
+}
+
 MASTER_PANEL_COLUMNS = [
     "run_date",
     "canonical_product",
@@ -167,6 +200,16 @@ MASTER_PANEL_COLUMNS = [
     "sniim_daily_median_mxn",
     "sniim_daily_min_mxn",
     "sniim_daily_max_mxn",
+    "avance_total_superficie_sembrada_ha",
+    "avance_total_superficie_cosechada_ha",
+    "avance_total_superficie_siniestrada_ha",
+    "avance_total_produccion",
+    "avance_yield_weighted_udm_ha",
+    "avance_rows_used",
+    "avance_crop_name",
+    "avance_crop_label_raw",
+    "avance_report_cutoff_label",
+    "avance_cutoff_date",
     "cierre_annual_weighted_pmr_mxn_udm",
     "cierre_rows_used",
     "cierre_total_produccion",
@@ -186,6 +229,21 @@ def _normalize_key(value: object) -> str:
     normalized = normalized.casefold()
     normalized = re.sub(r"[^a-z0-9]+", "_", normalized)
     return re.sub(r"_+", "_", normalized).strip("_")
+
+
+def _normalize_canonical_product_value(value: object) -> object:
+    if pd.isna(value):
+        return pd.NA
+    normalized = _normalize_key(value)
+    return normalized or pd.NA
+
+
+def _normalize_canonical_product_column(df: pd.DataFrame) -> pd.DataFrame:
+    normalized = df.copy()
+    if "canonical_product" not in normalized.columns:
+        return normalized
+    normalized["canonical_product"] = normalized["canonical_product"].map(_normalize_canonical_product_value)
+    return normalized
 
 
 def _read_sheet_with_aliases(path: Path, aliases: Iterable[str], *, fallback_first_sheet: bool = False) -> pd.DataFrame:
@@ -235,25 +293,31 @@ def _read_source_workbook(path: Path, source_name: str) -> tuple[pd.DataFrame, p
 
     if source_name == "walmart":
         return (
-            _rename_columns(data_df, WALMART_READ_COLUMN_MAP),
+            _normalize_canonical_product_column(_rename_columns(data_df, WALMART_READ_COLUMN_MAP)),
             meta_df,
             failures_df,
         )
     if source_name == "chedraui":
         return (
-            _rename_columns(data_df, CHEDRAUI_READ_COLUMN_MAP),
+            _normalize_canonical_product_column(_rename_columns(data_df, CHEDRAUI_READ_COLUMN_MAP)),
             meta_df,
             failures_df,
         )
     if source_name == "sniim":
         return (
-            _rename_columns(data_df, SNIIM_READ_COLUMN_MAP),
+            _normalize_canonical_product_column(_rename_columns(data_df, SNIIM_READ_COLUMN_MAP)),
             meta_df,
             failures_df,
         )
     if source_name == "cierre_agricola":
         return (
-            _rename_columns(data_df, CIERRE_READ_COLUMN_MAP),
+            _normalize_canonical_product_column(_rename_columns(data_df, CIERRE_READ_COLUMN_MAP)),
+            meta_df,
+            failures_df,
+        )
+    if source_name == "avance_agricola":
+        return (
+            _normalize_canonical_product_column(_rename_columns(data_df, AVANCE_READ_COLUMN_MAP)),
             meta_df,
             failures_df,
         )
@@ -306,7 +370,28 @@ def _load_cierre_crop_name_map(daily_root: Path) -> dict[str, str]:
             continue
         for config in configs:
             if config.cierre_crop_name:
-                mapping[_normalize_key(config.cierre_crop_name)] = config.canonical_product
+                mapping[_normalize_key(config.cierre_crop_name)] = _normalize_canonical_product_value(
+                    config.canonical_product
+                )
+    return mapping
+
+
+def _load_avance_crop_name_map(daily_root: Path) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for run_dir in sorted(path for path in daily_root.iterdir() if path.is_dir()):
+        snapshot_path = run_dir / "products_snapshot.xlsx"
+        if not snapshot_path.exists():
+            continue
+        try:
+            configs = load_products_config(snapshot_path)
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.warning("Skipping unreadable products snapshot %s: %s", snapshot_path, exc)
+            continue
+        for config in configs:
+            if config.avance_crop_name:
+                mapping[_normalize_key(config.avance_crop_name)] = _normalize_canonical_product_value(
+                    config.canonical_product
+                )
     return mapping
 
 
@@ -317,12 +402,49 @@ def _derive_query_year_from_path(path: Path) -> int | None:
     return int(match.group(1))
 
 
+SPANISH_MONTH_ALIASES = {
+    "enero": 1,
+    "febrero": 2,
+    "marzo": 3,
+    "abril": 4,
+    "mayo": 5,
+    "junio": 6,
+    "julio": 7,
+    "agosto": 8,
+    "septiembre": 9,
+    "setiembre": 9,
+    "octubre": 10,
+    "noviembre": 11,
+    "diciembre": 12,
+}
+
+
+def _derive_query_month_from_path(path: Path) -> int | None:
+    normalized_parts = [_normalize_key(part) for part in path.stem.split("_")]
+    for part in normalized_parts:
+        if part.isdigit():
+            value = int(part)
+            if 1 <= value <= 12:
+                return value
+        month_value = SPANISH_MONTH_ALIASES.get(part)
+        if month_value:
+            return month_value
+    return None
+
+
 def _derive_canonical_product_from_path(path: Path) -> str | None:
     stem = path.stem
+    stem = re.sub(
+        r"[_-]?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre|[1-9]|1[0-2])$",
+        "",
+        stem,
+        flags=re.IGNORECASE,
+    ).strip("_- ")
     stem = re.sub(r"[_-]?(20\d{2})$", "", stem).strip("_- ")
     if not stem:
         return None
-    return stem.replace("_", " ").replace("-", " ").strip() or None
+    normalized = _normalize_key(stem.replace("_", " ").replace("-", " ").strip())
+    return normalized or None
 
 
 def _strip_trailing_unit_from_crop_label(raw_label: str | None, unit_label: str | None) -> str | None:
@@ -374,7 +496,46 @@ def _resolve_canonical_product_for_cierre(
         return pd.NA
 
     resolved["canonical_product"] = resolved.apply(_lookup, axis=1)
-    return resolved
+    return _normalize_canonical_product_column(resolved)
+
+
+def _resolve_canonical_product_for_avance(
+    df: pd.DataFrame,
+    crop_name_map: dict[str, str],
+    *,
+    path_canonical_product: str | None = None,
+) -> pd.DataFrame:
+    resolved = df.copy()
+
+    if "canonical_product" not in resolved.columns:
+        resolved["canonical_product"] = pd.NA
+
+    def _lookup(row: pd.Series) -> object:
+        existing = row.get("canonical_product")
+        if pd.notna(existing) and str(existing).strip():
+            return existing
+
+        crop_name = row.get("avance_crop_name")
+        if pd.notna(crop_name):
+            matched = crop_name_map.get(_normalize_key(crop_name))
+            if matched:
+                return matched
+
+        raw_label = _strip_trailing_unit_from_crop_label(
+            row.get("avance_crop_label_raw"),
+            row.get("avance_unit_label"),
+        )
+        if raw_label:
+            matched = crop_name_map.get(_normalize_key(raw_label))
+            if matched:
+                return matched
+
+        if path_canonical_product:
+            return path_canonical_product
+        return pd.NA
+
+    resolved["canonical_product"] = resolved.apply(_lookup, axis=1)
+    return _normalize_canonical_product_column(resolved)
 
 
 def _load_cierre_frames(cierre_root: Path, daily_root: Path) -> pd.DataFrame:
@@ -413,6 +574,169 @@ def _load_cierre_frames(cierre_root: Path, daily_root: Path) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+def _pick_latest_avance_exports(avance_root: Path) -> dict[tuple[str, int, int], Path]:
+    latest: dict[tuple[str, int, int], tuple[float, Path]] = {}
+    for workbook_path in sorted(avance_root.rglob("*.xlsx")):
+        try:
+            data_df, _meta_df, _failures_df = _read_source_workbook(workbook_path, "avance_agricola")
+        except Exception:
+            continue
+
+        if data_df.empty:
+            continue
+
+        year_value = data_df.get("query_year")
+        month_value = data_df.get("query_month")
+        year = int(year_value.dropna().iloc[0]) if year_value is not None and not year_value.dropna().empty else None
+        month = (
+            int(month_value.dropna().iloc[0])
+            if month_value is not None and not month_value.dropna().empty
+            else _derive_query_month_from_path(workbook_path)
+        )
+        if year is None:
+            year = _derive_query_year_from_path(workbook_path)
+
+        canonical_product = _derive_canonical_product_from_path(workbook_path)
+        if canonical_product is None or year is None or month is None:
+            continue
+
+        key = (_normalize_key(canonical_product), int(year), int(month))
+        candidate = (workbook_path.stat().st_mtime, workbook_path)
+        previous = latest.get(key)
+        if previous is None or candidate[0] >= previous[0]:
+            latest[key] = candidate
+
+    return {key: value[1] for key, value in latest.items()}
+
+
+def _load_avance_frames(avance_root: Path, daily_root: Path) -> pd.DataFrame:
+    crop_name_map = _load_avance_crop_name_map(daily_root)
+    frames: list[pd.DataFrame] = []
+    for workbook_path in _pick_latest_avance_exports(avance_root).values():
+        data_df, _meta_df, _failures_df = _read_source_workbook(workbook_path, "avance_agricola")
+        if data_df.empty:
+            continue
+
+        normalized = data_df.copy()
+        if "query_year" not in normalized.columns or normalized["query_year"].isna().all():
+            normalized["query_year"] = _derive_query_year_from_path(workbook_path)
+        if "query_month" not in normalized.columns or normalized["query_month"].isna().all():
+            normalized["query_month"] = _derive_query_month_from_path(workbook_path)
+        if "source_name" not in normalized.columns:
+            normalized["source_name"] = "avance_agricola"
+        normalized = _resolve_canonical_product_for_avance(
+            normalized,
+            crop_name_map,
+            path_canonical_product=_derive_canonical_product_from_path(workbook_path),
+        )
+        frames.append(normalized)
+
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
+
+
+def _parse_avance_cutoff_date(value: object) -> date | pd.NaT:
+    if pd.isna(value):
+        return pd.NaT
+    text = str(value).strip()
+    match = re.search(
+        r"(\d{1,2})\s+de\s+([a-zA-ZáéíóúÁÉÍÓÚ]+)\s+de\s+(20\d{2})",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        return pd.NaT
+    day = int(match.group(1))
+    month = SPANISH_MONTH_ALIASES.get(_normalize_key(match.group(2)))
+    year = int(match.group(3))
+    if month is None:
+        return pd.NaT
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return pd.NaT
+
+
+def build_avance_monthly_stats(avance_df: pd.DataFrame) -> pd.DataFrame:
+    columns = [
+        "canonical_product",
+        "query_year",
+        "query_month",
+        "query_month_label",
+        "avance_month_key",
+        "avance_total_superficie_sembrada_ha",
+        "avance_total_superficie_cosechada_ha",
+        "avance_total_superficie_siniestrada_ha",
+        "avance_total_produccion",
+        "avance_yield_weighted_udm_ha",
+        "avance_rows_used",
+        "avance_unit_label",
+        "avance_crop_name",
+        "avance_crop_label_raw",
+        "avance_report_cutoff_label",
+        "avance_cutoff_date",
+        "avance_sembrada_vs_cosechada_ratio",
+        "avance_siniestrada_share",
+    ]
+    if avance_df.empty:
+        return pd.DataFrame(columns=columns)
+
+    working = _normalize_canonical_product_column(avance_df.copy())
+    for column in (
+        "superficie_sembrada_ha",
+        "superficie_cosechada_ha",
+        "superficie_siniestrada_ha",
+        "produccion",
+        "rendimiento_udm_ha",
+        "query_year",
+        "query_month",
+    ):
+        if column in working.columns:
+            working[column] = pd.to_numeric(working[column], errors="coerce")
+
+    working = working[
+        working["canonical_product"].notna() & working["query_year"].notna() & working["query_month"].notna()
+    ].copy()
+    if working.empty:
+        return pd.DataFrame(columns=columns)
+
+    grouped = (
+        working.groupby(["canonical_product", "query_year", "query_month"], dropna=False)
+        .agg(
+            avance_total_superficie_sembrada_ha=("superficie_sembrada_ha", "sum"),
+            avance_total_superficie_cosechada_ha=("superficie_cosechada_ha", "sum"),
+            avance_total_superficie_siniestrada_ha=("superficie_siniestrada_ha", "sum"),
+            avance_total_produccion=("produccion", "sum"),
+            avance_rows_used=("entidad", "count"),
+            avance_unit_label=("avance_unit_label", "first"),
+            avance_crop_name=("avance_crop_name", "first"),
+            avance_crop_label_raw=("avance_crop_label_raw", "first"),
+            avance_report_cutoff_label=("report_cutoff_label", "first"),
+            query_month_label=("query_month_label", "first"),
+        )
+        .reset_index()
+    )
+
+    cosechada = grouped["avance_total_superficie_cosechada_ha"].where(
+        grouped["avance_total_superficie_cosechada_ha"].notna() & (grouped["avance_total_superficie_cosechada_ha"] > 0)
+    )
+    sembrada = grouped["avance_total_superficie_sembrada_ha"].where(
+        grouped["avance_total_superficie_sembrada_ha"].notna() & (grouped["avance_total_superficie_sembrada_ha"] > 0)
+    )
+    grouped["avance_yield_weighted_udm_ha"] = grouped["avance_total_produccion"] / cosechada
+    grouped["avance_sembrada_vs_cosechada_ratio"] = grouped["avance_total_superficie_cosechada_ha"] / sembrada
+    grouped["avance_siniestrada_share"] = grouped["avance_total_superficie_siniestrada_ha"] / sembrada
+    grouped["avance_month_key"] = grouped.apply(
+        lambda row: f"{int(row['query_year']):04d}-{int(row['query_month']):02d}",
+        axis=1,
+    )
+    grouped["avance_cutoff_date"] = grouped["avance_report_cutoff_label"].map(_parse_avance_cutoff_date)
+    grouped["query_year"] = grouped["query_year"].astype(int)
+    grouped["query_month"] = grouped["query_month"].astype(int)
+    return grouped.reindex(columns=columns)
+
+
 def build_sniim_daily_stats(sniim_df: pd.DataFrame) -> pd.DataFrame:
     if sniim_df.empty:
         return pd.DataFrame(
@@ -428,7 +752,7 @@ def build_sniim_daily_stats(sniim_df: pd.DataFrame) -> pd.DataFrame:
             ]
         )
 
-    working = sniim_df.copy()
+    working = _normalize_canonical_product_column(sniim_df.copy())
     if "producto_nombre_sitio" not in working.columns:
         working["producto_nombre_sitio"] = pd.NA
 
@@ -465,7 +789,7 @@ def build_retail_daily_panel(df: pd.DataFrame, source_name: str) -> pd.DataFrame
             ]
         )
 
-    panel = df.copy()
+    panel = _normalize_canonical_product_column(df.copy())
     for column in ("source_page", "product_raw", "product_inferred", "search_terms_used"):
         if column not in panel.columns:
             panel[column] = pd.NA
@@ -513,11 +837,12 @@ def build_cierre_annual_stats(cierre_df: pd.DataFrame) -> pd.DataFrame:
             ]
         )
 
-    valid = cierre_df[
-        cierre_df["canonical_product"].notna()
-        & cierre_df["pmr_mxn_udm"].notna()
-        & cierre_df["produccion"].notna()
-        & (cierre_df["produccion"] > 0)
+    normalized = _normalize_canonical_product_column(cierre_df.copy())
+    valid = normalized[
+        normalized["canonical_product"].notna()
+        & normalized["pmr_mxn_udm"].notna()
+        & normalized["produccion"].notna()
+        & (normalized["produccion"] > 0)
     ].copy()
 
     if valid.empty:
@@ -576,10 +901,12 @@ def _build_base_daily_keyframe(
     ]
     frames = [frame for frame in frames if not frame.empty]
     if not frames:
-        return pd.DataFrame(columns=["run_date", "canonical_product", "query_year"])
+        return pd.DataFrame(columns=["run_date", "canonical_product", "query_year", "query_month"])
 
     base = pd.concat(frames, ignore_index=True).drop_duplicates().sort_values(["run_date", "canonical_product"])
-    base["query_year"] = pd.to_datetime(base["run_date"]).dt.year
+    timestamps = pd.to_datetime(base["run_date"])
+    base["query_year"] = timestamps.dt.year
+    base["query_month"] = timestamps.dt.month
     return base.reset_index(drop=True)
 
 
@@ -598,6 +925,52 @@ def _build_sniim_panel(sniim_stats: pd.DataFrame) -> pd.DataFrame:
     panel["product_inferred"] = pd.NA
     panel["search_terms_used"] = pd.NA
     panel["source_record_count"] = panel["sniim_source_row_count"]
+    panel["avance_total_superficie_sembrada_ha"] = pd.NA
+    panel["avance_total_superficie_cosechada_ha"] = pd.NA
+    panel["avance_total_superficie_siniestrada_ha"] = pd.NA
+    panel["avance_total_produccion"] = pd.NA
+    panel["avance_yield_weighted_udm_ha"] = pd.NA
+    panel["avance_rows_used"] = pd.NA
+    panel["avance_crop_name"] = pd.NA
+    panel["avance_crop_label_raw"] = pd.NA
+    panel["avance_report_cutoff_label"] = pd.NA
+    panel["avance_cutoff_date"] = pd.NaT
+    panel["cierre_annual_weighted_pmr_mxn_udm"] = pd.NA
+    panel["cierre_rows_used"] = pd.NA
+    panel["cierre_total_produccion"] = pd.NA
+    panel["cierre_crop_name"] = pd.NA
+    panel["cierre_crop_label_raw"] = pd.NA
+    return panel.reindex(columns=MASTER_PANEL_COLUMNS)
+
+
+def _build_avance_panel(avance_monthly_stats: pd.DataFrame) -> pd.DataFrame:
+    if avance_monthly_stats.empty:
+        return pd.DataFrame(columns=MASTER_PANEL_COLUMNS)
+
+    panel = avance_monthly_stats.copy()
+    panel["run_date"] = panel["avance_cutoff_date"].where(
+        panel["avance_cutoff_date"].notna(),
+        pd.to_datetime(
+            panel["query_year"].astype(int).astype(str)
+            + "-"
+            + panel["query_month"].astype(int).astype(str).str.zfill(2)
+            + "-01"
+        ),
+    )
+    panel["source"] = "avance_agricola"
+    panel["comparison_price_mxn"] = pd.NA
+    panel["price_basis"] = AVANCE_PANEL_PRICE_BASIS
+    panel["raw_price_mxn"] = pd.NA
+    panel["unit_label"] = panel["avance_unit_label"]
+    panel["source_page"] = pd.NA
+    panel["product_raw"] = pd.NA
+    panel["product_inferred"] = pd.NA
+    panel["search_terms_used"] = pd.NA
+    panel["source_record_count"] = panel["avance_rows_used"]
+    panel["sniim_daily_mean_mxn"] = pd.NA
+    panel["sniim_daily_median_mxn"] = pd.NA
+    panel["sniim_daily_min_mxn"] = pd.NA
+    panel["sniim_daily_max_mxn"] = pd.NA
     panel["cierre_annual_weighted_pmr_mxn_udm"] = pd.NA
     panel["cierre_rows_used"] = pd.NA
     panel["cierre_total_produccion"] = pd.NA
@@ -630,11 +1003,39 @@ def _build_cierre_daily_panel(base_daily_keys: pd.DataFrame, cierre_annual_stats
     panel["sniim_daily_median_mxn"] = pd.NA
     panel["sniim_daily_min_mxn"] = pd.NA
     panel["sniim_daily_max_mxn"] = pd.NA
+    panel["avance_total_superficie_sembrada_ha"] = pd.NA
+    panel["avance_total_superficie_cosechada_ha"] = pd.NA
+    panel["avance_total_superficie_siniestrada_ha"] = pd.NA
+    panel["avance_total_produccion"] = pd.NA
+    panel["avance_yield_weighted_udm_ha"] = pd.NA
+    panel["avance_rows_used"] = pd.NA
+    panel["avance_crop_name"] = pd.NA
+    panel["avance_crop_label_raw"] = pd.NA
+    panel["avance_report_cutoff_label"] = pd.NA
+    panel["avance_cutoff_date"] = pd.NaT
     return panel.reindex(columns=MASTER_PANEL_COLUMNS)
 
 
-def _ensure_cierre_compare_columns(compare_daily_wide: pd.DataFrame) -> pd.DataFrame:
+def _ensure_compare_columns(compare_daily_wide: pd.DataFrame) -> pd.DataFrame:
     ensured = compare_daily_wide.copy()
+    for column in (
+        "avance_total_superficie_sembrada_ha",
+        "avance_total_superficie_cosechada_ha",
+        "avance_total_superficie_siniestrada_ha",
+        "avance_total_produccion",
+        "avance_yield_weighted_udm_ha",
+        "avance_rows_used",
+        "avance_unit_label",
+        "avance_crop_name",
+        "avance_crop_label_raw",
+        "avance_report_cutoff_label",
+        "avance_cutoff_date",
+        "avance_sembrada_vs_cosechada_ratio",
+        "avance_siniestrada_share",
+        "avance_month_key",
+    ):
+        if column not in ensured.columns:
+            ensured[column] = pd.NA
     for column in (
         "cierre_annual_weighted_pmr_mxn_udm",
         "cierre_unit_label",
@@ -648,24 +1049,36 @@ def _ensure_cierre_compare_columns(compare_daily_wide: pd.DataFrame) -> pd.DataF
     return ensured
 
 
-def build_master_tables(daily_root: Path, cierre_root: Path) -> dict[str, pd.DataFrame]:
+def build_master_tables(
+    daily_root: Path,
+    avance_root: Path,
+    cierre_root: Path | None = None,
+) -> dict[str, pd.DataFrame]:
     sniim_df = _load_daily_source_frames(daily_root, "sniim")
     walmart_df = _load_daily_source_frames(daily_root, "walmart")
     chedraui_df = _load_daily_source_frames(daily_root, "chedraui")
-    cierre_df = _load_cierre_frames(cierre_root, daily_root)
+    avance_df = _load_avance_frames(avance_root, daily_root)
+    cierre_df = _load_cierre_frames(cierre_root, daily_root) if cierre_root and cierre_root.exists() else pd.DataFrame()
 
     sniim_stats = build_sniim_daily_stats(sniim_df)
     walmart_panel = build_retail_daily_panel(walmart_df, "walmart")
     chedraui_panel = build_retail_daily_panel(chedraui_df, "chedraui")
+    avance_monthly_stats = build_avance_monthly_stats(avance_df)
     cierre_annual_stats = build_cierre_annual_stats(cierre_df)
 
     base_daily_keys = _build_base_daily_keyframe(sniim_stats, walmart_panel, chedraui_panel)
+    avance_daily_context = base_daily_keys.merge(
+        avance_monthly_stats,
+        on=["canonical_product", "query_year", "query_month"],
+        how="left",
+    )
     cierre_daily_panel = _build_cierre_daily_panel(base_daily_keys, cierre_annual_stats)
 
     panel_frames = [
         _build_sniim_panel(sniim_stats),
         walmart_panel.reindex(columns=MASTER_PANEL_COLUMNS),
         chedraui_panel.reindex(columns=MASTER_PANEL_COLUMNS),
+        _build_avance_panel(avance_monthly_stats),
         cierre_daily_panel.reindex(columns=MASTER_PANEL_COLUMNS),
     ]
     panel_frames = [frame for frame in panel_frames if not frame.empty]
@@ -684,6 +1097,31 @@ def build_master_tables(daily_root: Path, cierre_root: Path) -> dict[str, pd.Dat
     compare_daily_wide = base_daily_keys.copy()
     if not sniim_stats.empty:
         compare_daily_wide = compare_daily_wide.merge(sniim_stats, on=["run_date", "canonical_product"], how="left")
+    if not avance_daily_context.empty:
+        compare_daily_wide = compare_daily_wide.merge(
+            avance_daily_context[
+                [
+                    "run_date",
+                    "canonical_product",
+                    "avance_total_superficie_sembrada_ha",
+                    "avance_total_superficie_cosechada_ha",
+                    "avance_total_superficie_siniestrada_ha",
+                    "avance_total_produccion",
+                    "avance_yield_weighted_udm_ha",
+                    "avance_rows_used",
+                    "avance_unit_label",
+                    "avance_crop_name",
+                    "avance_crop_label_raw",
+                    "avance_report_cutoff_label",
+                    "avance_cutoff_date",
+                    "avance_sembrada_vs_cosechada_ratio",
+                    "avance_siniestrada_share",
+                    "avance_month_key",
+                ]
+            ],
+            on=["run_date", "canonical_product"],
+            how="left",
+        )
 
     for source_name, source_panel in (("walmart", walmart_panel), ("chedraui", chedraui_panel)):
         if source_panel.empty:
@@ -729,7 +1167,7 @@ def build_master_tables(daily_root: Path, cierre_root: Path) -> dict[str, pd.Dat
             ]
         ].rename(columns={"unit_label": "cierre_unit_label"})
         compare_daily_wide = compare_daily_wide.merge(cierre_wide, on=["run_date", "canonical_product"], how="left")
-    compare_daily_wide = _ensure_cierre_compare_columns(compare_daily_wide)
+    compare_daily_wide = _ensure_compare_columns(compare_daily_wide)
 
     if not compare_daily_wide.empty:
         compare_daily_wide = compare_daily_wide.sort_values(["run_date", "canonical_product"]).reset_index(drop=True)
@@ -744,16 +1182,20 @@ def build_master_tables(daily_root: Path, cierre_root: Path) -> dict[str, pd.Dat
         coverage["has_sniim"] = _present("sniim_daily_mean_mxn")
         coverage["has_walmart"] = _present("walmart_comparison_mxn")
         coverage["has_chedraui"] = _present("chedraui_comparison_mxn")
+        coverage["has_avance"] = _present("avance_rows_used")
         coverage["has_cierre"] = _present("cierre_annual_weighted_pmr_mxn_udm")
-        coverage["available_sources_count"] = coverage[
-            ["has_sniim", "has_walmart", "has_chedraui", "has_cierre"]
-        ].sum(axis=1)
-        coverage["missing_sources_count"] = 4 - coverage["available_sources_count"]
+        count_columns = ["has_sniim", "has_walmart", "has_chedraui", "has_avance"]
+        if not cierre_annual_stats.empty:
+            count_columns.append("has_cierre")
+        coverage["available_sources_count"] = coverage[count_columns].sum(axis=1)
+        coverage["missing_sources_count"] = len(count_columns) - coverage["available_sources_count"]
 
     return {
         "panel_daily_long": panel_daily_long,
         "compare_daily_wide": compare_daily_wide,
         "sniim_daily_stats": sniim_stats,
+        "avance_monthly_stats": avance_monthly_stats,
+        "avance_entity_monthly": avance_df,
         "cierre_annual_stats": cierre_annual_stats,
         "coverage": coverage,
     }
@@ -766,8 +1208,13 @@ def write_master_workbook(output_path: Path, tables: dict[str, pd.DataFrame]) ->
             df.to_excel(writer, sheet_name=sheet_name, index=False)
 
 
-def build_master_workbook(daily_root: Path, cierre_root: Path, output_path: Path) -> dict[str, pd.DataFrame]:
-    tables = build_master_tables(daily_root, cierre_root)
+def build_master_workbook(
+    daily_root: Path,
+    avance_root: Path,
+    output_path: Path,
+    cierre_root: Path | None = None,
+) -> dict[str, pd.DataFrame]:
+    tables = build_master_tables(daily_root, avance_root, cierre_root)
     write_master_workbook(output_path, tables)
     return tables
 
@@ -776,8 +1223,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build a master comparative workbook from daily source exports.")
     parser.add_argument("--daily-root", required=True, type=Path, help="Root directory with dated daily run folders")
     parser.add_argument(
-        "--cierre-root",
+        "--avance-root",
         required=True,
+        type=Path,
+        help="Root directory with normalized Avance Agricola xlsx exports",
+    )
+    parser.add_argument(
+        "--cierre-root",
+        required=False,
         type=Path,
         help="Root directory with normalized Cierre Agricola xlsx exports",
     )
@@ -792,11 +1245,14 @@ def main() -> int:
     if not args.daily_root.exists():
         LOGGER.error("Daily root not found: %s", args.daily_root)
         return 1
-    if not args.cierre_root.exists():
+    if not args.avance_root.exists():
+        LOGGER.error("Avance root not found: %s", args.avance_root)
+        return 1
+    if args.cierre_root and not args.cierre_root.exists():
         LOGGER.error("Cierre root not found: %s", args.cierre_root)
         return 1
 
-    tables = build_master_workbook(args.daily_root, args.cierre_root, args.output)
+    tables = build_master_workbook(args.daily_root, args.avance_root, args.output, args.cierre_root)
     LOGGER.info(
         "Master workbook written to %s with %s compare rows",
         args.output,
