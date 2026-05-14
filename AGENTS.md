@@ -170,7 +170,7 @@ Get-Content COMMANDS.md
 - Avance Agricola is the primary agricultural-context layer for the comparative workbook and notebook; it should be aggregated by product-month and joined onto daily price rows by normalized `canonical_product + year + month`, where `canonical_product` is stored as a lowercase ASCII slug such as `aguacate`.
 - Do not hide unit ambiguity for Cierre Agricola. Preserve and surface the annual PMR unit rather than pretending it is directly kg-comparable when it is not.
 - For the EDA notebook, all markdown, comments, figure titles, axis labels, legends, and other user-facing annotations must stay in Spanish.
-- When mixing daily datetime series with monthly aggregates in the EDA notebook, keep the x-axis on real datetimes rather than string categories to avoid Matplotlib unit conflicts.
+- When mixing daily datetime series with monthly aggregates in the EDA notebook, keep the monthly plot on real datetimes and do not share that x-axis with the daily chart to avoid Matplotlib unit conflicts.
 
 ## Data and output rules
 
