@@ -9,6 +9,7 @@ from src.extract.presas_agricolas import (
     QUERY_SHEET_NAME,
     _filter_snapshot_by_state,
     _iter_catalog_periods,
+    _iter_forward_periods,
     _normalize_portal_record,
     _resolve_id_from_catalog,
     build_catalog_dataframe,
@@ -268,6 +269,111 @@ class PresasAgricolasTests(unittest.TestCase):
         self.assertIn((2026, 4, 3), periods)
         self.assertIn((2026, 1, 1), periods)
         self.assertIn((2025, 12, 3), periods)
+
+    def test_iter_forward_periods_covers_same_year_range(self) -> None:
+        periods = _iter_forward_periods(
+            start_year=2025,
+            start_month=1,
+            start_day_block=2,
+            end_year=2025,
+        )
+
+        self.assertEqual(periods[0], (2025, 1, 2))
+        self.assertEqual(periods[-1], (2025, 12, 3))
+        self.assertEqual(len(periods), 35)
+
+    def test_iter_forward_periods_spans_multiple_years(self) -> None:
+        periods = _iter_forward_periods(
+            start_year=2024,
+            start_month=12,
+            start_day_block=3,
+            end_year=2025,
+        )
+
+        self.assertEqual(periods[0], (2024, 12, 3))
+        self.assertEqual(periods[-1], (2025, 12, 3))
+        self.assertIn((2025, 1, 1), periods)
+
+    def test_iter_forward_periods_caps_to_published_period(self) -> None:
+        periods = _iter_forward_periods(
+            start_year=2026,
+            start_month=1,
+            start_day_block=1,
+            end_year=2026,
+            cap_period={"year": 2026, "month": 4, "day_block": 3},
+        )
+
+        self.assertNotIn((2026, 5, 1), periods)
+        self.assertEqual(periods[-1], (2026, 4, 3))
+
+    def test_load_queries_config_enables_period_range_for_presas_periodo(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "presas.xlsx"
+            df = pd.DataFrame(
+                [
+                    {
+                        "activo": True,
+                        "nombre_consulta": "cortes_2025",
+                        "tipo_consulta": "presas_periodo",
+                        "anio": 2025,
+                        "mes": 1,
+                        "decena": 1,
+                        "anio_final": 2025,
+                    }
+                ]
+            )
+            with pd.ExcelWriter(path, engine="openpyxl") as writer:
+                df.to_excel(writer, sheet_name=QUERY_SHEET_NAME, index=False)
+
+            queries = load_queries_config(path)
+
+            self.assertEqual(queries[0].range_end_year, 2025)
+
+    def test_load_queries_config_keeps_single_period_when_anio_final_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "presas.xlsx"
+            df = pd.DataFrame(
+                [
+                    {
+                        "activo": True,
+                        "nombre_consulta": "corte_unico",
+                        "tipo_consulta": "presas_periodo",
+                        "anio": 2025,
+                        "mes": 4,
+                        "decena": 3,
+                        "anio_final": "",
+                    }
+                ]
+            )
+            with pd.ExcelWriter(path, engine="openpyxl") as writer:
+                df.to_excel(writer, sheet_name=QUERY_SHEET_NAME, index=False)
+
+            queries = load_queries_config(path)
+
+            self.assertIsNone(queries[0].range_end_year)
+            self.assertEqual(queries[0].end_year, 2025)
+
+    def test_load_queries_config_rejects_anio_final_before_anio_for_presas_periodo(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "presas.xlsx"
+            df = pd.DataFrame(
+                [
+                    {
+                        "activo": True,
+                        "nombre_consulta": "rango_invalido",
+                        "tipo_consulta": "presas_periodo",
+                        "anio": 2026,
+                        "mes": 4,
+                        "decena": 3,
+                        "anio_final": 2025,
+                    }
+                ]
+            )
+            with pd.ExcelWriter(path, engine="openpyxl") as writer:
+                df.to_excel(writer, sheet_name=QUERY_SHEET_NAME, index=False)
+
+            with self.assertRaisesRegex(ValueError, "anio_final \\(2025\\) no puede ser menor"):
+                load_queries_config(path)
 
 
 def load_queries_config_from_rows(rows: list[dict[str, object]]):

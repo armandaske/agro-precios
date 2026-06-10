@@ -323,6 +323,7 @@ Salida esperada:
 - En `consultas`, usa `tipo_consulta = presas_periodo` para el corte nacional, `tipo_consulta = presas_estado` para traer todas las presas de una entidad en esa fecha, y `tipo_consulta = serie_presa` para el historico por presa
 - Puedes dejar `id_conagua` vacio y llenar `nombre_oficial` + `estado`; el script intenta resolver el identificador automaticamente contra `catalogo_presas`
 - Para `serie_presa`, si `anio_inicial` queda vacio, el script usa una ventana automatica de 10 anios
+- Para `presas_periodo`, si llenas `anio_final`, el script descarga todos los cortes desde `anio`/`mes`/`decena` hasta el fin de ese anio (limitado al ultimo periodo publicado cuando aplica). Deja `anio_final` vacio para un solo corte
 - Si llenas `id_conagua` en una fila `presas_periodo`, el resultado se filtra a esa sola presa dentro del corte solicitado
 - En `presas_estado`, `estado` es obligatorio y el resultado queda filtrado exactamente a esa entidad
 - Si un `nombre_oficial` coincide con varias presas, agrega `estado` o usa `id_conagua` directo para evitar ambiguedad

@@ -1,7 +1,8 @@
 """Extractor HTTP para el portal de Presas Agricolas.
 
 Soporta tres tipos de consulta configurables desde Excel:
-- `presas_periodo`: obtiene el corte de todas las presas para anio/mes/decena.
+- `presas_periodo`: obtiene el corte de todas las presas para anio/mes/decena; con
+  `anio_final` explicito recorre todos los cortes hasta fin de ese anio.
 - `presas_estado`: obtiene el corte filtrado por estado para anio/mes/decena.
 - `serie_presa`: obtiene la serie historica por presa para un mes/decena dado.
 """
@@ -191,6 +192,7 @@ class PresaQuery:
     day_block: int
     start_year: int | None
     end_year: int | None
+    range_end_year: int | None
     dam_name: str | None
     state: str | None
 
@@ -227,6 +229,10 @@ def _parse_optional_int(value: Any) -> int | None:
     if isinstance(value, float):
         return int(value)
     return int(str(value).strip())
+
+
+def _is_explicit_value(value: Any) -> bool:
+    return not pd.isna(value) and str(value).strip() != ""
 
 
 def _ensure_ok_response(response: requests.Response, context: str) -> None:
@@ -510,8 +516,18 @@ def load_queries_config(config_path: Path) -> list[PresaQuery]:
         _validate_month(month)
         _validate_day_block(day_block)
 
-        end_year = _parse_optional_int(row.get("end_year")) or year
+        end_year_raw = row.get("end_year")
+        end_year_explicit = _is_explicit_value(end_year_raw)
+        end_year = _parse_optional_int(end_year_raw) or year
         start_year = _parse_optional_int(row.get("start_year"))
+        range_end_year: int | None = None
+        if query_type == "presas_periodo" and end_year_explicit:
+            if end_year < year:
+                raise ValueError(
+                    f"Fila {idx + 2}: anio_final ({end_year}) no puede ser menor que anio ({year}) "
+                    "para presas_periodo."
+                )
+            range_end_year = end_year
         if query_type == "serie_presa":
             if not _clean_string(row.get("id_conagua")) and not _clean_string(row.get("dam_name")):
                 raise ValueError(
@@ -540,6 +556,7 @@ def load_queries_config(config_path: Path) -> list[PresaQuery]:
                 day_block=day_block,
                 start_year=start_year,
                 end_year=end_year,
+                range_end_year=range_end_year,
                 dam_name=_clean_string(row.get("dam_name")) or None,
                 state=_clean_string(row.get("state")) or None,
             )
@@ -572,7 +589,7 @@ def build_default_config_dataframe(
                 "month": default_month,
                 "day_block": default_day_block,
                 "start_year": "",
-                "end_year": default_year,
+                "end_year": "",
                 "dam_name": "",
                 "state": "",
             },
@@ -635,7 +652,11 @@ def build_instructions_dataframe() -> pd.DataFrame:
             },
             {
                 "campo": "anio_inicial / anio_final",
-                "descripcion": "Rango historico para serie_presa. Si anio_inicial queda vacio, el script usa una ventana de 10 anios.",
+                "descripcion": (
+                    "Para serie_presa: rango historico; si anio_inicial queda vacio, usa una ventana de 10 anios. "
+                    "Para presas_periodo: si anio_final esta lleno, obtiene todos los cortes desde anio/mes/decena "
+                    "hasta el fin de ese anio (limitado al ultimo periodo publicado cuando corresponde)."
+                ),
             },
         ]
     )
@@ -646,6 +667,42 @@ def _period_sort_value(year: Any, month: Any, day_block: Any) -> int:
     month_i = _parse_optional_int(month) or 0
     day_i = _parse_optional_int(day_block) or 0
     return year_i * 1000 + month_i * 10 + day_i
+
+
+def _advance_period(year: int, month: int, day_block: int) -> tuple[int, int, int]:
+    if day_block < 3:
+        return year, month, day_block + 1
+    if month < 12:
+        return year, month + 1, 1
+    return year + 1, 1, 1
+
+
+def _iter_forward_periods(
+    *,
+    start_year: int,
+    start_month: int,
+    start_day_block: int,
+    end_year: int,
+    cap_period: dict[str, int] | None = None,
+) -> list[tuple[int, int, int]]:
+    """Genera periodos consecutivos desde el inicio hasta fin de `end_year`, opcionalmente acotado al portal."""
+    end_sort = _period_sort_value(end_year, 12, 3)
+    cap_sort = (
+        _period_sort_value(cap_period["year"], cap_period["month"], cap_period["day_block"])
+        if cap_period is not None
+        else end_sort
+    )
+    max_sort = min(end_sort, cap_sort)
+    start_sort = _period_sort_value(start_year, start_month, start_day_block)
+    if start_sort > max_sort:
+        return []
+
+    periods: list[tuple[int, int, int]] = []
+    year, month, day_block = start_year, start_month, start_day_block
+    while _period_sort_value(year, month, day_block) <= max_sort:
+        periods.append((year, month, day_block))
+        year, month, day_block = _advance_period(year, month, day_block)
+    return periods
 
 
 def build_catalog_dataframe(snapshot_df: pd.DataFrame) -> pd.DataFrame:
@@ -896,37 +953,158 @@ def create_default_config(
     return config_path
 
 
+def _assign_snapshot_metadata(
+    snapshot_df: pd.DataFrame,
+    *,
+    query: PresaQuery,
+    resolved_id_conagua: str,
+    period_year: int,
+    period_month: int,
+    period_day_block: int,
+    extracted_at: str,
+) -> pd.DataFrame:
+    return snapshot_df.assign(
+        config_row_number=query.row_number,
+        query_name=query.query_name,
+        query_type=query.query_type,
+        requested_id_conagua=resolved_id_conagua or "",
+        requested_state=query.state or "",
+        query_year=period_year,
+        query_month=period_month,
+        query_day_block=period_day_block,
+        fuente="presas_agricolas_portal",
+        fecha_extraccion=extracted_at,
+    )
+
+
+def _fetch_snapshot_for_period(
+    query: PresaQuery,
+    *,
+    period_year: int,
+    period_month: int,
+    period_day_block: int,
+    session: requests.Session,
+    resolved_id_conagua: str,
+) -> pd.DataFrame:
+    snapshot_df = fetch_snapshot_dataframe(
+        year=period_year,
+        month=period_month,
+        day_block=period_day_block,
+        id_conagua=resolved_id_conagua if resolved_id_conagua else None,
+        session=session,
+    )
+    snapshot_df = _filter_snapshot_by_state(snapshot_df, query.state)
+    if snapshot_df.empty and resolved_id_conagua:
+        raise RuntimeError(
+            f"No se encontro la presa {resolved_id_conagua} para el periodo "
+            f"{period_year}-{period_month:02d} decena {period_day_block}."
+        )
+    if snapshot_df.empty and query.state:
+        raise RuntimeError(
+            f"No se encontraron presas para estado='{query.state}' en el periodo "
+            f"{period_year}-{period_month:02d} decena {period_day_block}."
+        )
+    return snapshot_df
+
+
 def _execute_query(
     query: PresaQuery,
     *,
     session: requests.Session,
     extracted_at: str,
     resolved_id_conagua: str,
+    published_period: dict[str, int] | None = None,
 ) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
-    if query.query_type in {"presas_periodo", "presas_estado"}:
-        snapshot_df = fetch_snapshot_dataframe(
-            year=query.year,
-            month=query.month,
-            day_block=query.day_block,
-            id_conagua=resolved_id_conagua if resolved_id_conagua else None,
-            session=session,
+    if query.query_type == "presas_periodo" and query.range_end_year is not None:
+        periods = _iter_forward_periods(
+            start_year=query.year,
+            start_month=query.month,
+            start_day_block=query.day_block,
+            end_year=query.range_end_year,
+            cap_period=published_period,
         )
-        snapshot_df = _filter_snapshot_by_state(snapshot_df, query.state)
-        if snapshot_df.empty and resolved_id_conagua:
-            raise RuntimeError(f"No se encontro la presa {resolved_id_conagua} para el periodo solicitado.")
-        if snapshot_df.empty and query.state:
-            raise RuntimeError(f"No se encontraron presas para estado='{query.state}' en el periodo solicitado.")
-        snapshot_df = snapshot_df.assign(
-            config_row_number=query.row_number,
-            query_name=query.query_name,
-            query_type=query.query_type,
-            requested_id_conagua=resolved_id_conagua or "",
-            requested_state=query.state or "",
-            query_year=query.year,
-            query_month=query.month,
-            query_day_block=query.day_block,
-            fuente="presas_agricolas_portal",
-            fecha_extraccion=extracted_at,
+        if not periods:
+            raise RuntimeError(
+                f"El rango solicitado para '{query.query_name}' queda fuera de los periodos publicados."
+            )
+
+        frames: list[pd.DataFrame] = []
+        period_errors: list[str] = []
+        total = len(periods)
+        for idx, (period_year, period_month, period_day_block) in enumerate(periods, start=1):
+            try:
+                snapshot_df = _fetch_snapshot_for_period(
+                    query,
+                    period_year=period_year,
+                    period_month=period_month,
+                    period_day_block=period_day_block,
+                    session=session,
+                    resolved_id_conagua=resolved_id_conagua,
+                )
+            except Exception as exc:
+                period_errors.append(
+                    f"{period_year}-{period_month:02d} decena {period_day_block}: {exc}"
+                )
+                LOGGER.warning(
+                    "Fallo el corte %s-%02d decena %s en consulta %s: %s",
+                    period_year,
+                    period_month,
+                    period_day_block,
+                    query.query_name,
+                    exc,
+                )
+                continue
+
+            frames.append(
+                _assign_snapshot_metadata(
+                    snapshot_df,
+                    query=query,
+                    resolved_id_conagua=resolved_id_conagua,
+                    period_year=period_year,
+                    period_month=period_month,
+                    period_day_block=period_day_block,
+                    extracted_at=extracted_at,
+                )
+            )
+            if idx % 12 == 0 or idx == total:
+                LOGGER.info(
+                    "Consulta %s: %s/%s periodos descargados",
+                    query.query_name,
+                    idx,
+                    total,
+                )
+
+        if not frames:
+            raise RuntimeError(
+                f"No se pudo obtener ningun corte para '{query.query_name}'. Errores: "
+                + "; ".join(period_errors[:5])
+            )
+        if period_errors:
+            LOGGER.warning(
+                "Consulta %s completa con %s periodo(s) fallido(s) de %s",
+                query.query_name,
+                len(period_errors),
+                total,
+            )
+        return pd.concat(frames, ignore_index=True), None
+
+    if query.query_type in {"presas_periodo", "presas_estado"}:
+        snapshot_df = _fetch_snapshot_for_period(
+            query,
+            period_year=query.year,
+            period_month=query.month,
+            period_day_block=query.day_block,
+            session=session,
+            resolved_id_conagua=resolved_id_conagua,
+        )
+        snapshot_df = _assign_snapshot_metadata(
+            snapshot_df,
+            query=query,
+            resolved_id_conagua=resolved_id_conagua,
+            period_year=query.year,
+            period_month=query.month,
+            period_day_block=query.day_block,
+            extracted_at=extracted_at,
         )
         return snapshot_df, None
 
@@ -990,6 +1168,7 @@ def run_from_config(
 
     session = _session()
     try:
+        published_period = fetch_default_period(session)
         for query in queries:
             try:
                 resolved_id = _resolve_id_from_catalog(query, catalog_df)
@@ -998,6 +1177,7 @@ def run_from_config(
                     session=session,
                     extracted_at=extracted_at,
                     resolved_id_conagua=resolved_id,
+                    published_period=published_period,
                 )
                 if snapshot_df is not None:
                     snapshot_frames.append(snapshot_df)

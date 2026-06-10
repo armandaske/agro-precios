@@ -141,6 +141,7 @@ Get-Content COMMANDS.md
 
 - `src/extract/presas_agricolas.py` should keep using the portal's direct JSON endpoints instead of browser automation as long as `js/funciones.php`, `js/graf.php`, `js/ajax/getInicio.php`, and `js/ajax/getAnios.php` remain stable.
 - Treat `anio + mes + decena` as the source-of-truth query contract for snapshots, and `id_conagua + mes + decena + rango de anios` as the source-of-truth contract for historical series.
+- For `presas_periodo`, an explicit `anio_final` in the config should expand the row into consecutive decena snapshots from the starting `anio/mes/decena` through the end of that year, capped by the portal's latest published period when needed.
 - Support the explicit `presas_estado` batch mode by filtering snapshots on `estado` after retrieval, and treat that filter as part of the auditable query metadata.
 - Preserve both the requested query metadata and the returned dam metadata in exports so later analysis can audit exactly which cut was retrieved.
 - Keep the workbook bootstrap flow intact: `python -m src.extract.presas_agricolas --init-config` should generate a ready-to-run `config/presas_agricolas.xlsx`.
