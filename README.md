@@ -289,6 +289,18 @@ Este scraper reproduce el flujo HTTP real del portal sin depender del iframe ni 
 - `--catalog-scope latest` arma el catalogo solo con el ultimo corte publicado.
 - `--catalog-scope all-available` intenta unir todos los periodos historicos publicados y agrega metadatos como `periodos_observados`, `anio_primer_avistamiento` y `anio_ultimo_avistamiento`.
 
+Ejecutar con la configuracion del archivo config/presas_agricolas.xlsx:
+
+```powershell
+python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx
+```
+
+Ejecutar con salida explicita:
+
+```powershell
+python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx --output data/raw/presas_agricolas/presas_historicas.xlsx
+```
+
 Crear o regenerar el workbook de configuracion:
 
 ```powershell
@@ -299,18 +311,6 @@ Generar un catalogo maestro mas fuerte, uniendo todos los periodos publicados di
 
 ```powershell
 python -m src.extract.presas_agricolas --init-config --overwrite-config --catalog-scope all-available
-```
-
-Ejecutar con la configuracion por default:
-
-```powershell
-python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx
-```
-
-Ejecutar con salida explicita:
-
-```powershell
-python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx --output data/raw/presas_agricolas/presas_historicas.xlsx
 ```
 
 Salida esperada:
