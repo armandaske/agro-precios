@@ -235,6 +235,11 @@ def _normalize_canonical_product_value(value: object) -> object:
     if pd.isna(value):
         return pd.NA
     normalized = _normalize_key(value)
+    normalized = {
+        "tomate": "tomate_rojo",
+        "tomate_rojo_202": "tomate_rojo",
+        "chile_jalapeno": "chile_verde",
+    }.get(normalized, normalized)
     return normalized or pd.NA
 
 

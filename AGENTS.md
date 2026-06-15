@@ -4,12 +4,12 @@
 
 This repository exists to collect agro-industry data from multiple public and commercial sources in Mexico and turn it into consulting-grade analysis inputs.
 
-The current codebase is extraction-first:
+The current codebase remains extraction-first, with an initial governed analytics layer:
 
 - Reliable source acquisition matters more than adding speculative modeling code.
 - Every dataset should preserve provenance, query parameters, and enough metadata to audit where a number came from.
 - The near-term goal is to build repeatable data assets and operational analyses for an agro consulting firm.
-- The longer-term goal can include modeling, forecasting, pricing intelligence, and executive reporting, but agents should not pretend that pipeline already exists.
+- Modeling, forecasting, pricing intelligence, and executive reporting now have runnable v1 pipelines, but agents must not present candidate models as operational unless temporal backtesting beats the configured baselines.
 
 ## What this repo currently is
 
@@ -23,10 +23,10 @@ The current codebase is extraction-first:
 - `Presas Agricolas` via direct HTTP endpoints for corte por decena and series historicas por presa.
 - `Walmart Mexico` fresh produce search scraping.
 - `Chedraui Mexico` fresh produce search scraping.
-- Existing tests focus on parser behavior and daily-run orchestration.
-- `scikit-learn` and `xgboost` are installed, but there is no formal modeling or forecasting pipeline yet.
+- Tests cover extraction, feature engineering, public-data parsing, and daily orchestration.
+- `scikit-learn`, `xgboost`, and `pyarrow` support the formal v1 analysis pipelines.
 
-Agents should treat this repo as a data acquisition and analysis foundation, not as a finished analytics platform.
+Agents should treat this repo as a data acquisition and analysis foundation with governed v1 models, not as a finished analytics platform.
 
 ## Core product intent
 
@@ -52,6 +52,12 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/fetch_cierre_batch.py`: batch runner that fetches normalized annual Cierre Agricola exports for the configured canonical products.
 - `scripts/fetch_avance_batch.py`: batch runner that fetches normalized monthly Avance Agricola exports for the configured canonical products.
 - `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Avance exports and optional normalized Cierre exports.
+- `src/analysis/`: shared feature engineering, temporal validation, model governance, and reporting code.
+- `scripts/run_water_risk_model.py`: creates decena reservoir features, backtests candidate forecasts, and writes alerts and a map.
+- `scripts/run_production_nowcast.py`: creates crop-state cutoff features and trains only when historical Avance and Cierre years overlap.
+- `scripts/run_price_shock_model.py`: creates product-market daily features, price forecasts, and margin anomalies.
+- `scripts/run_analysis_pipeline.py`: rebuilds the master workbook and runs all three analytical projects in order.
+- `scripts/fetch_nasa_power_weather.py`: optional NASA POWER climate enrichment.
 - `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
 - `COMMANDS.md`: quick command reference for the main extractors, batch runners, workbook builder, tests, and Windows scheduler workflow.
 - `config/products.xlsx`: operational config workbook for product mappings and enabled sources.
@@ -88,6 +94,12 @@ Run the daily orchestrator:
 python scripts/run_daily_extracts.py --config config/products.xlsx --output-root data/daily_runs
 ```
 
+Run the governed analysis pipeline:
+
+```powershell
+python -m scripts.run_analysis_pipeline
+```
+
 Quick command lookup:
 
 ```powershell
@@ -104,6 +116,20 @@ Get-Content COMMANDS.md
 - Keep query metadata in the exported DataFrame so consulting outputs can be audited later.
 - Preserve the report-header product label from the result page in the exported rows when available, because SNIIM may display a more specific market product name such as `Aguacate Hass`.
 - Parser robustness matters because table headers and encodings can be inconsistent.
+- Treat the portal's explicit `NO HAY REGISTROS` page as a valid empty market day, not a parser failure. Unknown result-page shapes must still fail loudly.
+
+### Predictive analysis
+
+- Preserve the generated feature Parquet metadata sidecars; they record source roots, coverage, and generation time.
+- Use date-based train/test splits only. Never use random splitting for reservoir, production, or price forecasts.
+- Compare every candidate model against the documented simple baselines.
+- Only set XGBoost as the operational method for a horizon when it has lower out-of-sample MAE than every baseline.
+- Keep non-winning candidate model artifacts for diagnostics, but label the selected `metodo_pronostico` in alert outputs.
+- Reservoir alerts should only include dams observed within 45 days of the latest reservoir cut.
+- Price alerts should only include markets observed within seven days of the latest SNIIM date.
+- Production nowcast requires historical Avance cutoffs joined to Cierre outcomes from the same crop, state, and year. If fewer than 100 labeled cutoffs or fewer than two labeled years exist, use the historical baseline and state the limitation.
+- The default dry scenarios are explicit assumptions: normal 0%, dry -8%, severe drought -15%. Do not present them as learned causal impacts.
+- Optional climate input must use `id_conagua + fecha`.
 
 ### SIAP Cierre Agricola
 
@@ -178,6 +204,7 @@ Get-Content COMMANDS.md
 - Treat generated outputs as disposable unless the user explicitly wants them committed.
 - `.gitignore` already excludes `data/daily_runs/`, logs, and spreadsheet outputs such as `*.xlsx`, `*.xls`, and `*.csv`.
 - New standalone scrapers should follow the same source-specific raw output layout: default under `data/raw/<source_slug>/` with timestamped filenames, while still allowing an explicit override flag for custom destinations.
+- Generated analysis outputs under `data/analysis/` and climate Parquet under `data/raw/climate/` are disposable and ignored by git.
 - `config/products.xlsx` is operationally important but is currently ignored by git, so do not assume config workbook changes will be versioned automatically.
 - Preserve source provenance columns and exported metadata whenever possible.
 - Prefer additive changes to schemas over breaking renames unless you update all downstream consumers and docs together.

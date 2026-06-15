@@ -30,6 +30,10 @@ logs/
 
 # Runtime outputs
 data/daily_runs/
+data/analysis/
+data/raw/climate/
+*.parquet
+*.joblib
 
 # Environment variables
 .env

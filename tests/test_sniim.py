@@ -4,6 +4,7 @@ from pathlib import Path
 from src.extract.sniim import (
     _append_metadata,
     _extract_site_product_name,
+    _is_no_records_response,
     _normalize_dataframe,
     _parse_results_table_or_raise,
     normalize_column_name,
@@ -62,6 +63,15 @@ class SniimParserTests(unittest.TestCase):
 
     def test_extract_site_product_name_from_fixture(self) -> None:
         self.assertEqual(_extract_site_product_name(self.html), "Aguacate Hass")
+
+    def test_detects_explicit_no_records_response(self) -> None:
+        html = """
+        <html><body>
+          <table><tr><td>NO HAY REGISTROS (cambie su consulta e intente nuevamente)</td></tr></table>
+        </body></html>
+        """
+        self.assertTrue(_is_no_records_response(html))
+        self.assertFalse(_is_no_records_response(self.html))
 
     def test_append_metadata_preserves_market_origin_and_destination(self) -> None:
         parsed = _parse_results_table_or_raise(self.html)

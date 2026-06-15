@@ -234,6 +234,49 @@ Parametros utiles:
 - `--cierre-root`: opcional; raiz de exportes por lote de Cierre
 - `--output`: ruta del workbook final
 
+## Analitica predictiva
+
+Ejecutar el flujo completo:
+
+```powershell
+python -m scripts.run_analysis_pipeline
+```
+
+Monitor de riesgo hidrico:
+
+```powershell
+python -m scripts.run_water_risk_model `
+  --input-root data/raw/presas_agricolas `
+  --output-dir data/analysis/water_risk
+```
+
+Nowcast de produccion:
+
+```powershell
+python -m scripts.run_production_nowcast `
+  --avance-root data/raw/avance_agricola_batch `
+  --cierre-root data/raw/cierre_agricola_batch `
+  --water-features data/analysis/water_risk/state_decena_features.parquet
+```
+
+Alerta de precios:
+
+```powershell
+python -m scripts.run_price_shock_model `
+  --daily-root data/daily_runs `
+  --production-forecast data/analysis/production_nowcast/pronostico_produccion_mensual.csv `
+  --water-features data/analysis/water_risk/state_decena_features.parquet
+```
+
+Descarga opcional de clima NASA POWER:
+
+```powershell
+python -m scripts.fetch_nasa_power_weather `
+  --start-date 2025-01-01 `
+  --end-date 2026-06-15 `
+  --output data/raw/climate/nasa_power_decena.parquet
+```
+
 ## Programador de tareas de Windows
 
 Wrapper local del scheduler:

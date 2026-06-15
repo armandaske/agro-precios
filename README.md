@@ -2,7 +2,7 @@
 
 POC para extraer y preparar datos de precios agroalimentarios en Mexico.
 
-Hoy el repositorio esta centrado principalmente en la capa de extraccion. Ya hay scrapers funcionales para fuentes publicas clave y pruebas para parte del parsing, pero todavia no existe un pipeline completo de transformacion, modelado y forecast como producto final.
+El repositorio combina una capa de extraccion con tres pipelines analiticos iniciales: riesgo hidrico, nowcast de produccion y alerta temprana de precios. Los modelos usan validacion temporal y solo se marcan como operativos cuando superan sus baselines.
 
 ## Guia para agentes y mantenimiento de docs
 
@@ -24,12 +24,17 @@ Implementado:
 - Scraper de precios de productos frescos de Chedraui Mexico.
 - Tests unitarios para parsing de SNIIM, Presas Agricolas, Walmart y Chedraui.
 
-No implementado aun como flujo formal:
+Analitica implementada:
 
-- Pipeline end-to-end de transformacion.
-- Feature engineering para forecast.
-- Entrenamiento de modelos.
-- Script orquestador tipo `run_all.py`.
+- Dataset por presa y decena, backtesting a 10, 30 y 60 dias, alertas de umbral y mapa HTML.
+- Dataset por cultivo, estado y corte mensual para nowcast de produccion.
+- Dataset diario por producto y mercado, forecast a 7, 14 y 28 dias y anomalias de margen retail-mayoreo.
+- Descarga opcional de clima NASA POWER.
+- Orquestador `scripts/run_analysis_pipeline.py` para reconstruir el workbook maestro y ejecutar los tres analisis.
+
+Limitacion actual:
+
+- Los archivos disponibles de Avance Agricola son de 2026 y los Cierres son de 2023-2024. No existen cortes historicos emparejados con su cierre del mismo anio, por lo que el nowcast de produccion usa baselines historicos y no presenta XGBoost como modelo operativo.
 
 ## Estructura relevante
 
@@ -44,6 +49,12 @@ No implementado aun como flujo formal:
 - `scripts/fetch_cierre_batch.py`: descarga en lote exportes normalizados de Cierre Agricola para los productos canonicos configurados.
 - `scripts/fetch_avance_batch.py`: descarga en lote exportes normalizados de Avance Agricola para los productos canonicos configurados.
 - `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui, Avance Agricola y Cierre Agricola secundario.
+- `scripts/run_water_risk_model.py`: monitor predictivo de riesgo hidrico.
+- `scripts/run_production_nowcast.py`: nowcast de produccion y rendimiento.
+- `scripts/run_price_shock_model.py`: alerta temprana de choques de precios.
+- `scripts/run_analysis_pipeline.py`: ejecucion integrada de los tres proyectos.
+- `scripts/fetch_nasa_power_weather.py`: descarga clima diario por coordenada y agrega por decena.
+- `src/analysis/`: feature engineering, validacion temporal, seleccion de baselines, modelos y reportes.
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
 - `config/presas_agricolas.xlsx`: workbook editable por el usuario con consultas de presas por anio, mes, decena e `id_conagua`.
 - `notebooks/master_price_eda.ipynb`: notebook base para graficar y explorar el workbook maestro.
@@ -73,6 +84,38 @@ playwright install chromium
 ## Como correr los scrapers manualmente
 
 Todos los comandos siguientes se ejecutan desde la raiz del repo.
+
+## Pipeline analitico completo
+
+Ejecutar los tres proyectos en el orden recomendado:
+
+```powershell
+python -m scripts.run_analysis_pipeline
+```
+
+La corrida reconstruye `data/analysis/master_price_workbook.xlsx` y escribe:
+
+- `data/analysis/water_risk/dam_decena_features.parquet`
+- `data/analysis/production_nowcast/crop_state_cutoff_features.parquet`
+- `data/analysis/price_shock/price_product_market_daily_features.parquet`
+- Reportes CSV, XLSX, HTML, PNG, metricas JSON y modelos candidatos bajo cada carpeta.
+
+La seleccion del metodo operativo se realiza con un corte temporal. Si XGBoost no supera el mejor baseline en MAE fuera de muestra, el reporte usa el baseline y conserva XGBoost solo como artefacto candidato.
+
+### Enriquecimiento climatico
+
+Descargar NASA POWER para las coordenadas de las presas:
+
+```powershell
+python -m scripts.fetch_nasa_power_weather --start-date 2025-01-01 --end-date 2026-06-15
+```
+
+Usar el archivo climatico en la corrida integrada:
+
+```powershell
+python -m scripts.run_analysis_pipeline `
+  --climate-file data/raw/climate/nasa_power_decena.parquet
+```
 
 ### 1. SNIIM
 

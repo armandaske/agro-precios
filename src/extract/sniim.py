@@ -50,6 +50,7 @@ RESULT_TABLE_TERMS = {
 }
 PRICE_COLUMN_TERMS = {"precio_minimo", "precio_maximo", "precio_frecuente"}
 CATEGORY_MARKERS = {"frutas", "hortalizas"}
+NO_RECORDS_MARKERS = ("no hay registros", "no existen registros")
 
 LOGGER = logging.getLogger(__name__)
 
@@ -298,6 +299,12 @@ def _read_html_tables(html: str) -> list[pd.DataFrame]:
         return []
 
 
+def _is_no_records_response(html: str) -> bool:
+    soup = BeautifulSoup(html, "html.parser")
+    page_text = normalize_column_name(soup.get_text(" ", strip=True))
+    return any(normalize_column_name(marker) in page_text for marker in NO_RECORDS_MARKERS)
+
+
 def _parse_results_table_or_raise(html: str) -> pd.DataFrame:
     soup = BeautifulSoup(html, "html.parser")
     preferred_table = soup.find("table", id=RESULTS_TABLE_ID)
@@ -462,6 +469,36 @@ def fetch_sniim_fruits_vegetables(
 
     if not any(fragment in response.url for fragment in RESULTS_URL_FRAGMENTS):
         raise ValueError("No se llegó a la página real de resultados de SNIIM")
+
+    if _is_no_records_response(response.text):
+        LOGGER.info(
+            "SNIIM returned no records for product=%s dates=%s..%s",
+            producto_id,
+            fecha_inicio,
+            fecha_final,
+        )
+        empty = pd.DataFrame(
+            columns=[
+                "fecha",
+                "presentacion",
+                "origen",
+                "destino",
+                "precio_minimo",
+                "precio_maximo",
+                "precio_frecuente",
+                "obs",
+            ]
+        )
+        return _append_metadata(
+            empty,
+            fecha_inicio=fecha_inicio,
+            fecha_final=fecha_final,
+            producto_id=producto_id,
+            producto_nombre_sitio=_extract_site_product_name(response.text),
+            origen_id=origen_id,
+            destino_id=destino_id,
+            precios_por_id=precios_por_id,
+        )
 
     try:
         parsed = _parse_results_table_or_raise(response.text)
