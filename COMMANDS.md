@@ -227,12 +227,47 @@ Construir el workbook maestro a partir de las corridas diarias y Avance, con Cie
 python -m scripts.build_master_price_workbook --daily-root data/daily_runs --avance-root data/raw/avance_agricola_batch --cierre-root data/raw/cierre_agricola_batch --output data/analysis/master_price_workbook.xlsx
 ```
 
+Con precios internacionales publicos:
+
+```powershell
+python -m scripts.build_master_price_workbook `
+  --daily-root data/daily_runs `
+  --avance-root data/raw/avance_agricola_batch `
+  --cierre-root data/raw/cierre_agricola_batch `
+  --international-features data/analysis/international_prices/international_price_features.parquet `
+  --output data/analysis/master_price_workbook.xlsx
+```
+
 Parametros utiles:
 
 - `--daily-root`: raiz de corridas diarias
 - `--avance-root`: raiz de exportes por lote de Avance
 - `--cierre-root`: opcional; raiz de exportes por lote de Cierre
+- `--international-features`: opcional; parquet de precios internacionales publicos
 - `--output`: ruta del workbook final
+
+## Precios internacionales publicos sin API keys
+
+Descargar fuentes directas publicas:
+
+```powershell
+python -m scripts.fetch_public_international_prices --output-root data/raw/international_prices
+```
+
+Notas:
+
+- World Bank Pink Sheet y FRED USD/MXN se descargan directamente.
+- USDA AMS e IMF se cargan desde archivos publicos CSV/XLS/XLSX colocados en `data/raw/international_prices/usda_ams/` y `data/raw/international_prices/imf/`.
+- No se usan tokens, API keys, Banxico SIE ni feeds pagados.
+
+Construir features internacionales:
+
+```powershell
+python -m scripts.build_international_price_features `
+  --config config/products.xlsx `
+  --raw-root data/raw/international_prices `
+  --output data/analysis/international_prices/international_price_features.parquet
+```
 
 ## Analitica predictiva
 
@@ -240,6 +275,13 @@ Ejecutar el flujo completo:
 
 ```powershell
 python -m scripts.run_analysis_pipeline
+```
+
+Con precios internacionales:
+
+```powershell
+python -m scripts.run_analysis_pipeline `
+  --international-features data/analysis/international_prices/international_price_features.parquet
 ```
 
 Monitor de riesgo hidrico:
@@ -266,6 +308,14 @@ python -m scripts.run_price_shock_model `
   --daily-root data/daily_runs `
   --production-forecast data/analysis/production_nowcast/pronostico_produccion_mensual.csv `
   --water-features data/analysis/water_risk/state_decena_features.parquet
+```
+
+Con precios internacionales:
+
+```powershell
+python -m scripts.run_price_shock_model `
+  --daily-root data/daily_runs `
+  --international-features data/analysis/international_prices/international_price_features.parquet
 ```
 
 Descarga opcional de clima NASA POWER:

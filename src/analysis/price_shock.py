@@ -79,6 +79,7 @@ MODEL_FEATURES = [
     "cultivo_canonico",
     "mercado",
 ]
+INTERNATIONAL_FEATURE_PREFIX = "intl_"
 
 
 def _rename_columns(frame: pd.DataFrame, aliases: dict[str, str]) -> pd.DataFrame:
@@ -251,6 +252,7 @@ def _merge_optional_context(
     features: pd.DataFrame,
     production_path: Path | None,
     water_path: Path | None,
+    international_features_path: Path | None = None,
 ) -> pd.DataFrame:
     result = features
     if production_path and production_path.exists():
@@ -292,7 +294,63 @@ def _merge_optional_context(
             direction="backward",
             tolerance=pd.Timedelta(days=45),
         )
+    if international_features_path and international_features_path.exists():
+        result = _merge_international_features(result, international_features_path)
     return result
+
+
+def _merge_international_features(features: pd.DataFrame, international_features_path: Path) -> pd.DataFrame:
+    external = pd.read_parquet(international_features_path)
+    if external.empty:
+        return features
+    external = external.copy()
+    external["fecha_disponible"] = pd.to_datetime(
+        external.get("fecha_disponible", external.get("fecha")),
+        errors="coerce",
+    )
+    external["producto_canonico"] = external.get("producto_canonico", pd.Series(dtype=object)).map(normalize_product)
+    external = external[
+        external["uso_modelo"].astype(str).str.casefold().eq("feature")
+        & external["fecha_disponible"].notna()
+        & external["producto_canonico"].notna()
+    ].copy()
+    if external.empty:
+        return features
+
+    value_columns = ["valor_modelo", "cambio_1_periodo", "cambio_3_periodos", "zscore_12_periodos"]
+    external = external[["fecha_disponible", "producto_canonico", "proxy_id", *value_columns]].copy()
+    external["proxy_id"] = external["proxy_id"].astype(str).map(normalize_key)
+    wide = external.pivot_table(
+        index=["fecha_disponible", "producto_canonico"],
+        columns="proxy_id",
+        values=value_columns,
+        aggfunc="last",
+    )
+    wide.columns = [
+        f"{INTERNATIONAL_FEATURE_PREFIX}{proxy_id}_{metric}"
+        for metric, proxy_id in wide.columns.to_flat_index()
+    ]
+    wide = wide.reset_index().sort_values(["producto_canonico", "fecha_disponible"])
+
+    merged_frames: list[pd.DataFrame] = []
+    base = features.copy()
+    base["cultivo_canonico"] = base["cultivo_canonico"].map(normalize_product)
+    for crop, group in base.groupby("cultivo_canonico", sort=False):
+        context = wide[wide["producto_canonico"].eq(crop)].drop(columns=["producto_canonico"])
+        if context.empty:
+            merged_frames.append(group)
+            continue
+        merged = pd.merge_asof(
+            group.sort_values("fecha"),
+            context.sort_values("fecha_disponible"),
+            left_on="fecha",
+            right_on="fecha_disponible",
+            direction="backward",
+        ).drop(columns=["fecha_disponible"], errors="ignore")
+        merged_frames.append(merged)
+    if not merged_frames:
+        return features
+    return pd.concat(merged_frames, ignore_index=True, sort=False)
 
 
 def build_price_product_market_features(
@@ -301,6 +359,7 @@ def build_price_product_market_features(
     *,
     production_path: Path | None = None,
     water_path: Path | None = None,
+    international_features_path: Path | None = None,
     horizons: tuple[int, ...] = (7, 14, 28),
 ) -> pd.DataFrame:
     features = _daily_market_panel(wholesale)
@@ -344,6 +403,7 @@ def build_price_product_market_features(
         features,
         production_path,
         water_path,
+        international_features_path,
     ).sort_values(["fecha", "cultivo_canonico", "mercado"])
 
 
@@ -363,7 +423,11 @@ def train_price_models(
     horizons: tuple[int, ...] = (7, 14, 28),
 ) -> tuple[pd.DataFrame, dict[str, Any], pd.DataFrame]:
     output_dir.mkdir(parents=True, exist_ok=True)
-    available_features = [column for column in MODEL_FEATURES if column in features.columns]
+    available_features = [
+        column
+        for column in features.columns
+        if column in MODEL_FEATURES or column.startswith(INTERNATIONAL_FEATURE_PREFIX)
+    ]
     metrics: dict[str, Any] = {}
     alerts: list[pd.DataFrame] = []
     importances: list[pd.DataFrame] = []
@@ -548,6 +612,7 @@ def run_price_shock_pipeline(
     *,
     production_path: Path | None = None,
     water_path: Path | None = None,
+    international_features_path: Path | None = None,
     horizons: tuple[int, ...] = (7, 14, 28),
 ) -> dict[str, Any]:
     wholesale = load_sniim_daily_history(daily_root)
@@ -558,6 +623,7 @@ def run_price_shock_pipeline(
         spreads,
         production_path=production_path,
         water_path=water_path,
+        international_features_path=international_features_path,
         horizons=horizons,
     )
     generated_at = datetime.now().isoformat(timespec="seconds")
@@ -573,6 +639,9 @@ def run_price_shock_pipeline(
             "mercados": int(features["mercado"].nunique()),
             "archivo_produccion": str(production_path) if production_path else None,
             "archivo_agua": str(water_path) if water_path else None,
+            "archivo_precios_internacionales": (
+                str(international_features_path) if international_features_path else None
+            ),
         },
     )
     alerts, metrics, importance = train_price_models(

@@ -30,6 +30,7 @@ Analitica implementada:
 - Dataset por cultivo, estado y corte mensual para nowcast de produccion.
 - Dataset diario por producto y mercado, forecast a 7, 14 y 28 dias y anomalias de margen retail-mayoreo.
 - Descarga opcional de clima NASA POWER.
+- Capa opcional de precios internacionales publicos sin API keys: World Bank Pink Sheet, FRED USD/MXN y archivos publicos descargados de USDA AMS o IMF.
 - Orquestador `scripts/run_analysis_pipeline.py` para reconstruir el workbook maestro y ejecutar los tres analisis.
 
 Limitacion actual:
@@ -54,6 +55,8 @@ Limitacion actual:
 - `scripts/run_price_shock_model.py`: alerta temprana de choques de precios.
 - `scripts/run_analysis_pipeline.py`: ejecucion integrada de los tres proyectos.
 - `scripts/fetch_nasa_power_weather.py`: descarga clima diario por coordenada y agrega por decena.
+- `scripts/fetch_public_international_prices.py`: descarga fuentes internacionales publicas que no requieren token.
+- `scripts/build_international_price_features.py`: normaliza proxies internacionales y genera features auditables.
 - `src/analysis/`: feature engineering, validacion temporal, seleccion de baselines, modelos y reportes.
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
 - `config/presas_agricolas.xlsx`: workbook editable por el usuario con consultas de presas por anio, mes, decena e `id_conagua`.
@@ -116,6 +119,39 @@ Usar el archivo climatico en la corrida integrada:
 python -m scripts.run_analysis_pipeline `
   --climate-file data/raw/climate/nasa_power_decena.parquet
 ```
+
+### Precios internacionales publicos
+
+Esta capa no usa API keys, tokens ni fuentes pagadas. Descarga directamente World Bank Pink Sheet y FRED USD/MXN; USDA AMS e IMF se consumen desde archivos publicos CSV/XLS/XLSX colocados manualmente en las carpetas indicadas.
+
+Descargar fuentes publicas directas:
+
+```powershell
+python -m scripts.fetch_public_international_prices --output-root data/raw/international_prices
+```
+
+Coloca descargas publicas adicionales en:
+
+- `data/raw/international_prices/usda_ams/`
+- `data/raw/international_prices/imf/`
+
+Construir el parquet de features:
+
+```powershell
+python -m scripts.build_international_price_features `
+  --config config/products.xlsx `
+  --raw-root data/raw/international_prices `
+  --output data/analysis/international_prices/international_price_features.parquet
+```
+
+Usarlo en la corrida integrada:
+
+```powershell
+python -m scripts.run_analysis_pipeline `
+  --international-features data/analysis/international_prices/international_price_features.parquet
+```
+
+La hoja `proxies_internacionales` de `config/products.xlsx` controla que proxies son `feature` y cuales quedan como `diagnostico_only`. Los proxies debiles no entran al modelo salvo que se cambie explicitamente la configuracion y el backtesting temporal justifique su uso.
 
 ### 1. SNIIM
 
@@ -419,6 +455,10 @@ Sheet requerida:
 
 - `productos`
 
+Sheet opcional:
+
+- `proxies_internacionales`
+
 Columnas requeridas:
 
 - `activo`
@@ -439,6 +479,20 @@ Columnas opcionales (para habilitar Chedraui):
 - `terminos_busqueda_chedraui`
 - `avance_agricola_habilitado`
 - `cultivo_avance_agricola`
+
+Columnas de `proxies_internacionales`:
+
+- `activo`
+- `producto_canonico`
+- `proxy_id`
+- `fuente`
+- `serie`
+- `tipo_proxy`
+- `uso_modelo`
+- `frecuencia`
+- `moneda`
+- `unidad_origen`
+- `nota_metodologica`
 
 Reglas importantes:
 
@@ -504,6 +558,9 @@ Salida esperada:
 - Sheet `avance_monthly_stats`
 - Sheet `avance_entity_monthly`
 - Sheet `cierre_annual_stats`
+- Sheet `precios_internacionales`
+- Sheet `cobertura_internacional`
+- Sheet `mapa_proxies`
 - Sheet `coverage`
 
 Reglas del workbook maestro:
@@ -513,6 +570,7 @@ Reglas del workbook maestro:
 - El constructor normaliza `canonical_product` a una llave ASCII en minusculas con guiones bajos antes de unir fuentes; por ejemplo, `Aguacate` y `aguacate` se consolidan como `aguacate`
 - Avance Agricola agrega contexto mensual por producto y lo replica sobre las filas diarias del mismo mes para poder analizar precios contra produccion, superficie cosechada, siniestralidad y rendimiento
 - Cierre Agricola calcula PMR anual ponderado por produccion y queda como referencia anual secundaria cuando se pasa `--cierre-root`
+- Los precios internacionales se agregan como contexto auditable cuando se pasa `--international-features`; los joins usan `fecha_disponible` para evitar fuga de informacion futura.
 - El notebook `notebooks/master_price_eda.ipynb` usa un eje de fechas mensual en las graficas agregadas y no comparte ese eje con la grafica diaria; asi se evitan conflictos de unidades en Matplotlib. En la grafica diaria con contexto de Avance, cada valor mensual se dibuja solo dentro de su propio mes en vez de arrastrarse hasta el siguiente dato disponible
 - El notebook `notebooks/master_price_eda.ipynb` ahora lee `compare_daily_wide`, `avance_monthly_stats`, `avance_entity_monthly`, `coverage` y opcionalmente `cierre_annual_stats`, con comentarios y figuras en español
 

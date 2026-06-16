@@ -19,6 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cierre-root", type=Path, default=Path("data/raw/cierre_agricola_batch"))
     parser.add_argument("--analysis-root", type=Path, default=Path("data/analysis"))
     parser.add_argument("--climate-file", type=Path)
+    parser.add_argument("--international-features", type=Path)
     return parser.parse_args()
 
 
@@ -34,6 +35,7 @@ def main() -> int:
         args.avance_root,
         master_path,
         args.cierre_root,
+        args.international_features,
     )
     summary["workbook_maestro"] = {
         "ruta": str(master_path),
@@ -58,6 +60,7 @@ def main() -> int:
         price_dir,
         production_path=production_dir / "pronostico_produccion_mensual.csv",
         water_path=water_dir / "state_decena_features.parquet",
+        international_features_path=args.international_features,
     )
     summary_path = args.analysis_root / "analysis_run_summary.json"
     summary_path.write_text(

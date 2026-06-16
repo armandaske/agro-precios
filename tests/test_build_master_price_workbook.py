@@ -495,6 +495,9 @@ class BuildMasterPriceWorkbookTests(unittest.TestCase):
                     "avance_monthly_stats",
                     "avance_entity_monthly",
                     "cierre_annual_stats",
+                    "precios_internacionales",
+                    "cobertura_internacional",
+                    "mapa_proxies",
                     "coverage",
                 },
             )
@@ -521,6 +524,9 @@ class BuildMasterPriceWorkbookTests(unittest.TestCase):
                         "avance_monthly_stats",
                         "avance_entity_monthly",
                         "cierre_annual_stats",
+                        "precios_internacionales",
+                        "cobertura_internacional",
+                        "mapa_proxies",
                         "coverage",
                     },
                 )

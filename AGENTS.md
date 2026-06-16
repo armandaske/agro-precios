@@ -57,6 +57,8 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/run_production_nowcast.py`: creates crop-state cutoff features and trains only when historical Avance and Cierre years overlap.
 - `scripts/run_price_shock_model.py`: creates product-market daily features, price forecasts, and margin anomalies.
 - `scripts/run_analysis_pipeline.py`: rebuilds the master workbook and runs all three analytical projects in order.
+- `scripts/fetch_public_international_prices.py`: downloads unauthenticated public international price files for World Bank Pink Sheet and FRED USD/MXN.
+- `scripts/build_international_price_features.py`: builds the optional audited international price feature parquet from public files and `proxies_internacionales`.
 - `scripts/fetch_nasa_power_weather.py`: optional NASA POWER climate enrichment.
 - `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
 - `COMMANDS.md`: quick command reference for the main extractors, batch runners, workbook builder, tests, and Windows scheduler workflow.
@@ -130,6 +132,15 @@ Get-Content COMMANDS.md
 - Production nowcast requires historical Avance cutoffs joined to Cierre outcomes from the same crop, state, and year. If fewer than 100 labeled cutoffs or fewer than two labeled years exist, use the historical baseline and state the limitation.
 - The default dry scenarios are explicit assumptions: normal 0%, dry -8%, severe drought -15%. Do not present them as learned causal impacts.
 - Optional climate input must use `id_conagua + fecha`.
+- Optional international price inputs must be public and unauthenticated. Do not introduce API keys, tokens, Banxico SIE credentials, paid futures feeds, or hidden secrets for this v1.
+- International proxy features must use `fecha_disponible` for joins to avoid future leakage. Proxies marked `diagnostico_only` must not enter model training.
+
+### International public prices
+
+- Prefer `scripts.fetch_public_international_prices` for direct public downloads that do not require credentials.
+- World Bank Pink Sheet and FRED USD/MXN are fetched directly; USDA AMS and IMF are normalized from public CSV/XLS/XLSX files placed under `data/raw/international_prices/usda_ams/` and `data/raw/international_prices/imf/`.
+- `config/products.xlsx` may include `proxies_internacionales` with `activo`, `producto_canonico`, `proxy_id`, `fuente`, `serie`, `tipo_proxy`, `uso_modelo`, `frecuencia`, `moneda`, `unidad_origen`, and `nota_metodologica`.
+- Weak proxies such as orange for lemon must stay diagnostic by default unless temporal backtesting proves they improve the operational method.
 
 ### SIAP Cierre Agricola
 
@@ -196,6 +207,7 @@ Get-Content COMMANDS.md
 - Keep the comparative output decision-complete for Excel analysis: one long panel sheet, one wide comparison sheet, and explicit supporting stats/coverage sheets.
 - Avance Agricola is the primary agricultural-context layer for the comparative workbook and notebook; it should be aggregated by product-month and joined onto daily price rows by normalized `canonical_product + year + month`, where `canonical_product` is stored as a lowercase ASCII slug such as `aguacate`.
 - Do not hide unit ambiguity for Cierre Agricola. Preserve and surface the annual PMR unit rather than pretending it is directly kg-comparable when it is not.
+- When `--international-features` is provided, the workbook should include `precios_internacionales`, `cobertura_internacional`, and `mapa_proxies`.
 - For the EDA notebook, all markdown, comments, figure titles, axis labels, legends, and other user-facing annotations must stay in Spanish.
 - When mixing daily datetime series with monthly aggregates in the EDA notebook, keep the monthly plot on real datetimes and do not share that x-axis with the daily chart to avoid Matplotlib unit conflicts. For the Avance overlay on daily price charts, draw each monthly value only across its own month instead of carrying it forward until the next observed month.
 

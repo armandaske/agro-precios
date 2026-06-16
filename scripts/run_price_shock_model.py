@@ -13,6 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=Path("data/analysis/price_shock"))
     parser.add_argument("--production-forecast", type=Path)
     parser.add_argument("--water-features", type=Path)
+    parser.add_argument("--international-features", type=Path)
     parser.add_argument("--horizons", type=int, nargs="+", default=[7, 14, 28])
     return parser.parse_args()
 
@@ -24,6 +25,7 @@ def main() -> int:
         args.output_dir,
         production_path=args.production_forecast,
         water_path=args.water_features,
+        international_features_path=args.international_features,
         horizons=tuple(args.horizons),
     )
     print(json.dumps(result, indent=2, ensure_ascii=False, default=str))

@@ -28,6 +28,41 @@ SNIIM_PANEL_UNIT_LABEL = "kg_calculado"
 CIERRE_PANEL_PRICE_BASIS = "pmr_mxn_udm_weighted_by_produccion"
 SNIIM_PANEL_PRICE_BASIS = "precio_frecuente_mean"
 AVANCE_PANEL_PRICE_BASIS = "contexto_mensual_avance_agricola"
+INTERNATIONAL_SHEET_COLUMNS = [
+    "fecha",
+    "fecha_disponible",
+    "producto_canonico",
+    "proxy_id",
+    "fuente",
+    "serie",
+    "precio_original",
+    "precio_usd",
+    "precio_mxn",
+    "valor_modelo",
+    "frecuencia",
+    "tipo_proxy",
+    "uso_modelo",
+    "moneda",
+    "unidad_origen",
+    "archivo_fuente",
+]
+INTERNATIONAL_COVERAGE_COLUMNS = [
+    "run_date",
+    "canonical_product",
+    "international_available_proxies",
+    "international_model_feature_proxies",
+    "international_latest_available_date",
+]
+INTERNATIONAL_PROXY_MAP_COLUMNS = [
+    "producto_canonico",
+    "proxy_id",
+    "fuente",
+    "serie",
+    "tipo_proxy",
+    "uso_modelo",
+    "frecuencia",
+    "nota_metodologica",
+]
 
 WALMART_READ_COLUMN_MAP = {
     "scraped_at_utc": "scraped_at_utc",
@@ -1054,16 +1089,92 @@ def _ensure_compare_columns(compare_daily_wide: pd.DataFrame) -> pd.DataFrame:
     return ensured
 
 
+def _load_international_features(international_features_path: Path | None) -> pd.DataFrame:
+    if not international_features_path or not international_features_path.exists():
+        return pd.DataFrame(columns=INTERNATIONAL_SHEET_COLUMNS)
+    features = pd.read_parquet(international_features_path)
+    if features.empty:
+        return pd.DataFrame(columns=INTERNATIONAL_SHEET_COLUMNS)
+    renamed = features.rename(columns={"producto_canonico": "canonical_product"})
+    for column in INTERNATIONAL_SHEET_COLUMNS:
+        source_column = "canonical_product" if column == "producto_canonico" else column
+        if source_column not in renamed.columns:
+            renamed[source_column] = pd.NA
+    sheet = renamed.rename(columns={"canonical_product": "producto_canonico"})
+    return sheet.reindex(columns=INTERNATIONAL_SHEET_COLUMNS)
+
+
+def _build_international_coverage(
+    base_daily_keys: pd.DataFrame,
+    international_features: pd.DataFrame,
+) -> pd.DataFrame:
+    if base_daily_keys.empty:
+        return pd.DataFrame(columns=INTERNATIONAL_COVERAGE_COLUMNS)
+    if international_features.empty:
+        coverage = base_daily_keys[["run_date", "canonical_product"]].copy()
+        coverage["international_available_proxies"] = 0
+        coverage["international_model_feature_proxies"] = 0
+        coverage["international_latest_available_date"] = pd.NaT
+        return coverage.reindex(columns=INTERNATIONAL_COVERAGE_COLUMNS)
+
+    features = international_features.rename(columns={"producto_canonico": "canonical_product"}).copy()
+    features["canonical_product"] = features["canonical_product"].map(_normalize_canonical_product_value)
+    features["fecha_disponible"] = pd.to_datetime(features["fecha_disponible"], errors="coerce")
+    rows: list[dict[str, object]] = []
+    for row in base_daily_keys[["run_date", "canonical_product"]].itertuples(index=False):
+        run_date = pd.Timestamp(row.run_date)
+        product = _normalize_canonical_product_value(row.canonical_product)
+        available = features[
+            features["canonical_product"].eq(product)
+            & features["fecha_disponible"].notna()
+            & (features["fecha_disponible"] <= run_date)
+        ]
+        model_features = available[available["uso_modelo"].astype(str).str.casefold().eq("feature")]
+        rows.append(
+            {
+                "run_date": row.run_date,
+                "canonical_product": product,
+                "international_available_proxies": int(available["proxy_id"].nunique()) if not available.empty else 0,
+                "international_model_feature_proxies": (
+                    int(model_features["proxy_id"].nunique()) if not model_features.empty else 0
+                ),
+                "international_latest_available_date": (
+                    available["fecha_disponible"].max() if not available.empty else pd.NaT
+                ),
+            }
+        )
+    return pd.DataFrame(rows, columns=INTERNATIONAL_COVERAGE_COLUMNS)
+
+
+def _build_international_proxy_map(international_features: pd.DataFrame) -> pd.DataFrame:
+    if international_features.empty:
+        return pd.DataFrame(columns=INTERNATIONAL_PROXY_MAP_COLUMNS)
+    proxy_map = international_features.rename(columns={"producto_canonico": "canonical_product"}).copy()
+    if "canonical_product" in proxy_map.columns:
+        proxy_map["producto_canonico"] = proxy_map["canonical_product"].map(_normalize_canonical_product_value)
+    for column in INTERNATIONAL_PROXY_MAP_COLUMNS:
+        if column not in proxy_map.columns:
+            proxy_map[column] = pd.NA
+    return (
+        proxy_map[INTERNATIONAL_PROXY_MAP_COLUMNS]
+        .drop_duplicates()
+        .sort_values(["producto_canonico", "proxy_id"])
+        .reset_index(drop=True)
+    )
+
+
 def build_master_tables(
     daily_root: Path,
     avance_root: Path,
     cierre_root: Path | None = None,
+    international_features_path: Path | None = None,
 ) -> dict[str, pd.DataFrame]:
     sniim_df = _load_daily_source_frames(daily_root, "sniim")
     walmart_df = _load_daily_source_frames(daily_root, "walmart")
     chedraui_df = _load_daily_source_frames(daily_root, "chedraui")
     avance_df = _load_avance_frames(avance_root, daily_root)
     cierre_df = _load_cierre_frames(cierre_root, daily_root) if cierre_root and cierre_root.exists() else pd.DataFrame()
+    international_features = _load_international_features(international_features_path)
 
     sniim_stats = build_sniim_daily_stats(sniim_df)
     walmart_panel = build_retail_daily_panel(walmart_df, "walmart")
@@ -1177,6 +1288,14 @@ def build_master_tables(
     if not compare_daily_wide.empty:
         compare_daily_wide = compare_daily_wide.sort_values(["run_date", "canonical_product"]).reset_index(drop=True)
 
+    international_coverage = _build_international_coverage(base_daily_keys, international_features)
+    if not international_coverage.empty and not compare_daily_wide.empty:
+        compare_daily_wide = compare_daily_wide.merge(
+            international_coverage,
+            on=["run_date", "canonical_product"],
+            how="left",
+        )
+
     coverage = compare_daily_wide[["run_date", "canonical_product"]].copy()
     if not coverage.empty:
         def _present(column: str) -> pd.Series:
@@ -1189,9 +1308,18 @@ def build_master_tables(
         coverage["has_chedraui"] = _present("chedraui_comparison_mxn")
         coverage["has_avance"] = _present("avance_rows_used")
         coverage["has_cierre"] = _present("cierre_annual_weighted_pmr_mxn_udm")
+        coverage["has_international"] = (
+            pd.to_numeric(
+                compare_daily_wide.get("international_available_proxies", pd.Series(0, index=compare_daily_wide.index)),
+                errors="coerce",
+            ).fillna(0)
+            > 0
+        )
         count_columns = ["has_sniim", "has_walmart", "has_chedraui", "has_avance"]
         if not cierre_annual_stats.empty:
             count_columns.append("has_cierre")
+        if not international_features.empty:
+            count_columns.append("has_international")
         coverage["available_sources_count"] = coverage[count_columns].sum(axis=1)
         coverage["missing_sources_count"] = len(count_columns) - coverage["available_sources_count"]
 
@@ -1202,6 +1330,9 @@ def build_master_tables(
         "avance_monthly_stats": avance_monthly_stats,
         "avance_entity_monthly": avance_df,
         "cierre_annual_stats": cierre_annual_stats,
+        "precios_internacionales": international_features,
+        "cobertura_internacional": international_coverage,
+        "mapa_proxies": _build_international_proxy_map(international_features),
         "coverage": coverage,
     }
 
@@ -1218,8 +1349,9 @@ def build_master_workbook(
     avance_root: Path,
     output_path: Path,
     cierre_root: Path | None = None,
+    international_features_path: Path | None = None,
 ) -> dict[str, pd.DataFrame]:
-    tables = build_master_tables(daily_root, avance_root, cierre_root)
+    tables = build_master_tables(daily_root, avance_root, cierre_root, international_features_path)
     write_master_workbook(output_path, tables)
     return tables
 
@@ -1239,6 +1371,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Root directory with normalized Cierre Agricola xlsx exports",
     )
+    parser.add_argument(
+        "--international-features",
+        required=False,
+        type=Path,
+        help="Parquet with public international price features",
+    )
     parser.add_argument("--output", required=True, type=Path, help="Path to the master comparative workbook")
     return parser.parse_args()
 
@@ -1257,7 +1395,13 @@ def main() -> int:
         LOGGER.error("Cierre root not found: %s", args.cierre_root)
         return 1
 
-    tables = build_master_workbook(args.daily_root, args.avance_root, args.output, args.cierre_root)
+    tables = build_master_workbook(
+        args.daily_root,
+        args.avance_root,
+        args.output,
+        args.cierre_root,
+        args.international_features,
+    )
     LOGGER.info(
         "Master workbook written to %s with %s compare rows",
         args.output,
