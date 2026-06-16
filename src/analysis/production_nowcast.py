@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import html
 import json
-import math
 import re
 from datetime import datetime
 from pathlib import Path
@@ -285,9 +284,86 @@ def _baseline_forecast(frame: pd.DataFrame) -> pd.Series:
             "produccion_anio_anterior",
             "produccion_promedio_5_anios",
             "produccion_acumulada",
-        ]
+    ]
     ].bfill(axis=1).iloc[:, 0]
     return pd.concat([baseline, frame["produccion_acumulada"]], axis=1).max(axis=1)
+
+
+def _pct_change(current: pd.Series, reference: pd.Series) -> pd.Series:
+    return current / reference.replace(0, np.nan) - 1
+
+
+def _add_comparison_columns(frame: pd.DataFrame) -> pd.DataFrame:
+    enriched = frame.copy()
+    enriched["referencia_comparacion"] = enriched["produccion_anio_anterior"].where(
+        enriched["produccion_anio_anterior"].notna(),
+        enriched["produccion_promedio_5_anios"],
+    )
+    enriched["tipo_referencia_comparacion"] = np.select(
+        [
+            enriched["produccion_anio_anterior"].notna(),
+            enriched["produccion_promedio_5_anios"].notna(),
+        ],
+        [
+            "anio_anterior",
+            "promedio_5_anios",
+        ],
+        default="sin_referencia",
+    )
+    enriched["cambio_abs_vs_referencia"] = (
+        enriched["produccion_pronosticada"] - enriched["referencia_comparacion"]
+    )
+    enriched["cambio_pct_vs_referencia"] = _pct_change(
+        enriched["produccion_pronosticada"], enriched["referencia_comparacion"]
+    )
+    return enriched
+
+
+def _format_number(value: Any) -> str:
+    if pd.isna(value):
+        return "s/d"
+    return f"{float(value):.0f}"
+
+
+def _format_percent(value: Any, *, signed: bool = False) -> str:
+    if pd.isna(value):
+        return "s/d"
+    pattern = "+.1%" if signed else ".1%"
+    return format(float(value), pattern)
+
+
+def _comparison_label(value: Any) -> str:
+    labels = {
+        "anio_anterior": "Anio anterior",
+        "promedio_5_anios": "Promedio 5 anios",
+    }
+    return labels.get(str(value), "Sin referencia")
+
+
+def _build_summary(frame: pd.DataFrame, group_column: str) -> pd.DataFrame:
+    summary = (
+        frame.groupby(group_column, as_index=False)
+        .agg(
+            produccion_pronosticada=("produccion_pronosticada", "sum"),
+            referencia_comparacion=("referencia_comparacion", lambda values: values.sum(min_count=1)),
+            produccion_anio_anterior=("produccion_anio_anterior", lambda values: values.sum(min_count=1)),
+            produccion_promedio_5_anios=("produccion_promedio_5_anios", lambda values: values.sum(min_count=1)),
+            produccion_p10=("produccion_p10", "sum"),
+            produccion_p90=("produccion_p90", "sum"),
+            probabilidad_caida_10=("probabilidad_caida_10", "max"),
+            alertas_altas_o_criticas=("nivel_riesgo", lambda values: int(values.isin(["alto", "critico"]).sum())),
+        )
+    )
+    summary["cambio_pct_vs_referencia"] = _pct_change(
+        summary["produccion_pronosticada"], summary["referencia_comparacion"]
+    )
+    summary["cambio_pct_vs_anio_anterior"] = _pct_change(
+        summary["produccion_pronosticada"], summary["produccion_anio_anterior"]
+    )
+    summary["cambio_pct_vs_promedio_5_anios"] = _pct_change(
+        summary["produccion_pronosticada"], summary["produccion_promedio_5_anios"]
+    )
+    return summary.sort_values("produccion_pronosticada", ascending=False)
 
 
 def train_and_forecast_production(
@@ -356,13 +432,11 @@ def train_and_forecast_production(
             "No se entreno un modelo para evitar resultados no defendibles."
         )
 
-    current["cambio_vs_anio_anterior"] = (
-        current["produccion_pronosticada"] / current["produccion_anio_anterior"].replace(0, np.nan) - 1
+    current["cambio_vs_anio_anterior"] = _pct_change(
+        current["produccion_pronosticada"], current["produccion_anio_anterior"]
     )
-    current["cambio_vs_promedio_5_anios"] = (
-        current["produccion_pronosticada"]
-        / current["produccion_promedio_5_anios"].replace(0, np.nan)
-        - 1
+    current["cambio_vs_promedio_5_anios"] = _pct_change(
+        current["produccion_pronosticada"], current["produccion_promedio_5_anios"]
     )
     for shortfall in (0.10, 0.15, 0.20):
         current[f"probabilidad_caida_{int(shortfall * 100)}"] = current.apply(
@@ -385,6 +459,7 @@ def train_and_forecast_production(
     current["supuesto_escenarios"] = (
         "Normal=0%; seco=-8%; sequia severa=-15% sobre el pronostico central."
     )
+    current = _add_comparison_columns(current)
     current["nivel_riesgo"] = pd.cut(
         current["probabilidad_caida_10"].fillna(0),
         bins=[-0.01, 0.25, 0.5, 0.75, 1.0],
@@ -411,14 +486,21 @@ def write_production_chart(forecast: pd.DataFrame, output_path: Path) -> None:
 
 
 def write_production_report(forecast: pd.DataFrame, metrics: dict[str, Any], output_path: Path) -> None:
-    top_risk = forecast.sort_values("probabilidad_caida_10", ascending=False).head(20)
+    top_risk = forecast.sort_values(
+        ["probabilidad_caida_10", "cambio_pct_vs_referencia"],
+        ascending=[False, True],
+        na_position="last",
+    ).head(20)
     largest_volume = forecast.sort_values("produccion_pronosticada", ascending=False).head(20)
     risk_rows = "".join(
         "<tr>"
         f"<td>{html.escape(str(row.cultivo_canonico))}</td>"
         f"<td>{html.escape(str(row.estado))}</td>"
-        f"<td>{row.produccion_pronosticada:.0f}</td>"
-        f"<td>{row.probabilidad_caida_10:.1%}</td>"
+        f"<td>{_format_number(row.produccion_pronosticada)}</td>"
+        f"<td>{_comparison_label(row.tipo_referencia_comparacion)}</td>"
+        f"<td>{_format_number(row.referencia_comparacion)}</td>"
+        f"<td>{_format_percent(row.cambio_pct_vs_referencia, signed=True)}</td>"
+        f"<td>{_format_percent(row.probabilidad_caida_10)}</td>"
         f"<td>{html.escape(str(row.nivel_riesgo))}</td>"
         "</tr>"
         for row in top_risk.itertuples()
@@ -427,9 +509,11 @@ def write_production_report(forecast: pd.DataFrame, metrics: dict[str, Any], out
         "<tr>"
         f"<td>{html.escape(str(row.cultivo_canonico))}</td>"
         f"<td>{html.escape(str(row.estado))}</td>"
-        f"<td>{row.produccion_pronosticada:.0f}</td>"
-        f"<td>{row.produccion_p10:.0f}</td>"
-        f"<td>{row.produccion_p90:.0f}</td>"
+        f"<td>{_format_number(row.produccion_pronosticada)}</td>"
+        f"<td>{_comparison_label(row.tipo_referencia_comparacion)}</td>"
+        f"<td>{_format_percent(row.cambio_pct_vs_referencia, signed=True)}</td>"
+        f"<td>{_format_number(row.produccion_p10)}</td>"
+        f"<td>{_format_number(row.produccion_p90)}</td>"
         f"<td>{html.escape(str(row.nivel_riesgo))}</td>"
         "</tr>"
         for row in largest_volume.itertuples()
@@ -445,6 +529,7 @@ th,td{{padding:8px;border-bottom:1px solid #ddd;text-align:left}}th{{background:
 <h1>Nowcast de produccion agricola</h1>
 <p>Modo actual: <strong>{html.escape(str(metrics.get("modo", "")))}</strong>. Esta vista resume volumen esperado y focos de riesgo para presentacion ejecutiva.</p>
 <p><strong>Horizonte del pronostico:</strong> produccion final del mismo anio agricola para cada cultivo-estado, usando el ultimo corte mensual disponible. No es un pronostico a 7, 14 o 30 dias.</p>
+<p><strong>Como leer la caida esperada:</strong> la comparacion usa primero el anio anterior y, si no existe, cae al promedio de los ultimos 5 anios. Cuando no hay base suficiente se muestra <strong>s/d</strong>.</p>
 <div class="grid">
 <div class="kpi"><strong>Pronosticos</strong><br>{len(forecast)}</div>
 <div class="kpi"><strong>Cultivos</strong><br>{forecast['cultivo_canonico'].nunique()}</div>
@@ -452,9 +537,9 @@ th,td{{padding:8px;border-bottom:1px solid #ddd;text-align:left}}th{{background:
 <div class="kpi"><strong>Alertas altas o criticas</strong><br>{int(forecast['nivel_riesgo'].isin(['alto','critico']).sum())}</div>
 </div>
 <h2>Mayores riesgos de caida</h2>
-<table><thead><tr><th>Cultivo</th><th>Estado</th><th>Produccion pronosticada</th><th>Prob. caida &gt;10%</th><th>Riesgo</th></tr></thead><tbody>{risk_rows}</tbody></table>
+<table><thead><tr><th>Cultivo</th><th>Estado</th><th>Produccion pronosticada</th><th>Base de comparacion</th><th>Produccion de referencia</th><th>Variacion esperada</th><th>Prob. caida &gt;10% vs anio anterior</th><th>Riesgo</th></tr></thead><tbody>{risk_rows}</tbody></table>
 <h2>Mayores volumenes pronosticados</h2>
-<table><thead><tr><th>Cultivo</th><th>Estado</th><th>Pronostico</th><th>P10</th><th>P90</th><th>Riesgo</th></tr></thead><tbody>{volume_rows}</tbody></table>
+<table><thead><tr><th>Cultivo</th><th>Estado</th><th>Pronostico</th><th>Base de comparacion</th><th>Variacion esperada</th><th>P10</th><th>P90</th><th>Riesgo</th></tr></thead><tbody>{volume_rows}</tbody></table>
 </body></html>""",
         encoding="utf-8",
     )
@@ -491,25 +576,8 @@ def run_production_nowcast_pipeline(
     )
     with pd.ExcelWriter(output_dir / "nowcast_produccion_agricola.xlsx", engine="openpyxl") as writer:
         forecast.to_excel(writer, sheet_name="pronostico", index=False)
-        (
-            forecast.groupby("cultivo_canonico", as_index=False)
-            .agg(
-                produccion_pronosticada=("produccion_pronosticada", "sum"),
-                produccion_p10=("produccion_p10", "sum"),
-                produccion_p90=("produccion_p90", "sum"),
-                probabilidad_caida_10=("probabilidad_caida_10", "max"),
-            )
-            .sort_values("produccion_pronosticada", ascending=False)
-        ).to_excel(writer, sheet_name="resumen_cultivo", index=False)
-        (
-            forecast.groupby("estado", as_index=False)
-            .agg(
-                produccion_pronosticada=("produccion_pronosticada", "sum"),
-                probabilidad_caida_10=("probabilidad_caida_10", "max"),
-                alertas_altas_o_criticas=("nivel_riesgo", lambda values: int(values.isin(["alto", "critico"]).sum())),
-            )
-            .sort_values("produccion_pronosticada", ascending=False)
-        ).to_excel(writer, sheet_name="resumen_estado", index=False)
+        _build_summary(forecast, "cultivo_canonico").to_excel(writer, sheet_name="resumen_cultivo", index=False)
+        _build_summary(forecast, "estado").to_excel(writer, sheet_name="resumen_estado", index=False)
         forecast.pivot_table(
             index="estado",
             columns="cultivo_canonico",

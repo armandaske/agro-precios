@@ -28,7 +28,7 @@ Implementado:
 Analitica implementada:
 
 - Dataset por presa y decena, backtesting a 10, 30 y 60 dias, alertas de umbral y mapa HTML.
-- Dataset por cultivo, estado y corte mensual para nowcast de produccion.
+- Dataset por cultivo, estado y corte mensual para nowcast de produccion, con comparativo explicito vs anio anterior o promedio 5 anios cuando exista.
 - Dataset diario por producto y mercado, forecast a 7, 14 y 28 dias y anomalias de margen retail-mayoreo.
 - Descarga opcional de clima NASA POWER.
 - Capa opcional de precios internacionales publicos sin API keys: World Bank Pink Sheet, FRED USD/MXN y archivos publicos descargados de USDA AMS o IMF.
@@ -104,6 +104,8 @@ La corrida reconstruye `data/analysis/master_price_workbook.xlsx` y escribe:
 - `data/analysis/price_shock/price_product_market_daily_features.parquet`
 - Reportes HTML y graficos PNG para nowcast de produccion y alerta de precios, ademas de los workbooks Excel.
 - Reportes CSV, XLSX, HTML, PNG, metricas JSON y modelos candidatos bajo cada carpeta.
+
+En el nowcast de produccion, los reportes ejecutivos muestran la variacion esperada contra una base de comparacion visible: primero `anio anterior` y, si falta, `promedio 5 anios`. Cuando no existe referencia suficiente, el reporte marca `s/d`.
 
 La seleccion del metodo operativo se realiza con un corte temporal. Si XGBoost no supera el mejor baseline en MAE fuera de muestra, el reporte usa el baseline y conserva XGBoost solo como artefacto candidato.
 

@@ -275,6 +275,7 @@ Campos utiles:
 - `produccion_pronosticada`
 - `produccion_p10`
 - `produccion_p90`
+- `referencia_comparacion`, `tipo_referencia_comparacion`, `cambio_pct_vs_referencia`
 - `probabilidad_caida_10`, `probabilidad_caida_15`, `probabilidad_caida_20`
 - `escenario_normal`, `escenario_seco`, `escenario_sequia_severa`
 
@@ -286,6 +287,12 @@ Definicion explicita:
   es una banda inferior orientativa para la produccion final. Debe leerse como un escenario pesimista razonable dentro del rango del sistema, no como "el peor caso posible".
 - `produccion_p90`:
   es una banda superior orientativa para la produccion final. Debe leerse como un escenario optimista razonable dentro del rango del sistema, no como una garantia de techo.
+- `referencia_comparacion`:
+  volumen historico usado para contextualizar el pronostico. Prefiere el `anio anterior` y, si no existe, cae al `promedio 5 anios`.
+- `tipo_referencia_comparacion`:
+  indica si la comparacion visible usa `anio_anterior`, `promedio_5_anios` o queda `sin_referencia`.
+- `cambio_pct_vs_referencia`:
+  variacion porcentual esperada del pronostico central contra esa referencia visible. Un `-12%` significa que el sistema espera cerrar 12% abajo de esa base.
 - `probabilidad_caida_10`:
   probabilidad estimada de que la produccion final quede 10% o mas abajo del anio anterior.
 - `probabilidad_caida_15`:
@@ -304,6 +311,7 @@ Como leerlo en negocio:
 - Si `produccion_pronosticada` es alta pero `produccion_p10` queda mucho mas abajo, el volumen central puede verse bien pero la incertidumbre es amplia.
 - Si `probabilidad_caida_10` o `probabilidad_caida_15` es alta, la señal importante no es solo el volumen esperado sino el riesgo de decepcion productiva frente al anio previo.
 - Si `produccion_pronosticada` y `produccion_p10` estan relativamente cerca, la estimacion es mas estable.
+- Si `cambio_pct_vs_referencia` es negativo, ya tienes una medida directa de la magnitud de la caida y no solo un volumen absoluto.
 
 Ejemplo practico:
 
@@ -324,7 +332,7 @@ Interpretacion:
 - `p10` y `p90` no son garantias ni limites fisicos; son bandas orientativas construidas a partir del comportamiento historico del error del sistema.
 
 Vista demo recomendada:
-- `reporte_nowcast_produccion.html` resume modo, volumen esperado, riesgos principales y volumenes mas relevantes.
+- `reporte_nowcast_produccion.html` resume modo, volumen esperado, riesgos principales y volumenes mas relevantes, mostrando tambien la base de comparacion y la variacion esperada.
 - `principales_riesgos_produccion.png` sirve para una diapositiva o resumen rapido.
 
 ### Limitaciones clave

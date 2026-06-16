@@ -131,6 +131,7 @@ Get-Content COMMANDS.md
 - Reservoir alerts should only include dams observed within 45 days of the latest reservoir cut.
 - Price alerts should only include markets observed within seven days of the latest SNIIM date.
 - Production nowcast requires historical Avance cutoffs joined to Cierre outcomes from the same crop, state, and year. If fewer than 100 labeled cutoffs or fewer than two labeled years exist, use the historical baseline and state the limitation.
+- Production nowcast executive outputs should expose an explicit comparison base for each crop-state forecast: prefer `anio anterior`, fall back to `promedio 5 anios`, and show `s/d` when neither exists instead of rendering `nan` percentages.
 - The default dry scenarios are explicit assumptions: normal 0%, dry -8%, severe drought -15%. Do not present them as learned causal impacts.
 - Optional climate input must use `id_conagua + fecha`.
 - Optional international price inputs must be public and unauthenticated. Do not introduce API keys, tokens, Banxico SIE credentials, paid futures feeds, or hidden secrets for this v1.

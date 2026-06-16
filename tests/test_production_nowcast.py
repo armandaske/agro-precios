@@ -48,6 +48,9 @@ class ProductionNowcastTests(unittest.TestCase):
             forecast, metrics, _ = train_and_forecast_production(features, Path(temp_dir))
         self.assertEqual(metrics["modo"], "base_historica")
         self.assertEqual(float(forecast.iloc[0]["produccion_pronosticada"]), 120)
+        self.assertEqual(str(forecast.iloc[0]["tipo_referencia_comparacion"]), "anio_anterior")
+        self.assertEqual(float(forecast.iloc[0]["referencia_comparacion"]), 120)
+        self.assertEqual(float(forecast.iloc[0]["cambio_pct_vs_referencia"]), 0.0)
         self.assertEqual(str(forecast.iloc[0]["horizonte_pronostico"]), "cierre_agricola_anual_del_mismo_anio")
         self.assertEqual(int(forecast.iloc[0]["anio_objetivo"]), 2025)
 
@@ -60,6 +63,9 @@ class ProductionNowcastTests(unittest.TestCase):
                     "produccion_pronosticada": 120.0,
                     "produccion_p10": 100.0,
                     "produccion_p90": 140.0,
+                    "referencia_comparacion": 150.0,
+                    "tipo_referencia_comparacion": "anio_anterior",
+                    "cambio_pct_vs_referencia": -0.2,
                     "probabilidad_caida_10": 0.6,
                     "nivel_riesgo": "alto",
                 }
@@ -75,6 +81,11 @@ class ProductionNowcastTests(unittest.TestCase):
         self.assertIn("Mayores riesgos de caida", html)
         self.assertIn("Mayores volumenes pronosticados", html)
         self.assertIn("Horizonte del pronostico", html)
+        self.assertIn("Base de comparacion", html)
+        self.assertIn("Variacion esperada", html)
+        self.assertIn("-20.0%", html)
+        self.assertIn("60.0%", html)
+        self.assertNotIn("nan%", html)
 
 
 if __name__ == "__main__":
