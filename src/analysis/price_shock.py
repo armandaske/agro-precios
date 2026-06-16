@@ -579,28 +579,87 @@ def write_price_chart(alerts: pd.DataFrame, output_path: Path) -> None:
     plt.close()
 
 
+def write_price_horizon_charts(alerts: pd.DataFrame, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for horizon in sorted(int(value) for value in alerts["horizonte_dias"].dropna().unique()):
+        subset = alerts.loc[alerts["horizonte_dias"] == horizon].copy()
+        if subset.empty:
+            continue
+        chart = (
+            subset.sort_values("probabilidad_alza_10", ascending=False)
+            .head(12)
+            .sort_values("probabilidad_alza_10")
+        )
+        labels = chart["cultivo_canonico"] + " | " + chart["mercado"].str.slice(0, 24)
+        plt.figure(figsize=(11, 7))
+        plt.barh(labels, chart["probabilidad_alza_10"], color="#b45309")
+        plt.xlabel("Probabilidad de aumento mayor a 10%")
+        plt.title(f"Principales alertas de choque de precios a {horizon} dias")
+        plt.xlim(0, 1)
+        plt.tight_layout()
+        plt.savefig(output_dir / f"principales_alertas_precios_h{horizon}.png", dpi=160)
+        plt.close()
+
+
 def write_price_report(alerts: pd.DataFrame, anomalies: pd.DataFrame, output_path: Path) -> None:
-    top = alerts.sort_values("probabilidad_alza_10", ascending=False).head(40)
-    rows = "".join(
+    horizon_values = sorted(int(value) for value in alerts["horizonte_dias"].dropna().unique())
+    default_horizon = horizon_values[0]
+    sections: list[str] = []
+    summary_rows = "".join(
         "<tr>"
-        f"<td>{html.escape(str(row.cultivo_canonico))}</td>"
-        f"<td>{html.escape(str(row.mercado))}</td>"
-        f"<td>{int(row.horizonte_dias)}</td>"
-        f"<td>{row.precio_actual:.2f}</td><td>{row.precio_pronosticado:.2f}</td>"
-        f"<td>{row.probabilidad_alza_10:.1%}</td>"
-        f"<td>{html.escape(str(row.accion_sugerida))}</td></tr>"
-        for row in top.itertuples()
+        f"<td>{horizon}</td>"
+        f"<td>{len(alerts.loc[alerts['horizonte_dias'] == horizon])}</td>"
+        f"<td>{int((alerts.loc[(alerts['horizonte_dias'] == horizon) & (alerts['nivel_alerta'] == 'critico')]).shape[0])}</td>"
+        f"<td>{alerts.loc[alerts['horizonte_dias'] == horizon, 'probabilidad_alza_10'].max():.1%}</td>"
+        "</tr>"
+        for horizon in horizon_values
     )
+    for horizon in horizon_values:
+        top = (
+            alerts.loc[alerts["horizonte_dias"] == horizon]
+            .sort_values("probabilidad_alza_10", ascending=False)
+            .head(25)
+        )
+        rows = "".join(
+            "<tr>"
+            f"<td>{html.escape(str(row.cultivo_canonico))}</td>"
+            f"<td>{html.escape(str(row.mercado))}</td>"
+            f"<td>{row.precio_actual:.2f}</td><td>{row.precio_pronosticado:.2f}</td>"
+            f"<td>{row.probabilidad_alza_10:.1%}</td>"
+            f"<td>{html.escape(str(row.metodo_pronostico))}</td>"
+            f"<td>{html.escape(str(row.accion_sugerida))}</td></tr>"
+            for row in top.itertuples()
+        )
+        sections.append(
+            f"""<section class="horizon-panel" data-horizon="{horizon}" {"hidden" if horizon != default_horizon else ""}>
+<h2>Horizonte a {horizon} dias</h2>
+<table><thead><tr><th>Producto</th><th>Mercado</th><th>Precio actual</th><th>Pronostico</th><th>Prob. alza &gt;10%</th><th>Metodo</th><th>Accion</th></tr></thead><tbody>{rows}</tbody></table>
+</section>"""
+        )
     anomaly_count = int((anomalies["puntaje_anomalia"].abs() >= 3).sum()) if not anomalies.empty else 0
     output_path.write_text(
         f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Alerta temprana de precios agricolas</title><style>
 body{{font-family:Arial;margin:28px;color:#17202a}}table{{border-collapse:collapse;width:100%}}
-th,td{{padding:8px;border-bottom:1px solid #ddd;text-align:left}}th{{background:#f3f4f6}}</style></head>
+th,td{{padding:8px;border-bottom:1px solid #ddd;text-align:left}}th{{background:#f3f4f6}}
+.toolbar{{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 24px}}
+.toolbar button{{padding:10px 14px;border:1px solid #cbd5e1;background:#fff;border-radius:6px;cursor:pointer}}
+.toolbar button.active{{background:#17202a;color:#fff;border-color:#17202a}}
+.horizon-panel[hidden]{{display:none}}</style></head>
 <body><h1>Alerta temprana de choques de precios agricolas</h1>
 <p>Se detectaron {anomaly_count} observaciones con margen retail-mayoreo atipico absoluto mayor a 3 MAD.</p>
-<table><thead><tr><th>Producto</th><th>Mercado</th><th>Horizonte</th><th>Precio actual</th>
-<th>Pronostico</th><th>Prob. alza &gt;10%</th><th>Accion</th></tr></thead><tbody>{rows}</tbody></table>
+<table><thead><tr><th>Horizonte</th><th>Alertas evaluadas</th><th>Criticas</th><th>Max prob. alza &gt;10%</th></tr></thead><tbody>{summary_rows}</tbody></table>
+<div class="toolbar">{"".join(f'<button type="button" data-target=\"{h}\" class=\"{"active" if h == default_horizon else ""}\">{h} dias</button>' for h in horizon_values)}</div>
+{"".join(sections)}
+<script>
+document.querySelectorAll('.toolbar button').forEach(button=>{{
+  button.addEventListener('click', ()=>{{
+    const target = button.dataset.target;
+    document.querySelectorAll('.toolbar button').forEach(node=>node.classList.toggle('active', node===button));
+    document.querySelectorAll('.horizon-panel').forEach(panel=>panel.hidden = panel.dataset.horizon !== target);
+  }});
+}});
+</script>
 </body></html>""",
         encoding="utf-8",
     )
@@ -654,6 +713,15 @@ def run_price_shock_pipeline(
     anomalies.to_csv(output_dir / "anomalias_margen_retail.csv", index=False, encoding="utf-8-sig")
     with pd.ExcelWriter(output_dir / "alerta_temprana_precios.xlsx", engine="openpyxl") as writer:
         alerts.to_excel(writer, sheet_name="alertas", index=False)
+        (
+            alerts.groupby("horizonte_dias", as_index=False)
+            .agg(
+                alertas=("cultivo_canonico", "size"),
+                alertas_criticas=("nivel_alerta", lambda values: int((values == "critico").sum())),
+                max_probabilidad_alza_10=("probabilidad_alza_10", "max"),
+            )
+            .sort_values("horizonte_dias")
+        ).to_excel(writer, sheet_name="resumen_horizontes", index=False)
         anomalies.to_excel(writer, sheet_name="anomalias_margen", index=False)
         importance.to_excel(writer, sheet_name="explicabilidad", index=False)
         pd.DataFrame(
@@ -664,6 +732,7 @@ def run_price_shock_pipeline(
         encoding="utf-8",
     )
     write_price_chart(alerts, output_dir / "principales_alertas_precios.png")
+    write_price_horizon_charts(alerts, output_dir)
     write_price_report(alerts, anomalies, output_dir / "reporte_alertas_precios.html")
     return {
         "filas_features": len(features),

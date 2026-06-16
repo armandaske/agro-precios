@@ -62,6 +62,7 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/fetch_nasa_power_weather.py`: optional NASA POWER climate enrichment.
 - `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
 - `COMMANDS.md`: quick command reference for the main extractors, batch runners, workbook builder, tests, and Windows scheduler workflow.
+- `ANALYSIS_GUIDE.md`: detailed operational and interpretation guide for the analytical pipelines, caveats, limitations, and demo framing.
 - `config/products.xlsx`: operational config workbook for product mappings and enabled sources.
 - `config/presas_agricolas.xlsx`: operational config workbook for dam queries by year, month, day-block, and `id_conagua`.
 - `config/presas_agricolas.xlsx` also carries a `catalogo_presas` sheet so operators can resolve `id_conagua` from `nombre_oficial` and `estado`.

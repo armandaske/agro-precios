@@ -239,6 +239,7 @@ def train_water_models(
     *,
     horizons: tuple[int, ...] = (1, 3, 6),
     thresholds: tuple[float, ...] = (40.0, 25.0, 15.0),
+    force_model: str | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any], pd.DataFrame]:
     output_dir.mkdir(parents=True, exist_ok=True)
     latest = (
@@ -288,6 +289,12 @@ def train_water_models(
             "misma_decena_anio_anterior": year_metrics["mae"],
         }
         operational_method = min(candidates, key=candidates.get)
+        if force_model:
+            if force_model not in candidates:
+                raise ValueError(
+                    "force_model debe ser uno de: xgboost, decena_anterior, misma_decena_anio_anterior."
+                )
+            operational_method = force_model
         operational_validation_prediction = {
             "xgboost": test_prediction,
             "decena_anterior": baseline_previous,
@@ -302,6 +309,8 @@ def train_water_models(
             "base_misma_decena_anio_anterior": year_metrics,
             "metodo_operativo": operational_method,
             "xgboost_operativo": operational_method == "xgboost",
+            "metodo_forzado": bool(force_model),
+            "metodo_forzado_nombre": force_model if force_model else None,
         }
         residuals = (
             training.loc[test_idx, target].to_numpy()
@@ -338,6 +347,8 @@ def train_water_models(
         ].copy()
         horizon_alert["horizonte_dias"] = horizon * 10
         horizon_alert["metodo_pronostico"] = operational_method
+        horizon_alert["metodo_forzado"] = bool(force_model)
+        horizon_alert["metodo_forzado_nombre"] = force_model if force_model else pd.NA
         horizon_alert["porcentaje_pronosticado"] = predicted
         horizon_alert["porcentaje_p10"] = predicted + lower_residual
         horizon_alert["porcentaje_p90"] = predicted + upper_residual
@@ -391,38 +402,106 @@ def train_water_models(
 
 
 def write_water_dashboard(alerts: pd.DataFrame, output_path: Path) -> None:
-    latest_horizon = int(alerts["horizonte_dias"].min())
-    points = alerts.loc[alerts["horizonte_dias"] == latest_horizon].copy()
-    records = points.replace({np.nan: None}).to_dict("records")
-    rows = "".join(
-        "<tr>"
-        f"<td>{html.escape(str(row.get('nombre_presa', '')))}</td>"
-        f"<td>{html.escape(str(row.get('estado', '')))}</td>"
-        f"<td>{float(row.get('porcentaje_almacenamiento') or 0):.1f}%</td>"
-        f"<td>{float(row.get('porcentaje_pronosticado') or 0):.1f}%</td>"
-        f"<td>{html.escape(str(row.get('nivel_riesgo', '')))}</td>"
-        "</tr>"
-        for row in sorted(records, key=lambda item: item.get("probabilidad_bajo_40") or 0, reverse=True)[:30]
+    horizon_values = sorted(int(value) for value in alerts["horizonte_dias"].dropna().unique())
+    default_horizon = horizon_values[0]
+    forced_methods = sorted(
+        {
+            str(value)
+            for value in alerts.get("metodo_forzado_nombre", pd.Series(dtype=object)).dropna().unique()
+            if str(value).strip()
+        }
     )
-    payload = json.dumps(records, ensure_ascii=False, default=str)
+    sections: list[str] = []
+    payload_by_horizon: dict[str, list[dict[str, Any]]] = {}
+
+    for horizon in horizon_values:
+        points = alerts.loc[alerts["horizonte_dias"] == horizon].copy()
+        records = (
+            points.sort_values(
+                ["probabilidad_bajo_40", "probabilidad_bajo_25", "probabilidad_bajo_15"],
+                ascending=False,
+            )
+            .replace({np.nan: None})
+            .to_dict("records")
+        )
+        payload_by_horizon[str(horizon)] = records
+        rows = "".join(
+            "<tr>"
+            f"<td>{html.escape(str(row.get('nombre_presa', '')))}</td>"
+            f"<td>{html.escape(str(row.get('estado', '')))}</td>"
+            f"<td>{float(row.get('porcentaje_almacenamiento') or 0):.1f}%</td>"
+            f"<td>{float(row.get('porcentaje_pronosticado') or 0):.1f}%</td>"
+            f"<td>{float(row.get('probabilidad_bajo_40') or 0):.1%}</td>"
+            f"<td>{html.escape(str(row.get('nivel_riesgo', '')))}</td>"
+            "</tr>"
+            for row in records[:20]
+        )
+        sections.append(
+            f"""<section class="horizon-panel" data-horizon="{horizon}" {"hidden" if horizon != default_horizon else ""}>
+<h2>Horizonte a {horizon} dias</h2>
+<div class="map" id="map-{horizon}"></div>
+<table><thead><tr><th>Presa</th><th>Estado</th><th>Actual</th><th>Pronostico</th><th>Prob. &lt;40%</th><th>Riesgo</th></tr></thead>
+<tbody>{rows}</tbody></table></section>"""
+        )
+
+    summary_rows = "".join(
+        "<tr>"
+        f"<td>{horizon}</td>"
+        f"<td>{len(alerts.loc[alerts['horizonte_dias'] == horizon])}</td>"
+        f"<td>{int((alerts.loc[alerts['horizonte_dias'] == horizon, 'nivel_riesgo'] == 'critico').sum())}</td>"
+        f"<td>{int((alerts.loc[alerts['horizonte_dias'] == horizon, 'nivel_riesgo'].isin(['alto', 'critico'])).sum())}</td>"
+        "</tr>"
+        for horizon in horizon_values
+    )
+    payload = json.dumps(payload_by_horizon, ensure_ascii=False, default=str)
     output_path.write_text(
         f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><title>Monitoreo de riesgo hidrico</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>body{{font-family:Arial;margin:24px;color:#17202a}}#map{{height:520px;border-radius:8px}}
-table{{border-collapse:collapse;width:100%;margin-top:20px}}th,td{{padding:8px;border-bottom:1px solid #ddd;text-align:left}}
-.critico{{color:#b91c1c}}.alto{{color:#c2410c}}.medio{{color:#a16207}}.bajo{{color:#15803d}}</style>
+<style>
+body{{font-family:Arial;margin:24px;color:#17202a}}
+.toolbar{{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 24px}}
+.toolbar button{{padding:10px 14px;border:1px solid #cbd5e1;background:#fff;border-radius:6px;cursor:pointer}}
+.toolbar button.active{{background:#17202a;color:#fff;border-color:#17202a}}
+.summary-table, table{{border-collapse:collapse;width:100%;margin-top:20px}}
+th,td{{padding:8px;border-bottom:1px solid #ddd;text-align:left}}
+.map{{height:520px;border-radius:8px}}
+.critico{{color:#b91c1c}}.alto{{color:#c2410c}}.medio{{color:#a16207}}.bajo{{color:#15803d}}
+.horizon-panel[hidden]{{display:none}}
+</style>
 </head><body><h1>Monitoreo predictivo de riesgo hidrico</h1>
-<p>Pronostico operativo a {latest_horizon} dias. Los intervalos y probabilidades provienen de validacion temporal.</p>
-<div id="map"></div><table><thead><tr><th>Presa</th><th>Estado</th><th>Actual</th><th>Pronostico</th><th>Riesgo</th></tr></thead>
-<tbody>{rows}</tbody></table>
+<p>El tablero muestra de forma separada los horizontes operativos a {", ".join(str(value) for value in horizon_values)} dias. Los intervalos y probabilidades provienen de validacion temporal.</p>
+{"<p><strong>Modo demo:</strong> el metodo operativo fue forzado a <code>" + ", ".join(forced_methods) + "</code>. Esta salida no respeta la seleccion automatica por mejor MAE fuera de muestra.</p>" if forced_methods else ""}
+<table class="summary-table"><thead><tr><th>Horizonte</th><th>Presas evaluadas</th><th>Criticas</th><th>Altas o criticas</th></tr></thead>
+<tbody>{summary_rows}</tbody></table>
+<div class="toolbar">{"".join(f'<button type="button" data-target=\"{h}\" class=\"{"active" if h == default_horizon else ""}\">{h} dias</button>' for h in horizon_values)}</div>
+{"".join(sections)}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
-const data={payload}; const map=L.map('map').setView([23.6,-102.5],5);
-L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png',{{attribution:'OpenStreetMap'}}).addTo(map);
+const dataByHorizon={payload};
 const colors={{critico:'#b91c1c',alto:'#ea580c',medio:'#ca8a04',bajo:'#16a34a'}};
-data.forEach(d=>{{if(d.latitud!=null&&d.longitud!=null)L.circleMarker([d.latitud,d.longitud],{{
-radius:6,color:colors[d.nivel_riesgo]||'#64748b',fillOpacity:.8}}).addTo(map).bindPopup(
-`<b>${{d.nombre_presa}}</b><br>${{d.estado}}<br>Actual: ${{Number(d.porcentaje_almacenamiento).toFixed(1)}}%<br>Pronostico: ${{Number(d.porcentaje_pronosticado).toFixed(1)}}%`);}});
+const maps={{}};
+function renderMap(horizon) {{
+  if (maps[horizon]) return;
+  const map=L.map(`map-${{horizon}}`).setView([23.6,-102.5],5);
+  L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png',{{attribution:'OpenStreetMap'}}).addTo(map);
+  (dataByHorizon[horizon] || []).forEach(d=>{{
+    if(d.latitud!=null&&d.longitud!=null)L.circleMarker([d.latitud,d.longitud],{{
+      radius:6,color:colors[d.nivel_riesgo]||'#64748b',fillOpacity:.8
+    }}).addTo(map).bindPopup(
+      `<b>${{d.nombre_presa}}</b><br>${{d.estado}}<br>Horizonte: ${{horizon}} dias<br>Actual: ${{Number(d.porcentaje_almacenamiento).toFixed(1)}}%<br>Pronostico: ${{Number(d.porcentaje_pronosticado).toFixed(1)}}%<br>Prob. <40%: ${{(Number(d.probabilidad_bajo_40)*100).toFixed(1)}}%`
+    );
+  }});
+  maps[horizon]=map;
+}}
+document.querySelectorAll('.toolbar button').forEach(button=>{{
+  button.addEventListener('click', ()=>{{
+    const target = button.dataset.target;
+    document.querySelectorAll('.toolbar button').forEach(node=>node.classList.toggle('active', node===button));
+    document.querySelectorAll('.horizon-panel').forEach(panel=>panel.hidden = panel.dataset.horizon !== target);
+    renderMap(target);
+  }});
+}});
+renderMap('{default_horizon}');
 </script></body></html>""",
         encoding="utf-8",
     )
@@ -435,6 +514,7 @@ def run_water_risk_pipeline(
     climate_path: Path | None = None,
     horizons: tuple[int, ...] = (1, 3, 6),
     thresholds: tuple[float, ...] = (40.0, 25.0, 15.0),
+    force_model: str | None = None,
 ) -> dict[str, Any]:
     history = load_reservoir_history(input_root)
     climate = _load_optional_climate(climate_path)
@@ -451,6 +531,7 @@ def run_water_risk_pipeline(
             "fecha_minima": features["fecha"].min(),
             "fecha_maxima": features["fecha"].max(),
             "archivo_clima": str(climate_path) if climate_path else None,
+            "metodo_forzado": force_model,
         },
     )
     state_features = build_state_decena_features(features)
@@ -464,10 +545,21 @@ def run_water_risk_pipeline(
         output_dir,
         horizons=horizons,
         thresholds=thresholds,
+        force_model=force_model,
     )
     alerts.to_csv(output_dir / "alertas_riesgo_hidrico.csv", index=False, encoding="utf-8-sig")
     with pd.ExcelWriter(output_dir / "monitoreo_riesgo_hidrico.xlsx", engine="openpyxl") as writer:
         alerts.to_excel(writer, sheet_name="alertas", index=False)
+        (
+            alerts.groupby("horizonte_dias", as_index=False)
+            .agg(
+                presas_evaluadas=("id_conagua", "nunique"),
+                presas_criticas=("nivel_riesgo", lambda values: int((values == "critico").sum())),
+                presas_altas_o_criticas=("nivel_riesgo", lambda values: int(values.isin(["alto", "critico"]).sum())),
+                promedio_pronosticado=("porcentaje_pronosticado", "mean"),
+            )
+            .sort_values("horizonte_dias")
+        ).to_excel(writer, sheet_name="resumen_horizontes", index=False)
         state_features.to_excel(writer, sheet_name="riesgo_estatal", index=False)
         importance.to_excel(writer, sheet_name="explicabilidad", index=False)
         pd.DataFrame(
@@ -482,5 +574,6 @@ def run_water_risk_pipeline(
         "filas_features": len(features),
         "presas": int(features["id_conagua"].nunique()),
         "alertas": len(alerts),
+        "metodo_forzado": force_model,
         "metricas": metrics,
     }

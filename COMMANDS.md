@@ -292,6 +292,21 @@ python -m scripts.run_water_risk_model `
   --output-dir data/analysis/water_risk
 ```
 
+Forzar metodo para demo:
+
+```powershell
+python -m scripts.run_water_risk_model `
+  --input-root data/raw/presas_agricolas `
+  --output-dir data/analysis/water_risk `
+  --force-model xgboost
+```
+
+Notas:
+
+- Valores permitidos: `xgboost`, `decena_anterior`, `misma_decena_anio_anterior`
+- Si se omite, el script mantiene la seleccion automatica por menor MAE fuera de muestra
+- El HTML, el XLSX y las metricas dejan evidencia de que el metodo fue forzado
+
 Nowcast de produccion:
 
 ```powershell
@@ -309,6 +324,14 @@ python -m scripts.run_price_shock_model `
   --production-forecast data/analysis/production_nowcast/pronostico_produccion_mensual.csv `
   --water-features data/analysis/water_risk/state_decena_features.parquet
 ```
+
+Salidas visuales relevantes:
+
+- `data/analysis/price_shock/reporte_alertas_precios.html`
+- `data/analysis/price_shock/principales_alertas_precios.png`
+- `data/analysis/price_shock/principales_alertas_precios_h7.png`
+- `data/analysis/price_shock/principales_alertas_precios_h14.png`
+- `data/analysis/price_shock/principales_alertas_precios_h28.png`
 
 Con precios internacionales:
 

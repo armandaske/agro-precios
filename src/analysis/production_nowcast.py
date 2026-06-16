@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import json
 import math
 import re
@@ -8,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import joblib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -302,6 +304,11 @@ def train_and_forecast_production(
         .tail(1)
         .copy()
     )
+    current["anio_objetivo"] = current["anio"]
+    current["horizonte_pronostico"] = "cierre_agricola_anual_del_mismo_anio"
+    current["descripcion_horizonte"] = (
+        "Pronostico de la produccion final del mismo anio agricola, no de los proximos dias o semanas."
+    )
     metrics: dict[str, Any] = {
         "modo": "base_historica",
         "filas_etiquetadas": int(len(training)),
@@ -386,6 +393,73 @@ def train_and_forecast_production(
     return current, metrics, importance
 
 
+def write_production_chart(forecast: pd.DataFrame, output_path: Path) -> None:
+    chart = (
+        forecast.sort_values("probabilidad_caida_10", ascending=False)
+        .head(12)
+        .sort_values("probabilidad_caida_10")
+    )
+    labels = chart["cultivo_canonico"] + " | " + chart["estado"].str.slice(0, 20)
+    plt.figure(figsize=(11, 7))
+    plt.barh(labels, chart["probabilidad_caida_10"].fillna(0), color="#0f766e")
+    plt.xlabel("Probabilidad de caida mayor a 10%")
+    plt.title("Principales riesgos de produccion")
+    plt.xlim(0, 1)
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=160)
+    plt.close()
+
+
+def write_production_report(forecast: pd.DataFrame, metrics: dict[str, Any], output_path: Path) -> None:
+    top_risk = forecast.sort_values("probabilidad_caida_10", ascending=False).head(20)
+    largest_volume = forecast.sort_values("produccion_pronosticada", ascending=False).head(20)
+    risk_rows = "".join(
+        "<tr>"
+        f"<td>{html.escape(str(row.cultivo_canonico))}</td>"
+        f"<td>{html.escape(str(row.estado))}</td>"
+        f"<td>{row.produccion_pronosticada:.0f}</td>"
+        f"<td>{row.probabilidad_caida_10:.1%}</td>"
+        f"<td>{html.escape(str(row.nivel_riesgo))}</td>"
+        "</tr>"
+        for row in top_risk.itertuples()
+    )
+    volume_rows = "".join(
+        "<tr>"
+        f"<td>{html.escape(str(row.cultivo_canonico))}</td>"
+        f"<td>{html.escape(str(row.estado))}</td>"
+        f"<td>{row.produccion_pronosticada:.0f}</td>"
+        f"<td>{row.produccion_p10:.0f}</td>"
+        f"<td>{row.produccion_p90:.0f}</td>"
+        f"<td>{html.escape(str(row.nivel_riesgo))}</td>"
+        "</tr>"
+        for row in largest_volume.itertuples()
+    )
+    output_path.write_text(
+        f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Nowcast de produccion agricola</title><style>
+body{{font-family:Arial;margin:28px;color:#17202a}}table{{border-collapse:collapse;width:100%;margin-top:18px}}
+th,td{{padding:8px;border-bottom:1px solid #ddd;text-align:left}}th{{background:#f3f4f6}}
+.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:20px 0}}
+.kpi{{border:1px solid #dbe4ea;border-radius:8px;padding:16px;background:#fff}}
+</style></head><body>
+<h1>Nowcast de produccion agricola</h1>
+<p>Modo actual: <strong>{html.escape(str(metrics.get("modo", "")))}</strong>. Esta vista resume volumen esperado y focos de riesgo para presentacion ejecutiva.</p>
+<p><strong>Horizonte del pronostico:</strong> produccion final del mismo anio agricola para cada cultivo-estado, usando el ultimo corte mensual disponible. No es un pronostico a 7, 14 o 30 dias.</p>
+<div class="grid">
+<div class="kpi"><strong>Pronosticos</strong><br>{len(forecast)}</div>
+<div class="kpi"><strong>Cultivos</strong><br>{forecast['cultivo_canonico'].nunique()}</div>
+<div class="kpi"><strong>Estados</strong><br>{forecast['estado'].nunique()}</div>
+<div class="kpi"><strong>Alertas altas o criticas</strong><br>{int(forecast['nivel_riesgo'].isin(['alto','critico']).sum())}</div>
+</div>
+<h2>Mayores riesgos de caida</h2>
+<table><thead><tr><th>Cultivo</th><th>Estado</th><th>Produccion pronosticada</th><th>Prob. caida &gt;10%</th><th>Riesgo</th></tr></thead><tbody>{risk_rows}</tbody></table>
+<h2>Mayores volumenes pronosticados</h2>
+<table><thead><tr><th>Cultivo</th><th>Estado</th><th>Pronostico</th><th>P10</th><th>P90</th><th>Riesgo</th></tr></thead><tbody>{volume_rows}</tbody></table>
+</body></html>""",
+        encoding="utf-8",
+    )
+
+
 def run_production_nowcast_pipeline(
     avance_root: Path,
     cierre_root: Path,
@@ -417,6 +491,25 @@ def run_production_nowcast_pipeline(
     )
     with pd.ExcelWriter(output_dir / "nowcast_produccion_agricola.xlsx", engine="openpyxl") as writer:
         forecast.to_excel(writer, sheet_name="pronostico", index=False)
+        (
+            forecast.groupby("cultivo_canonico", as_index=False)
+            .agg(
+                produccion_pronosticada=("produccion_pronosticada", "sum"),
+                produccion_p10=("produccion_p10", "sum"),
+                produccion_p90=("produccion_p90", "sum"),
+                probabilidad_caida_10=("probabilidad_caida_10", "max"),
+            )
+            .sort_values("produccion_pronosticada", ascending=False)
+        ).to_excel(writer, sheet_name="resumen_cultivo", index=False)
+        (
+            forecast.groupby("estado", as_index=False)
+            .agg(
+                produccion_pronosticada=("produccion_pronosticada", "sum"),
+                probabilidad_caida_10=("probabilidad_caida_10", "max"),
+                alertas_altas_o_criticas=("nivel_riesgo", lambda values: int(values.isin(["alto", "critico"]).sum())),
+            )
+            .sort_values("produccion_pronosticada", ascending=False)
+        ).to_excel(writer, sheet_name="resumen_estado", index=False)
         forecast.pivot_table(
             index="estado",
             columns="cultivo_canonico",
@@ -441,6 +534,8 @@ def run_production_nowcast_pipeline(
         json.dumps(metrics, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
+    write_production_chart(forecast, output_dir / "principales_riesgos_produccion.png")
+    write_production_report(forecast, metrics, output_dir / "reporte_nowcast_produccion.html")
     return {
         "filas_features": len(features),
         "pronosticos": len(forecast),

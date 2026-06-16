@@ -9,6 +9,7 @@ El repositorio combina una capa de extraccion con tres pipelines analiticos inic
 - Revisa `AGENTS.md` antes de hacer cambios importantes; ahi vive la guia operativa especifica del repo para agentes Codex.
 - Cada vez que un agente cree o modifique algo que valga la pena documentar, debe actualizar `README.md` y `AGENTS.md` en el mismo cambio para evitar que las instrucciones queden desfasadas.
 - Usa [COMMANDS.md](COMMANDS.md) como referencia rapida de comandos para los extractores, batch runners, workbook maestro y scheduler.
+- Usa [ANALYSIS_GUIDE.md](ANALYSIS_GUIDE.md) para una explicacion detallada de cada pipeline, sus salidas, caveats y limites operativos.
 - Todo texto orientado al usuario debe quedar en espanol por defecto: titulos, etiquetas, graficas, nombres de columnas, nombres de hojas y salidas visibles para analisis o consumo de negocio.
 
 ## Estado actual del repo
@@ -101,6 +102,7 @@ La corrida reconstruye `data/analysis/master_price_workbook.xlsx` y escribe:
 - `data/analysis/water_risk/dam_decena_features.parquet`
 - `data/analysis/production_nowcast/crop_state_cutoff_features.parquet`
 - `data/analysis/price_shock/price_product_market_daily_features.parquet`
+- Reportes HTML y graficos PNG para nowcast de produccion y alerta de precios, ademas de los workbooks Excel.
 - Reportes CSV, XLSX, HTML, PNG, metricas JSON y modelos candidatos bajo cada carpeta.
 
 La seleccion del metodo operativo se realiza con un corte temporal. Si XGBoost no supera el mejor baseline en MAE fuera de muestra, el reporte usa el baseline y conserva XGBoost solo como artefacto candidato.
@@ -119,6 +121,18 @@ Usar el archivo climatico en la corrida integrada:
 python -m scripts.run_analysis_pipeline `
   --climate-file data/raw/climate/nasa_power_decena.parquet
 ```
+
+Forzar un metodo operativo de riesgo hidrico para demo:
+
+```powershell
+python -m scripts.run_water_risk_model --force-model xgboost
+```
+
+Importante:
+
+- `--force-model` es solo para demo o inspeccion.
+- Si se usa, la salida de riesgo hidrico deja trazabilidad explicita de que el metodo fue forzado.
+- No debe presentarse como metodo operativo validado si el backtesting no lo favorece.
 
 ### Precios internacionales publicos
 

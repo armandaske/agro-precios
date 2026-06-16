@@ -1,0 +1,18 @@
+{
+  "generado_en": "2026-06-15T20:15:12",
+  "sin_tokens_api": true,
+  "fuentes": {
+    "world_bank": {
+      "estado": "exitoso",
+      "archivo": "data\\raw\\international_prices\\world_bank\\world_bank_pink_sheet_monthly_20260615_201512.xlsx"
+    },
+    "fred": {
+      "estado": "error",
+      "error": "504 Server Error: Gateway Time-out for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=DEXMXUS"
+    }
+  },
+  "notas": [
+    "USDA AMS se carga desde archivos publicos descargados manualmente en data/raw/international_prices/usda_ams/.",
+    "IMF se carga desde archivos publicos descargados manualmente en data/raw/international_prices/imf/."
+  ]
+}
