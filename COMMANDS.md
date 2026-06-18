@@ -142,6 +142,20 @@ Parametros utiles:
 - `--output-root`: carpeta raiz de salida
 - `--output-format`: `xls`, `csv` o `xlsx`
 
+## Historico interno de siembras/cosechas
+
+Convertir el CSV interno a XLSX compatibles con el nowcast:
+
+```powershell
+python -m scripts.normalize_company_avance_history --input data/raw/avance_agricola_batch/siembras_cosechas_202606171814.csv --output-root data/raw/avance_agricola_batch/company_historical_avance --years 2023 2024
+```
+
+Notas:
+
+- La salida queda bajo `data/raw/avance_agricola_batch/company_historical_avance/`
+- Esta normalizacion solo aporta superficies acumuladas (`siembra` y `cosecha`)
+- Los meses `pre_*` y `pos_*` se dejan fuera en esta primera version para no desalinear el calendario del nowcast actual
+
 ## Walmart
 
 Ejecucion por default:
@@ -275,6 +289,12 @@ Ejecutar el flujo completo:
 
 ```powershell
 python -m scripts.run_analysis_pipeline
+```
+
+Forzar XGBoost en el nowcast de produccion para demo:
+
+```powershell
+python -m scripts.run_analysis_pipeline --production-force-model xgboost
 ```
 
 Con precios internacionales:

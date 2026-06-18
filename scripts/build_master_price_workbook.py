@@ -988,8 +988,9 @@ def _build_avance_panel(avance_monthly_stats: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=MASTER_PANEL_COLUMNS)
 
     panel = avance_monthly_stats.copy()
-    panel["run_date"] = panel["avance_cutoff_date"].where(
-        panel["avance_cutoff_date"].notna(),
+    cutoff_dates = pd.to_datetime(panel["avance_cutoff_date"], errors="coerce")
+    panel["run_date"] = cutoff_dates.where(
+        cutoff_dates.notna(),
         pd.to_datetime(
             panel["query_year"].astype(int).astype(str)
             + "-"

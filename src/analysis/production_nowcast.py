@@ -126,6 +126,7 @@ def load_avance_history(root: Path) -> pd.DataFrame:
     if avance.empty:
         raise ValueError(f"No se encontraron exportes de Avance Agricola en {root}")
     for column in (
+        "numero",
         "anio",
         "mes_corte",
         "superficie_sembrada_ha",
@@ -369,6 +370,8 @@ def _build_summary(frame: pd.DataFrame, group_column: str) -> pd.DataFrame:
 def train_and_forecast_production(
     features: pd.DataFrame,
     output_dir: Path,
+    *,
+    force_model: str | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any], pd.DataFrame]:
     output_dir.mkdir(parents=True, exist_ok=True)
     feature_columns = [column for column in MODEL_FEATURES if column in features.columns]
@@ -398,29 +401,66 @@ def train_and_forecast_production(
         model.fit(training.loc[train_idx, feature_columns], training.loc[train_idx, "produccion_final"])
         predictions = model.predict(training.loc[test_idx, feature_columns])
         baseline = _baseline_forecast(training.loc[test_idx])
-        residuals = training.loc[test_idx, "produccion_final"].to_numpy() - predictions
+        residuals_xgb = training.loc[test_idx, "produccion_final"].to_numpy() - predictions
+        residuals_baseline = training.loc[test_idx, "produccion_final"].to_numpy() - baseline.to_numpy()
+        xgb_metrics = regression_metrics(training.loc[test_idx, "produccion_final"], predictions)
+        baseline_metrics = regression_metrics(
+            training.loc[test_idx, "produccion_final"], baseline.to_numpy()
+        )
+        candidates = {
+            "xgboost": xgb_metrics["mae"],
+            "base_historica": baseline_metrics["mae"],
+        }
+        operational_method = "xgboost" if xgb_metrics["mae"] < baseline_metrics["mae"] else "base_historica"
+        if force_model:
+            if force_model not in candidates:
+                raise ValueError("force_model debe ser uno de: xgboost, base_historica.")
+            operational_method = force_model
+        xgboost_operativo = operational_method == "xgboost"
         metrics = {
-            "modo": "xgboost",
+            "modo": operational_method,
             "fecha_corte_validacion": cutoff.isoformat(),
             "filas_entrenamiento": int(len(train_idx)),
             "filas_validacion": int(len(test_idx)),
-            "modelo_xgboost": regression_metrics(
-                training.loc[test_idx, "produccion_final"], predictions
-            ),
-            "base_historica": regression_metrics(
-                training.loc[test_idx, "produccion_final"], baseline.to_numpy()
-            ),
+            "modelo_xgboost": xgb_metrics,
+            "base_historica": baseline_metrics,
+            "xgboost_operativo": xgboost_operativo,
+            "metodo_forzado": bool(force_model),
+            "metodo_forzado_nombre": force_model if force_model else None,
         }
         final_model = make_regression_pipeline(training, feature_columns)
         final_model.fit(training[feature_columns], training["produccion_final"])
-        joblib.dump(final_model, output_dir / "modelo_nowcast_produccion.joblib")
-        current["produccion_pronosticada"] = final_model.predict(current[feature_columns])
-        lower_residual = float(np.nanquantile(residuals, 0.10))
-        upper_residual = float(np.nanquantile(residuals, 0.90))
-        current["produccion_p10"] = current["produccion_pronosticada"] + lower_residual
-        current["produccion_p90"] = current["produccion_pronosticada"] + upper_residual
+        joblib.dump(final_model, output_dir / "modelo_nowcast_produccion_candidato.joblib")
         importance = model_feature_importance(final_model).head(30)
+        if xgboost_operativo:
+            joblib.dump(final_model, output_dir / "modelo_nowcast_produccion.joblib")
+            current["produccion_pronosticada"] = final_model.predict(current[feature_columns])
+            lower_residual = float(np.nanquantile(residuals_xgb, 0.10))
+            upper_residual = float(np.nanquantile(residuals_xgb, 0.90))
+            current["produccion_p10"] = current["produccion_pronosticada"] + lower_residual
+            current["produccion_p90"] = current["produccion_pronosticada"] + upper_residual
+        else:
+            current["produccion_pronosticada"] = _baseline_forecast(current)
+            historical_std = current["desviacion_produccion_5_anios"].fillna(
+                pd.Series(residuals_baseline).std(ddof=0)
+            )
+            historical_std = historical_std.fillna(current["produccion_pronosticada"].abs() * 0.15)
+            current["produccion_p10"] = current["produccion_pronosticada"] - 1.2816 * historical_std
+            current["produccion_p90"] = current["produccion_pronosticada"] + 1.2816 * historical_std
+            metrics["motivo"] = (
+                "XGBoost no supero la base historica en MAE fuera de muestra. "
+                "Se conserva solo como artefacto candidato."
+            )
+        if force_model:
+            metrics["motivo"] = (
+                f"Metodo forzado para demo: {force_model}. "
+                "Usar solo para inspeccion y no como metodo operativo validado."
+            )
     else:
+        if force_model == "xgboost":
+            raise ValueError(
+                "No se puede forzar xgboost sin suficientes filas etiquetadas y al menos dos anios."
+            )
         current["produccion_pronosticada"] = _baseline_forecast(current)
         historical_std = current["desviacion_produccion_5_anios"].fillna(
             current["produccion_pronosticada"].abs() * 0.15
@@ -431,6 +471,8 @@ def train_and_forecast_production(
             "Se requieren al menos 100 cortes historicos etiquetados y dos anios. "
             "No se entreno un modelo para evitar resultados no defendibles."
         )
+        metrics["metodo_forzado"] = bool(force_model)
+        metrics["metodo_forzado_nombre"] = force_model if force_model else None
 
     current["cambio_vs_anio_anterior"] = _pct_change(
         current["produccion_pronosticada"], current["produccion_anio_anterior"]
@@ -528,6 +570,7 @@ th,td{{padding:8px;border-bottom:1px solid #ddd;text-align:left}}th{{background:
 </style></head><body>
 <h1>Nowcast de produccion agricola</h1>
 <p>Modo actual: <strong>{html.escape(str(metrics.get("modo", "")))}</strong>. Esta vista resume volumen esperado y focos de riesgo para presentacion ejecutiva.</p>
+<p><strong>Metodo forzado:</strong> {html.escape(str(metrics.get("metodo_forzado_nombre") or "no"))}</p>
 <p><strong>Horizonte del pronostico:</strong> produccion final del mismo anio agricola para cada cultivo-estado, usando el ultimo corte mensual disponible. No es un pronostico a 7, 14 o 30 dias.</p>
 <p><strong>Como leer la caida esperada:</strong> la comparacion usa primero el anio anterior y, si no existe, cae al promedio de los ultimos 5 anios. Cuando no hay base suficiente se muestra <strong>s/d</strong>.</p>
 <div class="grid">
@@ -551,6 +594,7 @@ def run_production_nowcast_pipeline(
     output_dir: Path,
     *,
     water_path: Path | None = None,
+    force_model: str | None = None,
 ) -> dict[str, Any]:
     avance = load_avance_history(avance_root)
     cierre = load_cierre_history(cierre_root)
@@ -566,9 +610,14 @@ def run_production_nowcast_pipeline(
             "archivo_riesgo_hidrico": str(water_path) if water_path else None,
             "filas": len(features),
             "filas_con_objetivo": int(features["produccion_final"].notna().sum()),
+            "metodo_forzado": force_model,
         },
     )
-    forecast, metrics, importance = train_and_forecast_production(features, output_dir)
+    forecast, metrics, importance = train_and_forecast_production(
+        features,
+        output_dir,
+        force_model=force_model,
+    )
     forecast.to_csv(
         output_dir / "pronostico_produccion_mensual.csv",
         index=False,

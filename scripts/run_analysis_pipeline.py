@@ -20,6 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--analysis-root", type=Path, default=Path("data/analysis"))
     parser.add_argument("--climate-file", type=Path)
     parser.add_argument("--international-features", type=Path)
+    parser.add_argument("--production-force-model", choices=["xgboost", "base_historica"])
     return parser.parse_args()
 
 
@@ -53,6 +54,7 @@ def main() -> int:
         args.cierre_root,
         production_dir,
         water_path=water_dir / "state_decena_features.parquet",
+        force_model=args.production_force_model,
     )
     price_dir = args.analysis_root / "price_shock"
     summary["alerta_precios"] = run_price_shock_pipeline(

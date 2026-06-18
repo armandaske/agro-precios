@@ -13,6 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cierre-root", type=Path, default=Path("data/raw/cierre_agricola_batch"))
     parser.add_argument("--output-dir", type=Path, default=Path("data/analysis/production_nowcast"))
     parser.add_argument("--water-features", type=Path)
+    parser.add_argument("--force-model", choices=["xgboost", "base_historica"])
     return parser.parse_args()
 
 
@@ -23,6 +24,7 @@ def main() -> int:
         args.cierre_root,
         args.output_dir,
         water_path=args.water_features,
+        force_model=args.force_model,
     )
     print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
     return 0

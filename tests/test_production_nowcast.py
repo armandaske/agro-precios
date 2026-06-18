@@ -1,6 +1,7 @@
 import unittest
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -85,7 +86,108 @@ class ProductionNowcastTests(unittest.TestCase):
         self.assertIn("Variacion esperada", html)
         self.assertIn("-20.0%", html)
         self.assertIn("60.0%", html)
+        self.assertIn("Metodo forzado", html)
         self.assertNotIn("nan%", html)
+
+    def test_uses_baseline_when_xgboost_loses_validation(self) -> None:
+        class FakeModel:
+            def fit(self, *_args, **_kwargs):
+                return self
+
+            def predict(self, features):
+                return pd.Series([0.0] * len(features)).to_numpy()
+
+        rows = []
+        for year in (2023, 2024):
+            for month in range(1, 7):
+                for state in ("Michoacan", "Jalisco", "Puebla", "Nayarit", "Colima", "Morelos", "Oaxaca", "Chiapas", "Guerrero", "Veracruz"):
+                    rows.append(
+                        {
+                            "cultivo_canonico": "aguacate",
+                            "estado": state,
+                            "anio": year,
+                            "mes_corte": month,
+                            "fecha_corte": pd.Timestamp(year=year, month=month, day=28) + pd.offsets.MonthEnd(0),
+                            "superficie_sembrada_ha": 100.0,
+                            "superficie_cosechada_ha": 60.0,
+                            "superficie_siniestrada_ha": 5.0,
+                            "produccion_acumulada": 100.0,
+                            "rendimiento_actual": 1.0,
+                            "produccion_anio_anterior": 100.0,
+                            "produccion_promedio_5_anios": 100.0,
+                            "desviacion_produccion_5_anios": 10.0,
+                            "produccion_final": 100.0,
+                            "rendimiento_final": 1.0,
+                        }
+                    )
+        features = pd.DataFrame(rows)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with (
+                patch("src.analysis.production_nowcast.make_regression_pipeline", return_value=FakeModel()),
+                patch(
+                    "src.analysis.production_nowcast.model_feature_importance",
+                    return_value=pd.DataFrame([{"variable": "produccion_acumulada", "importancia": 1.0}]),
+                ),
+                patch("src.analysis.production_nowcast.joblib.dump"),
+            ):
+                forecast, metrics, _ = train_and_forecast_production(features, Path(temp_dir))
+        self.assertEqual(metrics["modo"], "base_historica")
+        self.assertFalse(metrics["xgboost_operativo"])
+        self.assertIn("candidato", str(metrics["motivo"]).lower())
+        self.assertTrue((forecast["produccion_pronosticada"] == 100.0).all())
+
+    def test_forces_xgboost_for_demo_even_when_baseline_wins(self) -> None:
+        class FakeModel:
+            def fit(self, *_args, **_kwargs):
+                return self
+
+            def predict(self, features):
+                return pd.Series([0.0] * len(features)).to_numpy()
+
+        rows = []
+        for year in (2023, 2024):
+            for month in range(1, 7):
+                for state in ("Michoacan", "Jalisco", "Puebla", "Nayarit", "Colima", "Morelos", "Oaxaca", "Chiapas", "Guerrero", "Veracruz"):
+                    rows.append(
+                        {
+                            "cultivo_canonico": "aguacate",
+                            "estado": state,
+                            "anio": year,
+                            "mes_corte": month,
+                            "fecha_corte": pd.Timestamp(year=year, month=month, day=28) + pd.offsets.MonthEnd(0),
+                            "superficie_sembrada_ha": 100.0,
+                            "superficie_cosechada_ha": 60.0,
+                            "superficie_siniestrada_ha": 5.0,
+                            "produccion_acumulada": 100.0,
+                            "rendimiento_actual": 1.0,
+                            "produccion_anio_anterior": 100.0,
+                            "produccion_promedio_5_anios": 100.0,
+                            "desviacion_produccion_5_anios": 10.0,
+                            "produccion_final": 100.0,
+                            "rendimiento_final": 1.0,
+                        }
+                    )
+        features = pd.DataFrame(rows)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with (
+                patch("src.analysis.production_nowcast.make_regression_pipeline", return_value=FakeModel()),
+                patch(
+                    "src.analysis.production_nowcast.model_feature_importance",
+                    return_value=pd.DataFrame([{"variable": "produccion_acumulada", "importancia": 1.0}]),
+                ),
+                patch("src.analysis.production_nowcast.joblib.dump"),
+            ):
+                forecast, metrics, _ = train_and_forecast_production(
+                    features,
+                    Path(temp_dir),
+                    force_model="xgboost",
+                )
+        self.assertEqual(metrics["modo"], "xgboost")
+        self.assertTrue(metrics["xgboost_operativo"])
+        self.assertTrue(metrics["metodo_forzado"])
+        self.assertEqual(metrics["metodo_forzado_nombre"], "xgboost")
+        self.assertIn("demo", str(metrics["motivo"]).lower())
+        self.assertTrue((forecast["produccion_pronosticada"] == 0.0).all())
 
 
 if __name__ == "__main__":

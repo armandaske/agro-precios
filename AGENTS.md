@@ -51,6 +51,7 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/run_daily_extracts.py`: main daily orchestrator across enabled sources.
 - `scripts/fetch_cierre_batch.py`: batch runner that fetches normalized annual Cierre Agricola exports for the configured canonical products.
 - `scripts/fetch_avance_batch.py`: batch runner that fetches normalized monthly Avance Agricola exports for the configured canonical products.
+- `scripts/normalize_company_avance_history.py`: adapter that turns the internal `siembras_cosechas_*.csv` matrix into Avance-like monthly XLSX files for historical training coverage.
 - `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Avance exports and optional normalized Cierre exports.
 - `src/analysis/`: shared feature engineering, temporal validation, model governance, and reporting code.
 - `scripts/run_water_risk_model.py`: creates decena reservoir features, backtests candidate forecasts, and writes alerts and a map.
@@ -132,6 +133,7 @@ Get-Content COMMANDS.md
 - Price alerts should only include markets observed within seven days of the latest SNIIM date.
 - Production nowcast requires historical Avance cutoffs joined to Cierre outcomes from the same crop, state, and year. If fewer than 100 labeled cutoffs or fewer than two labeled years exist, use the historical baseline and state the limitation.
 - Production nowcast executive outputs should expose an explicit comparison base for each crop-state forecast: prefer `anio anterior`, fall back to `promedio 5 anios`, and show `s/d` when neither exists instead of rendering `nan` percentages.
+- If the user explicitly requests a demo override, `scripts.run_production_nowcast.py --force-model xgboost` and `scripts.run_analysis_pipeline.py --production-force-model xgboost` may be used, but the metrics and reports must say that the method was forced.
 - The default dry scenarios are explicit assumptions: normal 0%, dry -8%, severe drought -15%. Do not present them as learned causal impacts.
 - Optional climate input must use `id_conagua + fecha`.
 - Optional international price inputs must be public and unauthenticated. Do not introduce API keys, tokens, Banxico SIE credentials, paid futures feeds, or hidden secrets for this v1.
@@ -166,6 +168,9 @@ Get-Content COMMANDS.md
 - The Avance batch runner should create one timestamped run folder per invocation under `data/raw/avance_agricola_batch/` so repeated exports stay grouped.
 - Preserve `avance_crop_label_raw`, `avance_unit_label`, `query_month`, `query_month_label`, and `report_cutoff_label` in normalized outputs so monthly cuts remain auditable.
 - Default standalone outputs for this source should stay under `data/raw/avance_agricola/` unless the operator passes an explicit `--output`.
+- If the user provides the internal `siembras_cosechas_*.csv`, prefer `python -m scripts.normalize_company_avance_history --years 2023 2024` to generate Avance-like historical XLSX files without overwriting the richer 2026 official exports.
+- Treat that internal CSV as an area-only historical supplement: `SIEMBRA` maps to `superficie_sembrada_ha`, `COSECHA` maps to `superficie_cosechada_ha`, and the missing `produccion`, `rendimiento`, and `superficie_siniestrada` fields must remain empty rather than being fabricated.
+- The current production pipeline assumes `anio + mes_corte` are same-calendar-year cutoffs, so the first-pass adapter should keep only `enero..diciembre` from the target agricultural year and leave `pre_*` / `pos_*` months out until calendar-year support is added explicitly.
 
 ### Walmart
 

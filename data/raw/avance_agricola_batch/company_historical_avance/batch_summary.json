@@ -1,0 +1,28 @@
+{
+  "generado_en": "2026-06-17T18:49:14",
+  "output_root": "data\\raw\\avance_agricola_batch\\company_historical_avance",
+  "rows_written": 6841,
+  "files_written": 20,
+  "files": [
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\aguacate_2023_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\aguacate_2024_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\cebolla_2023_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\cebolla_2024_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\chile_verde_2023_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\chile_verde_2024_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\elote_2023_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\elote_2024_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\limon_2023_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\limon_2024_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\mango_2023_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\mango_2024_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\papa_2023_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\papa_2024_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\platano_2023_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\platano_2024_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\tomate_rojo_2023_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\tomate_rojo_2024_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\zanahoria_2023_historico_empresa.xlsx",
+    "data\\raw\\avance_agricola_batch\\company_historical_avance\\zanahoria_2024_historico_empresa.xlsx"
+  ]
+}

@@ -36,7 +36,7 @@ Analitica implementada:
 
 Limitacion actual:
 
-- Los archivos disponibles de Avance Agricola son de 2026 y los Cierres son de 2023-2024. No existen cortes historicos emparejados con su cierre del mismo anio, por lo que el nowcast de produccion usa baselines historicos y no presenta XGBoost como modelo operativo.
+- Los exportes oficiales de Avance Agricola disponibles en el repo siguen concentrados en 2026. El script `scripts/normalize_company_avance_history.py` puede sumar historia 2023-2024 desde un CSV interno de siembras/cosechas, pero esa capa historica solo aporta superficies acumuladas y no reemplaza columnas como `produccion`, `rendimiento` o `superficie_siniestrada`.
 
 ## Estructura relevante
 
@@ -50,6 +50,7 @@ Limitacion actual:
 - `scripts/run_daily_extracts.py`: orquestador diario para las 4 fuentes.
 - `scripts/fetch_cierre_batch.py`: descarga en lote exportes normalizados de Cierre Agricola para los productos canonicos configurados.
 - `scripts/fetch_avance_batch.py`: descarga en lote exportes normalizados de Avance Agricola para los productos canonicos configurados.
+- `scripts/normalize_company_avance_history.py`: convierte el CSV historico interno de siembras/cosechas en exportes XLSX compatibles con el layout consumido por el nowcast de produccion.
 - `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui, Avance Agricola y Cierre Agricola secundario.
 - `scripts/run_water_risk_model.py`: monitor predictivo de riesgo hidrico.
 - `scripts/run_production_nowcast.py`: nowcast de produccion y rendimiento.
@@ -97,6 +98,12 @@ Ejecutar los tres proyectos en el orden recomendado:
 python -m scripts.run_analysis_pipeline
 ```
 
+Forzar XGBoost en nowcast de produccion para demo:
+
+```powershell
+python -m scripts.run_analysis_pipeline --production-force-model xgboost
+```
+
 La corrida reconstruye `data/analysis/master_price_workbook.xlsx` y escribe:
 
 - `data/analysis/water_risk/dam_decena_features.parquet`
@@ -108,6 +115,8 @@ La corrida reconstruye `data/analysis/master_price_workbook.xlsx` y escribe:
 En el nowcast de produccion, los reportes ejecutivos muestran la variacion esperada contra una base de comparacion visible: primero `anio anterior` y, si falta, `promedio 5 anios`. Cuando no existe referencia suficiente, el reporte marca `s/d`.
 
 La seleccion del metodo operativo se realiza con un corte temporal. Si XGBoost no supera el mejor baseline en MAE fuera de muestra, el reporte usa el baseline y conserva XGBoost solo como artefacto candidato.
+
+En nowcast de produccion tambien existe un override de demo. Si fuerzas `--production-force-model xgboost`, la salida deja trazabilidad explicita de que el metodo fue forzado y no debe presentarse como validado por backtesting.
 
 ### Enriquecimiento climatico
 
@@ -318,6 +327,25 @@ Salida esperada:
 - Cada corrida crea una subcarpeta `run_YYYYMMDD_HHMMSS_<anio>_<mes>/`
 - El resumen queda dentro de esa subcarpeta como `batch_summary.json`
 - Solo se procesan filas activas con `cultivo_avance_agricola` lleno
+
+### 2.4. Historico interno de siembras/cosechas a formato Avance-like
+
+Si cuentas con el CSV interno `siembras_cosechas_*.csv`, puedes convertirlo a XLSX compatibles con el nowcast de produccion:
+
+```powershell
+python -m scripts.normalize_company_avance_history `
+  --input data/raw/avance_agricola_batch/siembras_cosechas_202606171814.csv `
+  --output-root data/raw/avance_agricola_batch/company_historical_avance `
+  --years 2023 2024
+```
+
+El adaptador:
+
+- Genera archivos `*.xlsx` por `cultivo + anio` bajo `data/raw/avance_agricola_batch/company_historical_avance/`
+- Conserva solo meses `enero..diciembre` del mismo anio agricola para no forzar cortes cruzados de calendario en el pipeline actual
+- Mapea `SIEMBRA -> superficie_sembrada_ha` y `COSECHA -> superficie_cosechada_ha`
+- Deja `superficie_siniestrada_ha`, `produccion` y `rendimiento` vacios porque ese CSV no los contiene
+- Recorta sufijos finales de ceros despues del ultimo acumulado positivo para evitar cierres espurios en el entrenamiento historico
 
 ### 3. Cierre Agricola SIAP con Playwright
 
