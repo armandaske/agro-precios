@@ -271,7 +271,14 @@ def _request_json(
     try:
         payload = response.json()
     except json.JSONDecodeError as exc:
-        raise RuntimeError(f"{path} devolvio una respuesta no-JSON") from exc
+        snippet = re.sub(r"\s+", " ", response.text).strip()[:240]
+        content_type = response.headers.get("Content-Type", "")
+        detail = f"{path} devolvio una respuesta no-JSON"
+        if content_type:
+            detail += f" (content-type: {content_type})"
+        if snippet:
+            detail += f" | inicio_respuesta={snippet}"
+        raise RuntimeError(detail) from exc
 
     if not isinstance(payload, list):
         raise RuntimeError(f"{path} devolvio un payload inesperado")

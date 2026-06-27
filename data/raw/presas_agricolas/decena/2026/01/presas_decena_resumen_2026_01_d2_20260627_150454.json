@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "run_timestamp": "2026-06-27T15:04:54.497908",
+  "target_year": 2026,
+  "target_month": 1,
+  "target_decena": 2,
+  "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\decena\\2026\\01\\presas_decena_2026_01_d2_20260627_150454.xlsx",
+  "config_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\decena\\2026\\01\\presas_decena_config_2026_01_d2_20260627_150454.xlsx",
+  "existing_output_paths": [],
+  "row_count": 163,
+  "error_count": 0
+}

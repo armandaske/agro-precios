@@ -33,6 +33,7 @@ Analitica implementada:
 - Descarga opcional de clima NASA POWER.
 - Capa opcional de precios internacionales publicos sin API keys: World Bank Pink Sheet, FRED USD/MXN y archivos publicos descargados de USDA AMS o IMF.
 - Orquestador `scripts/run_analysis_pipeline.py` para reconstruir el workbook maestro y ejecutar los tres analisis.
+- Wrapper operativo `scripts/fetch_presas_decena_snapshot.py` para descargar el corte nacional de presas por decena con config generada, salida timestamped e idempotencia por periodo.
 
 Limitacion actual:
 
@@ -59,6 +60,7 @@ Limitacion actual:
 - `scripts/fetch_nasa_power_weather.py`: descarga clima diario por coordenada y agrega por decena.
 - `scripts/fetch_public_international_prices.py`: descarga fuentes internacionales publicas que no requieren token.
 - `scripts/build_international_price_features.py`: normaliza proxies internacionales y genera features auditables.
+- `scripts/fetch_presas_decena_snapshot.py`: wrapper operativo para descargar y almacenar un corte nacional por decena usando el extractor existente de Presas Agricolas.
 - `src/analysis/`: feature engineering, validacion temporal, seleccion de baselines, modelos y reportes.
 - `config/products.xlsx`: workbook editable por el usuario con la configuracion de productos.
 - `config/presas_agricolas.xlsx`: workbook editable por el usuario con consultas de presas por anio, mes, decena e `id_conagua`.
@@ -90,18 +92,23 @@ playwright install chromium
 
 Todos los comandos siguientes se ejecutan desde la raiz del repo.
 
+Default operativo:
+
+- Usa siempre el interprete del repo: `.venv\Scripts\python.exe`.
+- Si activaste el entorno con `.\.venv\Scripts\Activate.ps1`, `python` ya apuntara al `.venv`, pero para automatizacion y agentes se prefiere la ruta explicita.
+
 ## Pipeline analitico completo
 
 Ejecutar los tres proyectos en el orden recomendado:
 
 ```powershell
-python -m scripts.run_analysis_pipeline
+.\.venv\Scripts\python.exe -m scripts.run_analysis_pipeline
 ```
 
 Forzar XGBoost en nowcast de produccion para demo:
 
 ```powershell
-python -m scripts.run_analysis_pipeline --production-force-model xgboost
+.\.venv\Scripts\python.exe -m scripts.run_analysis_pipeline --production-force-model xgboost
 ```
 
 La corrida reconstruye `data/analysis/master_price_workbook.xlsx` y escribe:
@@ -450,6 +457,41 @@ Salida esperada:
 - Si llenas `id_conagua` en una fila `presas_periodo`, el resultado se filtra a esa sola presa dentro del corte solicitado
 - En `presas_estado`, `estado` es obligatorio y el resultado queda filtrado exactamente a esa entidad
 - Si un `nombre_oficial` coincide con varias presas, agrega `estado` o usa `id_conagua` directo para evitar ambiguedad
+
+### 4.2. Wrapper automatizable por decena
+
+Cuando solo necesitas guardar el corte nacional de presas cada diez dias para un worker, cron o Task Scheduler, usa el wrapper operativo:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_presas_decena_snapshot
+```
+
+Forzar un periodo explicito:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_presas_decena_snapshot --year 2026 --month 6 --decena 3
+```
+
+Resolver la decena a partir de una fecha:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_presas_decena_snapshot --target-date 2026-06-27
+```
+
+Forzar una redescarga aunque ya exista ese periodo:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_presas_decena_snapshot --year 2026 --month 6 --decena 3 --force
+```
+
+Comportamiento esperado:
+
+- El script genera una configuracion minima en Excel con `tipo_consulta = presas_periodo` y llama al extractor existente.
+- La salida por default vive en `data/raw/presas_agricolas/decena/YYYY/MM/`.
+- Cada ejecucion exitosa guarda tres artefactos por corrida: workbook `.xlsx`, config `.xlsx` y resumen `.json`.
+- Si ya existe un workbook para la misma combinacion `anio + mes + decena`, la corrida se marca como `skipped_existing` y no vuelve a descargar salvo que pases `--force`.
+- El resumen JSON deja trazabilidad con `run_timestamp`, periodo objetivo, `status`, rutas de salida, `row_count` y `error_count`.
+- Si el extractor base escribe filas en la hoja `errores`, el wrapper marca la corrida como `error` o `partial_error` y termina con codigo de salida no-cero para que un scheduler detecte el fallo.
 
 ### 5. Chedraui produce scraper
 

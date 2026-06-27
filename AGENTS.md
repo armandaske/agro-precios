@@ -60,6 +60,7 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/run_analysis_pipeline.py`: rebuilds the master workbook and runs all three analytical projects in order.
 - `scripts/fetch_public_international_prices.py`: downloads unauthenticated public international price files for World Bank Pink Sheet and FRED USD/MXN.
 - `scripts/build_international_price_features.py`: builds the optional audited international price feature parquet from public files and `proxies_internacionales`.
+- `scripts/fetch_presas_decena_snapshot.py`: operational wrapper that generates a one-query config, fetches one national reservoir decena snapshot, and stores workbook plus JSON audit artifacts under a period-based folder.
 - `scripts/fetch_nasa_power_weather.py`: optional NASA POWER climate enrichment.
 - `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
 - `COMMANDS.md`: quick command reference for the main extractors, batch runners, workbook builder, tests, and Windows scheduler workflow.
@@ -86,22 +87,27 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
+Default interpreter rule:
+
+- Agents should use the repo virtualenv interpreter explicitly as the default command prefix: `.\.venv\Scripts\python.exe`.
+- If the shell is already activated into `(.venv)`, plain `python` is acceptable for an interactive human run, but automation and agent validation should still prefer the explicit `.venv` path to avoid drifting to a global interpreter.
+
 Run tests:
 
 ```powershell
-python -m unittest discover -s tests -p "test_*.py"
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py"
 ```
 
 Run the daily orchestrator:
 
 ```powershell
-python scripts/run_daily_extracts.py --config config/products.xlsx --output-root data/daily_runs
+.\.venv\Scripts\python.exe scripts/run_daily_extracts.py --config config/products.xlsx --output-root data/daily_runs
 ```
 
 Run the governed analysis pipeline:
 
 ```powershell
-python -m scripts.run_analysis_pipeline
+.\.venv\Scripts\python.exe -m scripts.run_analysis_pipeline
 ```
 
 Quick command lookup:
@@ -185,6 +191,7 @@ Get-Content COMMANDS.md
 
 - `src/extract/presas_agricolas.py` should keep using the portal's direct JSON endpoints instead of browser automation as long as `js/funciones.php`, `js/graf.php`, `js/ajax/getInicio.php`, and `js/ajax/getAnios.php` remain stable.
 - Treat `anio + mes + decena` as the source-of-truth query contract for snapshots, and `id_conagua + mes + decena + rango de anios` as the source-of-truth contract for historical series.
+- When the need is a production-like every-ten-days national pull, prefer `python -m scripts.fetch_presas_decena_snapshot` instead of hand-editing `config/presas_agricolas.xlsx`; the wrapper should stay thin and keep using `run_from_config` underneath.
 - For `presas_periodo`, an explicit `anio_final` in the config should expand the row into consecutive decena snapshots from the starting `anio/mes/decena` through the end of that year, capped by the portal's latest published period when needed.
 - Support the explicit `presas_estado` batch mode by filtering snapshots on `estado` after retrieval, and treat that filter as part of the auditable query metadata.
 - Preserve both the requested query metadata and the returned dam metadata in exports so later analysis can audit exactly which cut was retrieved.
@@ -192,6 +199,8 @@ Get-Content COMMANDS.md
 - Keep name-based lookup stable: if a query provides `nombre_oficial` and optional `estado`, the scraper should resolve `id_conagua` from `catalogo_presas` before calling the portal.
 - For stronger catalog coverage, prefer `--catalog-scope all-available`; preserve catalog provenance fields such as periods observed and first/last seen period.
 - Default standalone outputs for this source should stay under `data/raw/presas_agricolas/` unless the operator passes an explicit `--output`.
+- The decena wrapper should default to `data/raw/presas_agricolas/decena/YYYY/MM/`, write one timestamped workbook per execution, persist the generated config workbook, emit a JSON run summary, and skip already-fetched logical periods unless `--force` is passed.
+- If the generated workbook contains rows in `errores`, the wrapper should mark the run as failed for automation purposes and exit non-zero instead of reporting `success`.
 
 ### Chedraui
 

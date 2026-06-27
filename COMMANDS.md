@@ -8,6 +8,11 @@ Ejecuta todo desde la raiz del repo:
 cd C:\Users\Dell-G3\Documents\Jupyter-projects\Others\agro-precios
 ```
 
+Default operativo:
+
+- Usa siempre `.\.venv\Scripts\python.exe` en comandos manuales, agentes, workers y schedulers.
+- Si activaste `.\.venv\Scripts\Activate.ps1`, `python` puede funcionar igual, pero la ruta explicita evita ejecutar accidentalmente otro interprete global.
+
 ## Entorno
 
 Crear y activar el entorno virtual:
@@ -22,14 +27,14 @@ playwright install chromium
 Ejecutar toda la suite de pruebas:
 
 ```powershell
-python -m unittest discover -s tests -p "test_*.py"
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py"
 ```
 
 Ejecutar pruebas puntuales:
 
 ```powershell
-python -m unittest tests.test_sniim
-python -m unittest tests.test_walmart_produce_scraper
+.\.venv\Scripts\python.exe -m unittest tests.test_sniim
+.\.venv\Scripts\python.exe -m unittest tests.test_walmart_produce_scraper
 ```
 
 ## Presas Agricolas
@@ -37,26 +42,45 @@ python -m unittest tests.test_walmart_produce_scraper
 Crear el workbook de configuracion:
 
 ```powershell
-python -m src.extract.presas_agricolas --init-config
+.\.venv\Scripts\python.exe -m src.extract.presas_agricolas --init-config
 ```
 
 Regenerar el workbook con un catalogo mas completo:
 
 ```powershell
-python -m src.extract.presas_agricolas --init-config --overwrite-config --catalog-scope all-available
+.\.venv\Scripts\python.exe -m src.extract.presas_agricolas --init-config --overwrite-config --catalog-scope all-available
 ```
 
 Ejecutar con la configuracion por default:
 
 ```powershell
-python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx
+.\.venv\Scripts\python.exe -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx
 ```
 
 Con workbook de salida explicito:
 
 ```powershell
-python -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx --output data/raw/presas_agricolas/presas_historicas.xlsx
+.\.venv\Scripts\python.exe -m src.extract.presas_agricolas --config config/presas_agricolas.xlsx --output data/raw/presas_agricolas/presas_historicas.xlsx
 ```
+
+Descargar solo el corte nacional de una decena con almacenamiento auditable e idempotencia por periodo:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_presas_decena_snapshot
+```
+
+Periodo explicito:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_presas_decena_snapshot --year 2026 --month 6 --decena 3
+```
+
+Parametros utiles del wrapper:
+
+- `--target-date`: fecha `YYYY-MM-DD` para resolver la decena automaticamente
+- `--year`, `--month`, `--decena`: periodo explicito; deben venir juntos
+- `--output-root`: raiz de salida, default `data/raw/presas_agricolas/decena`
+- `--force`: vuelve a descargar aunque ya exista un workbook para esa decena
 
 Parametros utiles:
 
