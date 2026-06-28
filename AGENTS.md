@@ -54,7 +54,8 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/normalize_company_avance_history.py`: adapter that turns the internal `siembras_cosechas_*.csv` matrix into Avance-like monthly XLSX files for historical training coverage.
 - `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Avance exports and optional normalized Cierre exports.
 - `src/analysis/`: shared feature engineering, temporal validation, model governance, and reporting code.
-- `scripts/run_water_risk_model.py`: creates decena reservoir features, backtests candidate forecasts, and writes alerts and a map.
+- `scripts/run_water_risk_model.py`: creates decena reservoir features, backtests candidate forecasts, and writes alerts and a map. The current default horizons are 30, 60, and 90 days (`3, 6, 9` decenas).
+- `scripts/fetch_presas_historical_backfill.py`: loops the existing Presas extractor year by year to rebuild a stronger national decena archive for training.
 - `scripts/run_production_nowcast.py`: creates crop-state cutoff features and trains only when historical Avance and Cierre years overlap.
 - `scripts/run_price_shock_model.py`: creates product-market daily features, price forecasts, and margin anomalies.
 - `scripts/run_analysis_pipeline.py`: rebuilds the master workbook and runs all three analytical projects in order.
@@ -136,6 +137,7 @@ Get-Content COMMANDS.md
 - Only set XGBoost as the operational method for a horizon when it has lower out-of-sample MAE than every baseline.
 - Keep non-winning candidate model artifacts for diagnostics, but label the selected `metodo_pronostico` in alert outputs.
 - Reservoir alerts should only include dams observed within 45 days of the latest reservoir cut.
+- Climate enrichment for water risk is optional and must stay benchmarked. Do not assume NASA POWER helps every horizon; if it worsens out-of-sample MAE, keep it as diagnostic rather than operational input.
 - Price alerts should only include markets observed within seven days of the latest SNIIM date.
 - Production nowcast requires historical Avance cutoffs joined to Cierre outcomes from the same crop, state, and year. If fewer than 100 labeled cutoffs or fewer than two labeled years exist, use the historical baseline and state the limitation.
 - Production nowcast executive outputs should expose an explicit comparison base for each crop-state forecast: prefer `anio anterior`, fall back to `promedio 5 anios`, and show `s/d` when neither exists instead of rendering `nan` percentages.
@@ -192,6 +194,7 @@ Get-Content COMMANDS.md
 - `src/extract/presas_agricolas.py` should keep using the portal's direct JSON endpoints instead of browser automation as long as `js/funciones.php`, `js/graf.php`, `js/ajax/getInicio.php`, and `js/ajax/getAnios.php` remain stable.
 - Treat `anio + mes + decena` as the source-of-truth query contract for snapshots, and `id_conagua + mes + decena + rango de anios` as the source-of-truth contract for historical series.
 - When the need is a production-like every-ten-days national pull, prefer `python -m scripts.fetch_presas_decena_snapshot` instead of hand-editing `config/presas_agricolas.xlsx`; the wrapper should stay thin and keep using `run_from_config` underneath.
+- When the need is to reinforce the water-risk training archive across many years, prefer `python -m scripts.fetch_presas_historical_backfill --start-year ... --end-year ...` instead of hand-building dozens of annual config rows; the runner should stay thin and keep using `run_from_config` underneath.
 - For `presas_periodo`, an explicit `anio_final` in the config should expand the row into consecutive decena snapshots from the starting `anio/mes/decena` through the end of that year, capped by the portal's latest published period when needed.
 - Support the explicit `presas_estado` batch mode by filtering snapshots on `estado` after retrieval, and treat that filter as part of the auditable query metadata.
 - Preserve both the requested query metadata and the returned dam metadata in exports so later analysis can audit exactly which cut was retrieved.

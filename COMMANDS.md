@@ -82,6 +82,19 @@ Parametros utiles del wrapper:
 - `--output-root`: raiz de salida, default `data/raw/presas_agricolas/decena`
 - `--force`: vuelve a descargar aunque ya exista un workbook para esa decena
 
+Backfill anual del historico nacional para reforzar entrenamiento:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_presas_historical_backfill --start-year 1999 --end-year 2026
+```
+
+Parametros utiles del backfill:
+
+- `--start-year`: primer anio a descargar
+- `--end-year`: ultimo anio a descargar; default ultimo anio publicado por el portal
+- `--output-root`: raiz de salida, default `data/raw/presas_agricolas/backfill`
+- `--force`: vuelve a descargar aunque ya exista el workbook anual
+
 Parametros utiles:
 
 - `--config`: workbook de configuracion, default `config/presas_agricolas.xlsx`
@@ -342,14 +355,16 @@ Forzar metodo para demo:
 python -m scripts.run_water_risk_model `
   --input-root data/raw/presas_agricolas `
   --output-dir data/analysis/water_risk `
-  --force-model xgboost
+  --force-model xgboost_delta
 ```
 
 Notas:
 
-- Valores permitidos: `xgboost`, `decena_anterior`, `misma_decena_anio_anterior`
+- Horizontes default: `3, 6, 9` decenas = `30, 60, 90` dias
+- Valores permitidos: `xgboost_nivel`, `xgboost_delta`, `decena_anterior`, `misma_decena_anio_anterior`, `promedio_3_decenas`, `delta_estacional_mediana`
 - Si se omite, el script mantiene la seleccion automatica por menor MAE fuera de muestra
 - El HTML, el XLSX y las metricas dejan evidencia de que el metodo fue forzado
+- Con el historico nacional reforzado, la salida actual usa `xgboost_delta` en `30`, `60` y `90` dias cuando mejora el MAE
 
 Nowcast de produccion:
 
@@ -389,10 +404,14 @@ Descarga opcional de clima NASA POWER:
 
 ```powershell
 python -m scripts.fetch_nasa_power_weather `
-  --start-date 2025-01-01 `
-  --end-date 2026-06-15 `
+  --start-date 1999-01-01 `
+  --end-date 2026-05-31 `
   --output data/raw/climate/nasa_power_decena.parquet
 ```
+
+Nota:
+
+- El clima debe seguir siendo opcional y benchmarked; no se vuelve operativo por default si empeora MAE fuera de muestra en algun horizonte.
 
 ## Programador de tareas de Windows
 

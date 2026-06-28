@@ -27,7 +27,8 @@ Implementado:
 
 Analitica implementada:
 
-- Dataset por presa y decena, backtesting a 10, 30 y 60 dias, alertas de umbral y mapa HTML.
+- Dataset por presa y decena, backtesting a 30, 60 y 90 dias, alertas de umbral y mapa HTML.
+- Backfill anual reproducible de presas para reconstruir el historico nacional por decena con el mismo extractor HTTP.
 - Dataset por cultivo, estado y corte mensual para nowcast de produccion, con comparativo explicito vs anio anterior o promedio 5 anios cuando exista.
 - Dataset diario por producto y mercado, forecast a 7, 14 y 28 dias y anomalias de margen retail-mayoreo.
 - Descarga opcional de clima NASA POWER.
@@ -54,6 +55,7 @@ Limitacion actual:
 - `scripts/normalize_company_avance_history.py`: convierte el CSV historico interno de siembras/cosechas en exportes XLSX compatibles con el layout consumido por el nowcast de produccion.
 - `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui, Avance Agricola y Cierre Agricola secundario.
 - `scripts/run_water_risk_model.py`: monitor predictivo de riesgo hidrico.
+- `scripts/fetch_presas_historical_backfill.py`: backfill anual del corte nacional de presas para reforzar entrenamiento historico.
 - `scripts/run_production_nowcast.py`: nowcast de produccion y rendimiento.
 - `scripts/run_price_shock_model.py`: alerta temprana de choques de precios.
 - `scripts/run_analysis_pipeline.py`: ejecucion integrada de los tres proyectos.
@@ -123,6 +125,8 @@ En el nowcast de produccion, los reportes ejecutivos muestran la variacion esper
 
 La seleccion del metodo operativo se realiza con un corte temporal. Si XGBoost no supera el mejor baseline en MAE fuera de muestra, el reporte usa el baseline y conserva XGBoost solo como artefacto candidato.
 
+En la version actual del monitor hidrico, el historial reforzado de presas permite que el modelo operativo use un enfoque por deltas (`xgboost_delta`) en `30`, `60` y `90` dias. El HTML y el XLSX dejan visible el metodo por horizonte, el cambio pronosticado frente al valor actual y muestran todas las presas evaluadas en la tabla, no solo una muestra.
+
 En nowcast de produccion tambien existe un override de demo. Si fuerzas `--production-force-model xgboost`, la salida deja trazabilidad explicita de que el metodo fue forzado y no debe presentarse como validado por backtesting.
 
 ### Enriquecimiento climatico
@@ -131,6 +135,12 @@ Descargar NASA POWER para las coordenadas de las presas:
 
 ```powershell
 python -m scripts.fetch_nasa_power_weather --start-date 2025-01-01 --end-date 2026-06-15
+```
+
+Backfill anual del historico nacional de presas:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_presas_historical_backfill --start-year 1999 --end-year 2026
 ```
 
 Usar el archivo climatico en la corrida integrada:
@@ -143,7 +153,7 @@ python -m scripts.run_analysis_pipeline `
 Forzar un metodo operativo de riesgo hidrico para demo:
 
 ```powershell
-python -m scripts.run_water_risk_model --force-model xgboost
+python -m scripts.run_water_risk_model --force-model xgboost_delta
 ```
 
 Importante:
@@ -151,6 +161,7 @@ Importante:
 - `--force-model` es solo para demo o inspeccion.
 - Si se usa, la salida de riesgo hidrico deja trazabilidad explicita de que el metodo fue forzado.
 - No debe presentarse como metodo operativo validado si el backtesting no lo favorece.
+- El clima NASA debe mantenerse como enriquecimiento opcional: si empeora el MAE fuera de muestra en un horizonte, no debe quedarse como input operativo solo por intuicion.
 
 ### Precios internacionales publicos
 
@@ -488,6 +499,19 @@ Comportamiento esperado:
 
 - El script genera una configuracion minima en Excel con `tipo_consulta = presas_periodo` y llama al extractor existente.
 - La salida por default vive en `data/raw/presas_agricolas/decena/YYYY/MM/`.
+
+Cuando necesitas reforzar el entrenamiento del monitor hidrico con historia nacional completa por decena, usa el backfill anual:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_presas_historical_backfill --start-year 1999 --end-year 2026
+```
+
+Comportamiento esperado:
+
+- Genera un workbook anual por anio bajo `data/raw/presas_agricolas/backfill/`.
+- Reusa `run_from_config` del extractor de presas; no introduce otro scraper.
+- Escribe `backfill_summary.json` con el resumen agregado de la corrida.
+- Si ya existe un anio descargado, lo salta salvo que pases `--force`.
 - Cada ejecucion exitosa guarda tres artefactos por corrida: workbook `.xlsx`, config `.xlsx` y resumen `.json`.
 - Si ya existe un workbook para la misma combinacion `anio + mes + decena`, la corrida se marca como `skipped_existing` y no vuelve a descargar salvo que pases `--force`.
 - El resumen JSON deja trazabilidad con `run_timestamp`, periodo objetivo, `status`, rutas de salida, `row_count` y `error_count`.

@@ -182,26 +182,32 @@ Unidad de tiempo:
 - La presa se observa por decena.
 
 Horizontes:
-- Por default usa `1, 3, 6` decenas.
-- Eso equivale a `10, 30 y 60 dias`.
+- Por default usa `3, 6, 9` decenas.
+- Eso equivale a `30, 60 y 90 dias`.
 
 Features:
 - Lags de almacenamiento.
 - Cambios recientes por decena.
 - Promedios y desviaciones moviles.
-- Estacionalidad por mes.
+- Estacionalidad por mes y por decena del anio.
 - Variables climaticas opcionales si se pasan explicitamente.
 
 Baselines:
 - `decena_anterior`
 - `misma_decena_anio_anterior`
+- `promedio_3_decenas`
+- `delta_estacional_mediana`
+
+Modelos candidatos:
+- `xgboost_nivel`: pronostica el porcentaje futuro directamente.
+- `xgboost_delta`: pronostica el cambio esperado respecto al valor actual y luego reconstruye el porcentaje futuro.
 
 Gobernanza:
 - XGBoost solo queda operativo si mejora el MAE fuera de muestra.
 - Si no lo hace, el pronostico operativo usa el mejor baseline.
 
 Modo demo forzado:
-- Puedes forzar `xgboost`, `decena_anterior` o `misma_decena_anio_anterior` con `--force-model`.
+- Puedes forzar `xgboost_nivel`, `xgboost_delta`, `decena_anterior`, `misma_decena_anio_anterior`, `promedio_3_decenas` o `delta_estacional_mediana` con `--force-model`.
 - Si lo haces, el pipeline deja trazabilidad explicita en metricas, CSV/XLSX y HTML.
 - Ese modo no debe presentarse como seleccion operativa validada; es una sobrescritura manual.
 
@@ -211,21 +217,27 @@ En `alertas_riesgo_hidrico.csv`:
 
 - `porcentaje_almacenamiento`: valor actual.
 - `porcentaje_pronosticado`: valor esperado al horizonte.
+- `delta_pronosticado_puntos`: diferencia esperada en puntos porcentuales frente al valor actual.
+- `metodo_pronostico`: metodo que quedo operativo en ese horizonte.
+- `pronostico_es_persistencia`: marca cuando el horizonte quedo en baseline de continuidad.
 - `probabilidad_bajo_40`, `probabilidad_bajo_25`, `probabilidad_bajo_15`: riesgo de caer debajo de umbrales operativos.
 - `nivel_riesgo`: clasificacion final.
-- `horizonte_dias`: 10, 30 o 60 dias.
+- `horizonte_dias`: 30, 60 o 90 dias.
 
 En `monitoreo_riesgo_hidrico.html`:
 
 - El tablero ahora separa claramente los horizontes por pestaña.
 - Hay una tabla resumen por horizonte.
 - Cada mapa se renderiza por horizonte, no solo por el mas corto.
+- El HTML muestra el metodo operativo y el cambio esperado; si un horizonte queda en persistencia, lo explica explicitamente.
+- La tabla HTML lista todas las presas evaluadas en cada horizonte; ya no se limita a un top corto.
 
 ### Limitaciones clave
 
 - El modelo no estima lluvia futura si no se le entrega clima externo.
+- Incluso con clima externo, el uso operativo debe quedar supeditado al backtesting; no se asume que NASA POWER mejore todos los horizontes.
 - Una presa no equivale automaticamente al estres hidrico de todos los cultivos cercanos.
-- A mayor horizonte, suele deteriorarse el error; por eso se reportan 10, 30 y 60 dias por separado.
+- A mayor horizonte, suele deteriorarse el error; por eso se reportan 30, 60 y 90 dias por separado.
 
 ## 5. Nowcast de produccion
 
@@ -529,15 +541,21 @@ python -m scripts.run_water_risk_model --horizons 1 3 6
 python -m scripts.run_water_risk_model --horizons 2 4 8
 ```
 
+### Reforzar el historico nacional de presas
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_presas_historical_backfill --start-year 1999 --end-year 2026
+```
+
 ### Forzar metodo de riesgo hidrico para demo
 
 ```powershell
-python -m scripts.run_water_risk_model --force-model xgboost
+python -m scripts.run_water_risk_model --force-model xgboost_delta
 python -m scripts.run_water_risk_model --force-model decena_anterior
 ```
 
 Nota:
-- Los valores se expresan en decenas. Internamente `1 = 10 dias`, `3 = 30 dias`, etc.
+- Los valores se expresan en decenas. Internamente `3 = 30 dias`, `6 = 60 dias`, `9 = 90 dias`, etc.
 
 ## 9. Guion recomendado para demo
 
@@ -546,7 +564,7 @@ Nota:
 3. Mostrar `coverage` para explicar donde hay cobertura y donde no.
 4. Mostrar `precios_internacionales` y `mapa_proxies` para explicar el enrichment externo.
 5. Abrir `data/analysis/price_shock/reporte_alertas_precios.html`.
-6. Abrir `data/analysis/water_risk/monitoreo_riesgo_hidrico.html` y cambiar entre 10, 30 y 60 dias.
+6. Abrir `data/analysis/water_risk/monitoreo_riesgo_hidrico.html` y cambiar entre 30, 60 y 90 dias.
 7. Explicar que `nowcast_produccion` hoy corre en baseline historico por limitacion de etiquetado, no por falla tecnica.
 
 ## 10. Riesgos de interpretacion

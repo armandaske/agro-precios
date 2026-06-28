@@ -1,0 +1,291 @@
+{
+  "generated_at": "2026-06-28T09:59:23",
+  "start_year": 1999,
+  "end_year": 2026,
+  "years_requested": [
+    1999,
+    2000,
+    2001,
+    2002,
+    2003,
+    2004,
+    2005,
+    2006,
+    2007,
+    2008,
+    2009,
+    2010,
+    2011,
+    2012,
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "years_completed": [
+    1999,
+    2000,
+    2001,
+    2002,
+    2003,
+    2004,
+    2005,
+    2006,
+    2007,
+    2008,
+    2009,
+    2010,
+    2011,
+    2012,
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "results": [
+    {
+      "year": 1999,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_1999.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2000,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2000.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2001,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2001.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2002,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2002.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2003,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2003.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2004,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2004.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2005,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2005.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2006,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2006.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2007,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2007.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2008,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2008.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2009,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2009.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2010,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2010.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2011,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2011.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2012,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2012.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2013,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2013.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2014,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2014.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2015,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2015.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2016,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2016.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2017,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2017.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2018,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2018.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2019,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2019.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2020,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2020.xlsx",
+      "snapshot_rows": 4968,
+      "snapshot_dams": 138,
+      "error_rows": 0
+    },
+    {
+      "year": 2021,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2021.xlsx",
+      "snapshot_rows": 5846,
+      "snapshot_dams": 163,
+      "error_rows": 0
+    },
+    {
+      "year": 2022,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2022.xlsx",
+      "snapshot_rows": 5868,
+      "snapshot_dams": 163,
+      "error_rows": 0
+    },
+    {
+      "year": 2023,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2023.xlsx",
+      "snapshot_rows": 5868,
+      "snapshot_dams": 163,
+      "error_rows": 0
+    },
+    {
+      "year": 2024,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2024.xlsx",
+      "snapshot_rows": 5868,
+      "snapshot_dams": 163,
+      "error_rows": 0
+    },
+    {
+      "year": 2025,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2025.xlsx",
+      "snapshot_rows": 5868,
+      "snapshot_dams": 163,
+      "error_rows": 0
+    },
+    {
+      "year": 2026,
+      "status": "success",
+      "output_path": "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\backfill\\presas_agricolas_backfill_2026.xlsx",
+      "snapshot_rows": 2445,
+      "snapshot_dams": 163,
+      "error_rows": 0
+    }
+  ]
+}

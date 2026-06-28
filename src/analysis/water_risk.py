@@ -54,8 +54,11 @@ BASE_FEATURES = [
     "longitud",
     "mes",
     "decena",
+    "decena_anual",
     "mes_seno",
     "mes_coseno",
+    "decena_anual_seno",
+    "decena_anual_coseno",
     "porcentaje_lag_1",
     "porcentaje_lag_2",
     "porcentaje_lag_3",
@@ -64,12 +67,30 @@ BASE_FEATURES = [
     "porcentaje_lag_36",
     "cambio_1_decena",
     "cambio_3_decenas",
+    "cambio_6_decenas",
     "promedio_3_decenas",
     "promedio_6_decenas",
     "desviacion_6_decenas",
+    "gap_vs_promedio_3",
+    "gap_vs_promedio_6",
+    "tendencia_3_decenas",
+    "tendencia_6_decenas",
+    "porcentaje_yoy_gap",
     "estado",
     "uso_principal",
     "distrito_riego",
+    "precipitacion_mm",
+    "temperatura_c",
+    "temperatura_max_c",
+    "temperatura_min_c",
+    "evapotranspiracion_mm",
+    "dias_observados",
+    "indice_sequia",
+    "balance_hidrico_mm",
+    "precipitacion_lag_1",
+    "precipitacion_3_decenas",
+    "evapotranspiracion_3_decenas",
+    "balance_hidrico_3_decenas",
 ]
 
 
@@ -89,6 +110,8 @@ def _standardize_columns(frame: pd.DataFrame) -> pd.DataFrame:
 def load_reservoir_history(input_root: Path) -> pd.DataFrame:
     frames: list[pd.DataFrame] = []
     for path in sorted(input_root.rglob("*.xlsx")):
+        if path.name.startswith("~$"):
+            continue
         for aliases in (("presas_periodo",), ("series_presa",)):
             try:
                 frame = read_sheet_aliases(path, aliases)
@@ -142,6 +165,9 @@ def _load_optional_climate(path: Path | None) -> pd.DataFrame:
             "id": "id_conagua",
             "precipitation_mm": "precipitacion_mm",
             "temperature_c": "temperatura_c",
+            "temperature_max_c": "temperatura_max_c",
+            "temperature_min_c": "temperatura_min_c",
+            "evapotranspiration_mm": "evapotranspiracion_mm",
             "drought_index": "indice_sequia",
         }
     )
@@ -154,10 +180,11 @@ def build_dam_decena_features(
     history: pd.DataFrame,
     climate: pd.DataFrame | None = None,
     *,
-    horizons: tuple[int, ...] = (1, 3, 6),
+    horizons: tuple[int, ...] = (3, 6, 9),
 ) -> pd.DataFrame:
     features = history.copy().sort_values(["id_conagua", "fecha"]).reset_index(drop=True)
     group = features.groupby("id_conagua", sort=False)["porcentaje_almacenamiento"]
+    features["decena_anual"] = (features["mes"] - 1) * 3 + features["decena"]
     for lag in (1, 2, 3, 6, 12, 36):
         features[f"porcentaje_lag_{lag}"] = group.shift(lag)
     features["cambio_1_decena"] = (
@@ -165,6 +192,9 @@ def build_dam_decena_features(
     )
     features["cambio_3_decenas"] = (
         features["porcentaje_almacenamiento"] - features["porcentaje_lag_3"]
+    )
+    features["cambio_6_decenas"] = (
+        features["porcentaje_almacenamiento"] - features["porcentaje_lag_6"]
     )
     features["promedio_3_decenas"] = group.transform(
         lambda values: values.shift(1).rolling(3, min_periods=1).mean()
@@ -177,17 +207,67 @@ def build_dam_decena_features(
     )
     features["mes_seno"] = np.sin(2 * np.pi * features["mes"] / 12)
     features["mes_coseno"] = np.cos(2 * np.pi * features["mes"] / 12)
+    features["decena_anual_seno"] = np.sin(2 * np.pi * features["decena_anual"] / 36)
+    features["decena_anual_coseno"] = np.cos(2 * np.pi * features["decena_anual"] / 36)
+    features["gap_vs_promedio_3"] = (
+        features["porcentaje_almacenamiento"] - features["promedio_3_decenas"]
+    )
+    features["gap_vs_promedio_6"] = (
+        features["porcentaje_almacenamiento"] - features["promedio_6_decenas"]
+    )
+    features["tendencia_3_decenas"] = features["cambio_3_decenas"] / 3
+    features["tendencia_6_decenas"] = features["cambio_6_decenas"] / 6
+    features["porcentaje_yoy_gap"] = (
+        features["porcentaje_almacenamiento"] - features["porcentaje_lag_36"]
+    )
     for horizon in horizons:
         features[f"objetivo_porcentaje_h{horizon}"] = group.shift(-horizon)
         features[f"objetivo_almacenamiento_h{horizon}"] = features.groupby(
             "id_conagua", sort=False
         )["almacenamiento_hm3"].shift(-horizon)
+        features[f"objetivo_delta_h{horizon}"] = (
+            features[f"objetivo_porcentaje_h{horizon}"] - features["porcentaje_almacenamiento"]
+        )
 
     if climate is not None and not climate.empty:
-        features = features.merge(climate, on=["id_conagua", "fecha"], how="left")
-        for column in ("precipitacion_mm", "temperatura_c", "indice_sequia"):
-            if column in features.columns and column not in BASE_FEATURES:
-                BASE_FEATURES.append(column)
+        climate_columns = [
+            column
+            for column in (
+                "id_conagua",
+                "fecha",
+                "precipitacion_mm",
+                "temperatura_c",
+                "temperatura_max_c",
+                "temperatura_min_c",
+                "evapotranspiracion_mm",
+                "dias_observados",
+                "indice_sequia",
+            )
+            if column in climate.columns
+        ]
+        if climate_columns:
+            climate = climate[climate_columns].drop_duplicates(["id_conagua", "fecha"])
+            features = features.merge(climate, on=["id_conagua", "fecha"], how="left")
+            features["balance_hidrico_mm"] = (
+                pd.to_numeric(features.get("precipitacion_mm"), errors="coerce")
+                - pd.to_numeric(features.get("evapotranspiracion_mm"), errors="coerce")
+            )
+            if "precipitacion_mm" in features.columns:
+                precip_group = features.groupby("id_conagua", sort=False)["precipitacion_mm"]
+                features["precipitacion_lag_1"] = precip_group.shift(1)
+                features["precipitacion_3_decenas"] = precip_group.transform(
+                    lambda values: values.shift(1).rolling(3, min_periods=1).sum()
+                )
+            if "evapotranspiracion_mm" in features.columns:
+                evap_group = features.groupby("id_conagua", sort=False)["evapotranspiracion_mm"]
+                features["evapotranspiracion_3_decenas"] = evap_group.transform(
+                    lambda values: values.shift(1).rolling(3, min_periods=1).sum()
+                )
+            if "balance_hidrico_mm" in features.columns:
+                balance_group = features.groupby("id_conagua", sort=False)["balance_hidrico_mm"]
+                features["balance_hidrico_3_decenas"] = balance_group.transform(
+                    lambda values: values.shift(1).rolling(3, min_periods=1).sum()
+                )
     return features
 
 
@@ -233,11 +313,32 @@ def _risk_level(
     return "bajo"
 
 
+def _seasonal_delta_prediction(
+    train_frame: pd.DataFrame,
+    predict_frame: pd.DataFrame,
+    delta_column: str,
+    *,
+    default_delta: float,
+) -> np.ndarray:
+    seasonal_delta = (
+        train_frame.groupby("decena_anual", dropna=False)[delta_column]
+        .median()
+        .to_dict()
+    )
+    predicted_delta = (
+        predict_frame["decena_anual"].map(seasonal_delta).fillna(default_delta).to_numpy()
+    )
+    current = pd.to_numeric(
+        predict_frame["porcentaje_almacenamiento"], errors="coerce"
+    ).to_numpy()
+    return current + predicted_delta
+
+
 def train_water_models(
     features: pd.DataFrame,
     output_dir: Path,
     *,
-    horizons: tuple[int, ...] = (1, 3, 6),
+    horizons: tuple[int, ...] = (3, 6, 9),
     thresholds: tuple[float, ...] = (40.0, 25.0, 15.0),
     force_model: str | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any], pd.DataFrame]:
@@ -254,7 +355,10 @@ def train_water_models(
 
     for horizon in horizons:
         target = f"objetivo_porcentaje_h{horizon}"
-        training = features.dropna(subset=[target, "porcentaje_lag_1"]).copy()
+        delta_target = f"objetivo_delta_h{horizon}"
+        training = features.dropna(
+            subset=[target, delta_target, "porcentaje_almacenamiento", "porcentaje_lag_1"]
+        ).copy()
         if len(training) < 200:
             raise ValueError(
                 f"No hay suficientes filas para horizonte {horizon}: {len(training)}; minimo 200."
@@ -271,44 +375,86 @@ def train_water_models(
             training.loc[train_idx, target],
         )
         test_prediction = point_model.predict(training.loc[test_idx, validation_features])
+        delta_model = make_regression_pipeline(training.loc[train_idx], validation_features)
+        delta_model.fit(
+            training.loc[train_idx, validation_features],
+            training.loc[train_idx, delta_target],
+        )
+        delta_test_prediction = delta_model.predict(
+            training.loc[test_idx, validation_features]
+        )
+        delta_test_prediction_abs = (
+            training.loc[test_idx, "porcentaje_almacenamiento"].to_numpy()
+            + delta_test_prediction
+        )
 
         baseline_previous = training.loc[test_idx, "porcentaje_almacenamiento"].to_numpy()
         baseline_year = training.loc[test_idx, "porcentaje_lag_36"].fillna(
             training.loc[test_idx, "porcentaje_almacenamiento"]
         )
+        baseline_avg3 = training.loc[test_idx, "promedio_3_decenas"].fillna(
+            training.loc[test_idx, "porcentaje_almacenamiento"]
+        )
+        seasonal_delta_default = float(
+            training.loc[train_idx, delta_target].median(skipna=True)
+        )
+        baseline_seasonal_delta = _seasonal_delta_prediction(
+            training.loc[train_idx],
+            training.loc[test_idx],
+            delta_target,
+            default_delta=seasonal_delta_default,
+        )
         model_metrics = regression_metrics(training.loc[test_idx, target], test_prediction)
+        model_delta_metrics = regression_metrics(
+            training.loc[test_idx, target], delta_test_prediction_abs
+        )
         previous_metrics = regression_metrics(
             training.loc[test_idx, target], baseline_previous
         )
         year_metrics = regression_metrics(
             training.loc[test_idx, target], baseline_year.to_numpy()
         )
+        avg3_metrics = regression_metrics(
+            training.loc[test_idx, target], baseline_avg3.to_numpy()
+        )
+        seasonal_delta_metrics = regression_metrics(
+            training.loc[test_idx, target], baseline_seasonal_delta
+        )
         candidates = {
-            "xgboost": model_metrics["mae"],
+            "xgboost_nivel": model_metrics["mae"],
+            "xgboost_delta": model_delta_metrics["mae"],
             "decena_anterior": previous_metrics["mae"],
             "misma_decena_anio_anterior": year_metrics["mae"],
+            "promedio_3_decenas": avg3_metrics["mae"],
+            "delta_estacional_mediana": seasonal_delta_metrics["mae"],
         }
         operational_method = min(candidates, key=candidates.get)
         if force_model:
             if force_model not in candidates:
                 raise ValueError(
-                    "force_model debe ser uno de: xgboost, decena_anterior, misma_decena_anio_anterior."
+                    "force_model debe ser uno de: xgboost_nivel, xgboost_delta, decena_anterior, misma_decena_anio_anterior, promedio_3_decenas, delta_estacional_mediana."
                 )
             operational_method = force_model
         operational_validation_prediction = {
-            "xgboost": test_prediction,
+            "xgboost_nivel": test_prediction,
+            "xgboost_delta": delta_test_prediction_abs,
             "decena_anterior": baseline_previous,
             "misma_decena_anio_anterior": baseline_year.to_numpy(),
+            "promedio_3_decenas": baseline_avg3.to_numpy(),
+            "delta_estacional_mediana": baseline_seasonal_delta,
         }[operational_method]
         horizon_metrics = {
             "fecha_corte_validacion": cutoff.isoformat(),
             "filas_entrenamiento": int(len(train_idx)),
             "filas_validacion": int(len(test_idx)),
-            "modelo_xgboost": model_metrics,
+            "modelo_xgboost_nivel": model_metrics,
+            "modelo_xgboost_delta": model_delta_metrics,
             "base_decena_anterior": previous_metrics,
             "base_misma_decena_anio_anterior": year_metrics,
+            "base_promedio_3_decenas": avg3_metrics,
+            "base_delta_estacional_mediana": seasonal_delta_metrics,
             "metodo_operativo": operational_method,
-            "xgboost_operativo": operational_method == "xgboost",
+            "xgboost_operativo": operational_method in {"xgboost_nivel", "xgboost_delta"},
             "metodo_forzado": bool(force_model),
             "metodo_forzado_nombre": force_model if force_model else None,
         }
@@ -322,14 +468,30 @@ def train_water_models(
 
         final_model = make_regression_pipeline(training, available_features)
         final_model.fit(training[available_features], training[target])
+        final_delta_model = make_regression_pipeline(training, available_features)
+        final_delta_model.fit(training[available_features], training[delta_target])
         joblib.dump(final_model, output_dir / f"modelo_agua_h{horizon}.joblib")
+        joblib.dump(final_delta_model, output_dir / f"modelo_agua_delta_h{horizon}.joblib")
+        seasonal_delta_default_full = float(training[delta_target].median(skipna=True))
+        baseline_seasonal_delta_latest = _seasonal_delta_prediction(
+            training,
+            latest,
+            delta_target,
+            default_delta=seasonal_delta_default_full,
+        )
 
         predicted = {
-            "xgboost": final_model.predict(latest[available_features]),
+            "xgboost_nivel": final_model.predict(latest[available_features]),
+            "xgboost_delta": latest["porcentaje_almacenamiento"].to_numpy()
+            + final_delta_model.predict(latest[available_features]),
             "decena_anterior": latest["porcentaje_almacenamiento"].to_numpy(),
             "misma_decena_anio_anterior": latest["porcentaje_lag_36"]
             .fillna(latest["porcentaje_almacenamiento"])
             .to_numpy(),
+            "promedio_3_decenas": latest["promedio_3_decenas"]
+            .fillna(latest["porcentaje_almacenamiento"])
+            .to_numpy(),
+            "delta_estacional_mediana": baseline_seasonal_delta_latest,
         }[operational_method]
         horizon_alert = latest[
             [
@@ -350,6 +512,17 @@ def train_water_models(
         horizon_alert["metodo_forzado"] = bool(force_model)
         horizon_alert["metodo_forzado_nombre"] = force_model if force_model else pd.NA
         horizon_alert["porcentaje_pronosticado"] = predicted
+        horizon_alert["delta_pronosticado_puntos"] = (
+            horizon_alert["porcentaje_pronosticado"] - horizon_alert["porcentaje_almacenamiento"]
+        )
+        horizon_alert["cambio_pronosticado_pct"] = np.where(
+            horizon_alert["porcentaje_almacenamiento"].abs() > 1e-9,
+            horizon_alert["porcentaje_pronosticado"] / horizon_alert["porcentaje_almacenamiento"] - 1,
+            pd.NA,
+        )
+        horizon_alert["pronostico_es_persistencia"] = (
+            horizon_alert["metodo_pronostico"] == "decena_anterior"
+        )
         horizon_alert["porcentaje_p10"] = predicted + lower_residual
         horizon_alert["porcentaje_p90"] = predicted + upper_residual
         capacity = pd.to_numeric(horizon_alert["capacidad_namo_hm3"], errors="coerce")
@@ -375,7 +548,16 @@ def train_water_models(
         )
         alerts.append(horizon_alert)
 
-        importance = model_feature_importance(final_model).head(20)
+        importance_pipeline = final_model
+        if operational_method == "xgboost_delta":
+            importance_pipeline = final_delta_model
+        elif operational_method not in {"xgboost_nivel", "xgboost_delta"}:
+            importance_pipeline = (
+                final_delta_model
+                if model_delta_metrics["mae"] <= model_metrics["mae"]
+                else final_model
+            )
+        importance = model_feature_importance(importance_pipeline).head(20)
         importance["horizonte_dias"] = horizon * 10
         importances.append(importance)
 
@@ -411,6 +593,14 @@ def write_water_dashboard(alerts: pd.DataFrame, output_path: Path) -> None:
             if str(value).strip()
         }
     )
+    persistence_horizons: list[int] = []
+    if "pronostico_es_persistencia" in alerts.columns:
+        persistence_horizons = sorted(
+            int(value)
+            for value in alerts.loc[
+                alerts["pronostico_es_persistencia"], "horizonte_dias"
+            ].dropna().unique()
+        )
     sections: list[str] = []
     payload_by_horizon: dict[str, list[dict[str, Any]]] = {}
 
@@ -431,16 +621,18 @@ def write_water_dashboard(alerts: pd.DataFrame, output_path: Path) -> None:
             f"<td>{html.escape(str(row.get('estado', '')))}</td>"
             f"<td>{float(row.get('porcentaje_almacenamiento') or 0):.1f}%</td>"
             f"<td>{float(row.get('porcentaje_pronosticado') or 0):.1f}%</td>"
+            f"<td>{float(row.get('delta_pronosticado_puntos') or 0):+.1f} pts</td>"
             f"<td>{float(row.get('probabilidad_bajo_40') or 0):.1%}</td>"
+            f"<td>{html.escape(str(row.get('metodo_pronostico', '')))}</td>"
             f"<td>{html.escape(str(row.get('nivel_riesgo', '')))}</td>"
             "</tr>"
-            for row in records[:20]
+            for row in records
         )
         sections.append(
             f"""<section class="horizon-panel" data-horizon="{horizon}" {"hidden" if horizon != default_horizon else ""}>
 <h2>Horizonte a {horizon} dias</h2>
 <div class="map" id="map-{horizon}"></div>
-<table><thead><tr><th>Presa</th><th>Estado</th><th>Actual</th><th>Pronostico</th><th>Prob. &lt;40%</th><th>Riesgo</th></tr></thead>
+<table><thead><tr><th>Presa</th><th>Estado</th><th>Actual</th><th>Pronostico</th><th>Cambio</th><th>Prob. &lt;40%</th><th>Metodo</th><th>Riesgo</th></tr></thead>
 <tbody>{rows}</tbody></table></section>"""
         )
 
@@ -471,6 +663,7 @@ th,td{{padding:8px;border-bottom:1px solid #ddd;text-align:left}}
 </style>
 </head><body><h1>Monitoreo predictivo de riesgo hidrico</h1>
 <p>El tablero muestra de forma separada los horizontes operativos a {", ".join(str(value) for value in horizon_values)} dias. Los intervalos y probabilidades provienen de validacion temporal.</p>
+{"<p><strong>Lectura operativa:</strong> los horizontes " + ", ".join(str(value) for value in persistence_horizons) + " dias quedaron en persistencia porque ese baseline supero al resto fuera de muestra.</p>" if persistence_horizons else ""}
 {"<p><strong>Modo demo:</strong> el metodo operativo fue forzado a <code>" + ", ".join(forced_methods) + "</code>. Esta salida no respeta la seleccion automatica por mejor MAE fuera de muestra.</p>" if forced_methods else ""}
 <table class="summary-table"><thead><tr><th>Horizonte</th><th>Presas evaluadas</th><th>Criticas</th><th>Altas o criticas</th></tr></thead>
 <tbody>{summary_rows}</tbody></table>
@@ -488,7 +681,7 @@ function renderMap(horizon) {{
     if(d.latitud!=null&&d.longitud!=null)L.circleMarker([d.latitud,d.longitud],{{
       radius:6,color:colors[d.nivel_riesgo]||'#64748b',fillOpacity:.8
     }}).addTo(map).bindPopup(
-      `<b>${{d.nombre_presa}}</b><br>${{d.estado}}<br>Horizonte: ${{horizon}} dias<br>Actual: ${{Number(d.porcentaje_almacenamiento).toFixed(1)}}%<br>Pronostico: ${{Number(d.porcentaje_pronosticado).toFixed(1)}}%<br>Prob. <40%: ${{(Number(d.probabilidad_bajo_40)*100).toFixed(1)}}%`
+      `<b>${{d.nombre_presa}}</b><br>${{d.estado}}<br>Horizonte: ${{horizon}} dias<br>Actual: ${{Number(d.porcentaje_almacenamiento).toFixed(1)}}%<br>Pronostico: ${{Number(d.porcentaje_pronosticado).toFixed(1)}}%<br>Cambio: ${{Number(d.delta_pronosticado_puntos).toFixed(1)}} pts<br>Metodo: ${{d.metodo_pronostico}}<br>Prob. <40%: ${{(Number(d.probabilidad_bajo_40)*100).toFixed(1)}}%`
     );
   }});
   maps[horizon]=map;
@@ -512,7 +705,7 @@ def run_water_risk_pipeline(
     output_dir: Path,
     *,
     climate_path: Path | None = None,
-    horizons: tuple[int, ...] = (1, 3, 6),
+    horizons: tuple[int, ...] = (3, 6, 9),
     thresholds: tuple[float, ...] = (40.0, 25.0, 15.0),
     force_model: str | None = None,
 ) -> dict[str, Any]:
@@ -557,6 +750,8 @@ def run_water_risk_pipeline(
                 presas_criticas=("nivel_riesgo", lambda values: int((values == "critico").sum())),
                 presas_altas_o_criticas=("nivel_riesgo", lambda values: int(values.isin(["alto", "critico"]).sum())),
                 promedio_pronosticado=("porcentaje_pronosticado", "mean"),
+                delta_abs_promedio=("delta_pronosticado_puntos", lambda values: float(values.abs().mean())),
+                metodo_operativo=("metodo_pronostico", lambda values: values.mode().iloc[0]),
             )
             .sort_values("horizonte_dias")
         ).to_excel(writer, sheet_name="resumen_horizontes", index=False)
