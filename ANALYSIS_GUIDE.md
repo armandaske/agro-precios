@@ -369,6 +369,7 @@ Artefactos principales:
 - `data/analysis/price_shock/price_product_market_daily_features.parquet`
 - `data/analysis/price_shock/alertas_semanales_precios.csv`
 - `data/analysis/price_shock/anomalias_margen_retail.csv`
+- `data/analysis/price_shock/comparativo_precios_semanales.csv`
 - `data/analysis/price_shock/alerta_temprana_precios.xlsx`
 - `data/analysis/price_shock/reporte_alertas_precios.html`
 - `data/analysis/price_shock/metricas_modelo_precios.json`
@@ -400,6 +401,13 @@ Baselines:
 
 Gobernanza:
 - El metodo operativo por horizonte es el de menor MAE fuera de muestra.
+
+Comparativo semanal ejecutivo:
+- `comparativo_precios_semanales.csv` agrega por `semana_inicio + cultivo_canonico`.
+- `Mercados SNIIM` significa la mediana semanal nacional del mayoreo.
+- El rango del chart usa el minimo y maximo semanales medianos entre mercados observados.
+- Walmart y Chedraui se calculan una sola vez por `fecha + cultivo` antes de agregar, para no duplicar el mismo snapshot retail contra cada mercado SNIIM.
+- El workbook `alerta_temprana_precios.xlsx` incluye la hoja `comparativo_semanal`.
 
 ### Como leer la salida
 
@@ -467,7 +475,11 @@ Sirve para detectar:
 
 Vista demo recomendada:
 - El HTML ahora separa visualmente cada horizonte en lugar de mezclar 7, 14 y 28 dias en una sola tabla principal.
-- El workbook incluye `resumen_horizontes` para lectura ejecutiva rapida.
+- Antes de las tablas de horizonte, el HTML incluye `Comparativo semanal por cultivo` con selector, chart pre-renderizado y tarjetas KPI para `Mercados SNIIM`, Walmart, Chedraui, cambios semanales, brechas retail-vs-mayoreo y mercados cubiertos.
+- El selector de cultivo tambien filtra las tablas de alertas por producto para que solo se vean filas del cultivo elegido.
+- El chart semanal muestra hasta las 16 semanas mas recientes cuando hay suficiente historia; si no, usa toda la historia disponible.
+- La tabla HTML visible ya no muestra la columna `Accion`; la lectura se centra en producto, mercado, precio actual, pronostico, probabilidad y metodo.
+- El workbook incluye `resumen_horizontes` para lectura ejecutiva rapida y `comparativo_semanal` para auditoria en Excel.
 
 ### Limitaciones clave
 

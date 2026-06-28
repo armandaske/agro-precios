@@ -31,6 +31,7 @@ Analitica implementada:
 - Backfill anual reproducible de presas para reconstruir el historico nacional por decena con el mismo extractor HTTP.
 - Dataset por cultivo, estado y corte mensual para nowcast de produccion, con comparativo explicito vs anio anterior o promedio 5 anios cuando exista.
 - Dataset diario por producto y mercado, forecast a 7, 14 y 28 dias y anomalias de margen retail-mayoreo.
+- Comparativo semanal ejecutivo por cultivo para precios de mercados SNIIM, Walmart y Chedraui dentro del reporte HTML de alerta de precios.
 - Descarga opcional de clima NASA POWER.
 - Capa opcional de precios internacionales publicos sin API keys: World Bank Pink Sheet, FRED USD/MXN y archivos publicos descargados de USDA AMS o IMF.
 - Orquestador `scripts/run_analysis_pipeline.py` para reconstruir el workbook maestro y ejecutar los tres analisis.
@@ -118,6 +119,7 @@ La corrida reconstruye `data/analysis/master_price_workbook.xlsx` y escribe:
 - `data/analysis/water_risk/dam_decena_features.parquet`
 - `data/analysis/production_nowcast/crop_state_cutoff_features.parquet`
 - `data/analysis/price_shock/price_product_market_daily_features.parquet`
+- `data/analysis/price_shock/comparativo_precios_semanales.csv`
 - Reportes HTML y graficos PNG para nowcast de produccion y alerta de precios, ademas de los workbooks Excel.
 - Reportes CSV, XLSX, HTML, PNG, metricas JSON y modelos candidatos bajo cada carpeta.
 
@@ -128,6 +130,8 @@ La seleccion del metodo operativo se realiza con un corte temporal. Si XGBoost n
 En la version actual del monitor hidrico, el historial reforzado de presas permite que el modelo operativo use un enfoque por deltas (`xgboost_delta`) en `30`, `60` y `90` dias. El HTML y el XLSX dejan visible el metodo por horizonte, el cambio pronosticado frente al valor actual y muestran todas las presas evaluadas en la tabla, no solo una muestra.
 
 En nowcast de produccion tambien existe un override de demo. Si fuerzas `--production-force-model xgboost`, la salida deja trazabilidad explicita de que el metodo fue forzado y no debe presentarse como validado por backtesting.
+
+En `data/analysis/price_shock/reporte_alertas_precios.html`, la salida ahora incluye un modulo ejecutivo `Comparativo semanal por cultivo` con selector de cultivo, chart semanal pre-renderizado y tarjetas KPI. `Mercados SNIIM` se interpreta como la mediana semanal nacional del mayoreo y el sombreado muestra el rango semanal mediano minimo-maximo entre mercados observados. Ese mismo selector tambien filtra las tablas de alertas por cultivo y la tabla visible ya no muestra la columna `Accion`. Este bloque da contexto de negocio; no reemplaza la tabla de alertas por mercado.
 
 ### Enriquecimiento climatico
 

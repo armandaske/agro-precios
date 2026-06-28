@@ -57,7 +57,7 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/run_water_risk_model.py`: creates decena reservoir features, backtests candidate forecasts, and writes alerts and a map. The current default horizons are 30, 60, and 90 days (`3, 6, 9` decenas).
 - `scripts/fetch_presas_historical_backfill.py`: loops the existing Presas extractor year by year to rebuild a stronger national decena archive for training.
 - `scripts/run_production_nowcast.py`: creates crop-state cutoff features and trains only when historical Avance and Cierre years overlap.
-- `scripts/run_price_shock_model.py`: creates product-market daily features, price forecasts, and margin anomalies.
+- `scripts/run_price_shock_model.py`: creates product-market daily features, weekly executive price comparisons, price forecasts, and margin anomalies.
 - `scripts/run_analysis_pipeline.py`: rebuilds the master workbook and runs all three analytical projects in order.
 - `scripts/fetch_public_international_prices.py`: downloads unauthenticated public international price files for World Bank Pink Sheet and FRED USD/MXN.
 - `scripts/build_international_price_features.py`: builds the optional audited international price feature parquet from public files and `proxies_internacionales`.
@@ -139,6 +139,8 @@ Get-Content COMMANDS.md
 - Reservoir alerts should only include dams observed within 45 days of the latest reservoir cut.
 - Climate enrichment for water risk is optional and must stay benchmarked. Do not assume NASA POWER helps every horizon; if it worsens out-of-sample MAE, keep it as diagnostic rather than operational input.
 - Price alerts should only include markets observed within seven days of the latest SNIIM date.
+- The price-shock report should keep `Mercados SNIIM` as a national weekly summary for executive visuals: weekly median across observed markets plus a min-max range band, not dozens of separate market lines.
+- Weekly price comparison outputs for `alerta_precios` should keep Walmart and Chedraui unique at `fecha + cultivo` before weekly aggregation so one retail snapshot is not duplicated across every SNIIM market row.
 - Production nowcast requires historical Avance cutoffs joined to Cierre outcomes from the same crop, state, and year. If fewer than 100 labeled cutoffs or fewer than two labeled years exist, use the historical baseline and state the limitation.
 - Production nowcast executive outputs should expose an explicit comparison base for each crop-state forecast: prefer `anio anterior`, fall back to `promedio 5 anios`, and show `s/d` when neither exists instead of rendering `nan` percentages.
 - If the user explicitly requests a demo override, `scripts.run_production_nowcast.py --force-model xgboost` and `scripts.run_analysis_pipeline.py --production-force-model xgboost` may be used, but the metrics and reports must say that the method was forced.
