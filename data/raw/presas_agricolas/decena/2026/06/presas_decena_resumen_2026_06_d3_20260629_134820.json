@@ -1,0 +1,14 @@
+{
+  "status": "skipped_existing",
+  "run_timestamp": "2026-06-29T13:48:20.883269",
+  "target_year": 2026,
+  "target_month": 6,
+  "target_decena": 3,
+  "output_path": null,
+  "config_path": null,
+  "existing_output_paths": [
+    "C:\\Users\\Dell-G3\\Documents\\Jupyter-projects\\Others\\agro-precios\\data\\raw\\presas_agricolas\\decena\\2026\\06\\presas_decena_2026_06_d3_20260627_145347.xlsx"
+  ],
+  "row_count": 0,
+  "error_count": 0
+}

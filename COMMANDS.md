@@ -344,7 +344,7 @@ python -m scripts.run_analysis_pipeline `
 Monitor de riesgo hidrico:
 
 ```powershell
-python -m scripts.run_water_risk_model `
+.\.venv\Scripts\python.exe -m scripts.run_water_risk_model `
   --input-root data/raw/presas_agricolas `
   --output-dir data/analysis/water_risk
 ```
@@ -352,7 +352,7 @@ python -m scripts.run_water_risk_model `
 Forzar metodo para demo:
 
 ```powershell
-python -m scripts.run_water_risk_model `
+.\.venv\Scripts\python.exe -m scripts.run_water_risk_model `
   --input-root data/raw/presas_agricolas `
   --output-dir data/analysis/water_risk `
   --force-model xgboost_delta
@@ -365,6 +365,20 @@ Notas:
 - Si se omite, el script mantiene la seleccion automatica por menor MAE fuera de muestra
 - El HTML, el XLSX y las metricas dejan evidencia de que el metodo fue forzado
 - Con el historico nacional reforzado, la salida actual usa `xgboost_delta` en `30`, `60` y `90` dias cuando mejora el MAE
+
+Refresh operativo del deliverable hidrico:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.run_water_risk_refresh `
+  --publish-html-to C:\serving\agro-precios\monitoreo_riesgo_hidrico.html
+```
+
+Notas:
+
+- Es el entrypoint recomendado para server o scheduler cuando solo quieres refrescar riesgo hidrico.
+- Si la decena actual ya existe, termina en `skipped_existing` y no toca clima, modelo ni HTML publicado.
+- Si encuentra una decena nueva, actualiza NASA POWER en merge incremental, recalcula `data/analysis/water_risk/` y publica el HTML canonico con reemplazo atomico.
+- El resumen de la corrida queda por default en `data/analysis/water_risk/water_risk_refresh_summary.json`.
 
 Nowcast de produccion:
 
@@ -403,9 +417,19 @@ python -m scripts.run_price_shock_model `
 Descarga opcional de clima NASA POWER:
 
 ```powershell
-python -m scripts.fetch_nasa_power_weather `
+.\.venv\Scripts\python.exe -m scripts.fetch_nasa_power_weather `
   --start-date 1999-01-01 `
-  --end-date 2026-05-31 `
+  --end-date 2026-06-29 `
+  --output data/raw/climate/nasa_power_decena.parquet
+```
+
+Refresh incremental conservando el historial previo:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_nasa_power_weather `
+  --end-date 2026-06-29 `
+  --merge-existing `
+  --lookback-days 40 `
   --output data/raw/climate/nasa_power_decena.parquet
 ```
 

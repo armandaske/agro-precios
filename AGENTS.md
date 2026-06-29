@@ -55,6 +55,7 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/build_master_price_workbook.py`: builds the analysis-ready comparative workbook from dated daily runs plus normalized Avance exports and optional normalized Cierre exports.
 - `src/analysis/`: shared feature engineering, temporal validation, model governance, and reporting code.
 - `scripts/run_water_risk_model.py`: creates decena reservoir features, backtests candidate forecasts, and writes alerts and a map. The current default horizons are 30, 60, and 90 days (`3, 6, 9` decenas).
+- `scripts/run_water_risk_refresh.py`: scheduler-safe water-risk refresh that checks the latest decena, incrementally refreshes NASA POWER, reruns the hydric model, and publishes one canonical HTML deliverable.
 - `scripts/fetch_presas_historical_backfill.py`: loops the existing Presas extractor year by year to rebuild a stronger national decena archive for training.
 - `scripts/run_production_nowcast.py`: creates crop-state cutoff features and trains only when historical Avance and Cierre years overlap.
 - `scripts/run_price_shock_model.py`: creates product-market daily features, weekly executive price comparisons, price forecasts, and margin anomalies.
@@ -62,7 +63,7 @@ When you work in this repo, optimize for these outcomes:
 - `scripts/fetch_public_international_prices.py`: downloads unauthenticated public international price files for World Bank Pink Sheet and FRED USD/MXN.
 - `scripts/build_international_price_features.py`: builds the optional audited international price feature parquet from public files and `proxies_internacionales`.
 - `scripts/fetch_presas_decena_snapshot.py`: operational wrapper that generates a one-query config, fetches one national reservoir decena snapshot, and stores workbook plus JSON audit artifacts under a period-based folder.
-- `scripts/fetch_nasa_power_weather.py`: optional NASA POWER climate enrichment.
+- `scripts/fetch_nasa_power_weather.py`: optional NASA POWER climate enrichment with replace or incremental-merge modes.
 - `scripts/run_daily_extracts_task.cmd`: Windows Task Scheduler wrapper using the local virtualenv.
 - `COMMANDS.md`: quick command reference for the main extractors, batch runners, workbook builder, tests, and Windows scheduler workflow.
 - `ANALYSIS_GUIDE.md`: detailed operational and interpretation guide for the analytical pipelines, caveats, limitations, and demo framing.
@@ -138,6 +139,7 @@ Get-Content COMMANDS.md
 - Keep non-winning candidate model artifacts for diagnostics, but label the selected `metodo_pronostico` in alert outputs.
 - Reservoir alerts should only include dams observed within 45 days of the latest reservoir cut.
 - Climate enrichment for water risk is optional and must stay benchmarked. Do not assume NASA POWER helps every horizon; if it worsens out-of-sample MAE, keep it as diagnostic rather than operational input.
+- For automated water-risk refresh, prefer `scripts.run_water_risk_refresh.py` over wiring separate scheduler steps by hand; it is the production-safe entrypoint that skips unchanged decenas and only publishes after a successful rerun.
 - Price alerts should only include markets observed within seven days of the latest SNIIM date.
 - The price-shock report should keep `Mercados SNIIM` as a national weekly summary for executive visuals: weekly median across observed markets plus a min-max range band, not dozens of separate market lines.
 - Weekly price comparison outputs for `alerta_precios` should keep Walmart and Chedraui unique at `fecha + cultivo` before weekly aggregation so one retail snapshot is not duplicated across every SNIIM market row.
@@ -146,6 +148,7 @@ Get-Content COMMANDS.md
 - If the user explicitly requests a demo override, `scripts.run_production_nowcast.py --force-model xgboost` and `scripts.run_analysis_pipeline.py --production-force-model xgboost` may be used, but the metrics and reports must say that the method was forced.
 - The default dry scenarios are explicit assumptions: normal 0%, dry -8%, severe drought -15%. Do not present them as learned causal impacts.
 - Optional climate input must use `id_conagua + fecha`.
+- If `scripts.fetch_nasa_power_weather.py` is used incrementally, preserve the historical parquet and refetch with overlap before deduping on `id_conagua + fecha`; do not replace the file with only the most recent 10-day window.
 - Optional international price inputs must be public and unauthenticated. Do not introduce API keys, tokens, Banxico SIE credentials, paid futures feeds, or hidden secrets for this v1.
 - International proxy features must use `fecha_disponible` for joins to avoid future leakage. Proxies marked `diagnostico_only` must not enter model training.
 
@@ -196,6 +199,7 @@ Get-Content COMMANDS.md
 - `src/extract/presas_agricolas.py` should keep using the portal's direct JSON endpoints instead of browser automation as long as `js/funciones.php`, `js/graf.php`, `js/ajax/getInicio.php`, and `js/ajax/getAnios.php` remain stable.
 - Treat `anio + mes + decena` as the source-of-truth query contract for snapshots, and `id_conagua + mes + decena + rango de anios` as the source-of-truth contract for historical series.
 - When the need is a production-like every-ten-days national pull, prefer `python -m scripts.fetch_presas_decena_snapshot` instead of hand-editing `config/presas_agricolas.xlsx`; the wrapper should stay thin and keep using `run_from_config` underneath.
+- When the need is the live operational deliverable, prefer `python -m scripts.run_water_risk_refresh --publish-html-to ...` on a daily scheduler. The command should perform an idempotent decena check, refresh NASA incrementally, and only overwrite the canonical HTML after the model succeeds.
 - When the need is to reinforce the water-risk training archive across many years, prefer `python -m scripts.fetch_presas_historical_backfill --start-year ... --end-year ...` instead of hand-building dozens of annual config rows; the runner should stay thin and keep using `run_from_config` underneath.
 - For `presas_periodo`, an explicit `anio_final` in the config should expand the row into consecutive decena snapshots from the starting `anio/mes/decena` through the end of that year, capped by the portal's latest published period when needed.
 - Support the explicit `presas_estado` batch mode by filtering snapshots on `estado` after retrieval, and treat that filter as part of the auditable query metadata.

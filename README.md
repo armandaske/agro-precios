@@ -36,6 +36,7 @@ Analitica implementada:
 - Capa opcional de precios internacionales publicos sin API keys: World Bank Pink Sheet, FRED USD/MXN y archivos publicos descargados de USDA AMS o IMF.
 - Orquestador `scripts/run_analysis_pipeline.py` para reconstruir el workbook maestro y ejecutar los tres analisis.
 - Wrapper operativo `scripts/fetch_presas_decena_snapshot.py` para descargar el corte nacional de presas por decena con config generada, salida timestamped e idempotencia por periodo.
+- Entry point `scripts/run_water_risk_refresh.py` para refrescar automaticamente el deliverable de riesgo hidrico con snapshot de presas, clima incremental y publicacion atomica del HTML final.
 
 Limitacion actual:
 
@@ -56,11 +57,12 @@ Limitacion actual:
 - `scripts/normalize_company_avance_history.py`: convierte el CSV historico interno de siembras/cosechas en exportes XLSX compatibles con el layout consumido por el nowcast de produccion.
 - `scripts/build_master_price_workbook.py`: constructor del workbook maestro comparativo para SNIIM, Walmart, Chedraui, Avance Agricola y Cierre Agricola secundario.
 - `scripts/run_water_risk_model.py`: monitor predictivo de riesgo hidrico.
+- `scripts/run_water_risk_refresh.py`: refresh idempotente para scheduler que baja la nueva decena, actualiza NASA POWER en merge incremental y publica el HTML canonico.
 - `scripts/fetch_presas_historical_backfill.py`: backfill anual del corte nacional de presas para reforzar entrenamiento historico.
 - `scripts/run_production_nowcast.py`: nowcast de produccion y rendimiento.
 - `scripts/run_price_shock_model.py`: alerta temprana de choques de precios.
 - `scripts/run_analysis_pipeline.py`: ejecucion integrada de los tres proyectos.
-- `scripts/fetch_nasa_power_weather.py`: descarga clima diario por coordenada y agrega por decena.
+- `scripts/fetch_nasa_power_weather.py`: descarga clima diario por coordenada, agrega por decena y puede fusionar el parquet existente para conservar historial.
 - `scripts/fetch_public_international_prices.py`: descarga fuentes internacionales publicas que no requieren token.
 - `scripts/build_international_price_features.py`: normaliza proxies internacionales y genera features auditables.
 - `scripts/fetch_presas_decena_snapshot.py`: wrapper operativo para descargar y almacenar un corte nacional por decena usando el extractor existente de Presas Agricolas.
@@ -138,7 +140,20 @@ En `data/analysis/price_shock/reporte_alertas_precios.html`, la salida ahora inc
 Descargar NASA POWER para las coordenadas de las presas:
 
 ```powershell
-python -m scripts.fetch_nasa_power_weather --start-date 2025-01-01 --end-date 2026-06-15
+.\.venv\Scripts\python.exe -m scripts.fetch_nasa_power_weather `
+  --start-date 1999-01-01 `
+  --end-date 2026-06-29 `
+  --output data/raw/climate/nasa_power_decena.parquet
+```
+
+Actualizarlo en modo incremental conservando el historial ya guardado:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.fetch_nasa_power_weather `
+  --end-date 2026-06-29 `
+  --merge-existing `
+  --lookback-days 40 `
+  --output data/raw/climate/nasa_power_decena.parquet
 ```
 
 Backfill anual del historico nacional de presas:
@@ -157,7 +172,7 @@ python -m scripts.run_analysis_pipeline `
 Forzar un metodo operativo de riesgo hidrico para demo:
 
 ```powershell
-python -m scripts.run_water_risk_model --force-model xgboost_delta
+.\.venv\Scripts\python.exe -m scripts.run_water_risk_model --force-model xgboost_delta
 ```
 
 Importante:
@@ -166,6 +181,29 @@ Importante:
 - Si se usa, la salida de riesgo hidrico deja trazabilidad explicita de que el metodo fue forzado.
 - No debe presentarse como metodo operativo validado si el backtesting no lo favorece.
 - El clima NASA debe mantenerse como enriquecimiento opcional: si empeora el MAE fuera de muestra en un horizonte, no debe quedarse como input operativo solo por intuicion.
+
+### Refresh operativo del deliverable hidrico
+
+Para un server siempre encendido, el flujo recomendado no es `run_analysis_pipeline.py`, sino el refresh dedicado:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.run_water_risk_refresh `
+  --publish-html-to C:\serving\agro-precios\monitoreo_riesgo_hidrico.html
+```
+
+Comportamiento:
+
+- Corre un chequeo idempotente de la decena actual usando `scripts.fetch_presas_decena_snapshot`.
+- Si la decena ya existe, termina en `skipped_existing` sin tocar clima, modelo ni HTML publicado.
+- Si encuentra una decena nueva, actualiza `data/raw/climate/nasa_power_decena.parquet` en merge incremental, rerena/recalcula `data/analysis/water_risk/` y publica el HTML final con reemplazo atomico.
+- Escribe `data/analysis/water_risk/water_risk_refresh_summary.json` con `status`, estados por etapa y rutas relevantes.
+
+Bootstrap recomendado para el server:
+
+1. Correr una vez `scripts.fetch_presas_historical_backfill.py` para reconstruir el historico nacional.
+2. Correr una vez `scripts.fetch_nasa_power_weather.py --start-date ... --end-date ...` para construir el parquet climatico inicial.
+3. Correr manualmente `scripts.run_water_risk_refresh.py` y verificar que el HTML canonico se publique correctamente.
+4. Registrar la tarea diaria del scheduler para que el mismo comando haga el chequeo y refresh cuando aparezca una nueva decena.
 
 ### Precios internacionales publicos
 
